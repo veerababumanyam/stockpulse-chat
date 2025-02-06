@@ -1,11 +1,25 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Navigation } from "@/components/Navigation";
 import { AgentCard } from "@/components/agents/AgentCard";
 import { AgentConfigDialog } from "@/components/agents/AgentConfigDialog";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Filter, Plus, Search, ArrowUp, ArrowDown } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AgentConfig {
   id: string;
@@ -106,6 +120,10 @@ const Agents = () => {
   const [agents, setAgents] = useState<AgentConfig[]>(defaultAgents);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<AgentConfig | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState<"name" | "model">("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [activeFilter, setActiveFilter] = useState<boolean | null>(null);
   const { toast } = useToast();
 
   const handleAddAgent = () => {
@@ -150,6 +168,27 @@ const Agents = () => {
     });
   };
 
+  const toggleSortDirection = () => {
+    setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+  };
+
+  const filteredAndSortedAgents = useMemo(() => {
+    return agents
+      .filter(agent => {
+        const matchesSearch = agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            agent.description.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesActiveFilter = activeFilter === null || agent.active === activeFilter;
+        return matchesSearch && matchesActiveFilter;
+      })
+      .sort((a, b) => {
+        const direction = sortDirection === "asc" ? 1 : -1;
+        if (sortField === "name") {
+          return direction * a.name.localeCompare(b.name);
+        }
+        return direction * a.model.localeCompare(b.model);
+      });
+  }, [agents, searchQuery, sortField, sortDirection, activeFilter]);
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -167,8 +206,67 @@ const Agents = () => {
           </Button>
         </div>
 
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search agents..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+          
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Filter className="w-4 h-4" />
+                  Filter
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuCheckboxItem
+                  checked={activeFilter === true}
+                  onCheckedChange={() => setActiveFilter(activeFilter === true ? null : true)}
+                >
+                  Active
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={activeFilter === false}
+                  onCheckedChange={() => setActiveFilter(activeFilter === false ? null : false)}
+                >
+                  Inactive
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Select value={sortField} onValueChange={(value: "name" | "model") => setSortField(value)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="model">Model</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant="outline"
+              onClick={toggleSortDirection}
+              className="flex items-center gap-2"
+            >
+              {sortDirection === "asc" ? (
+                <ArrowUp className="w-4 h-4" />
+              ) : (
+                <ArrowDown className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {agents.map(agent => (
+          {filteredAndSortedAgents.map(agent => (
             <AgentCard
               key={agent.id}
               agent={agent}
@@ -191,3 +289,4 @@ const Agents = () => {
 };
 
 export default Agents;
+
