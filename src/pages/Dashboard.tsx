@@ -4,7 +4,7 @@ import ChatWindow from "@/components/ChatWindow";
 import { TrendingUp, DollarSign, LineChart } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
-const Index = () => {
+const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -66,4 +66,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Dashboard;
