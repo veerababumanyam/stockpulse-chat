@@ -1,6 +1,6 @@
 
 export class TechnicalAnalysisAgent {
-  static analyze(stockData: any) {
+  static async analyze(stockData: any): Promise<any> {
     const { quote } = stockData;
     
     const movingAverage50 = quote.priceAvg50;

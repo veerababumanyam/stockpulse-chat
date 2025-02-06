@@ -1,6 +1,6 @@
 
 export class FundamentalAnalysisAgent {
-  static analyze(stockData: any) {
+  static async analyze(stockData: any): Promise<any> {
     const { quote, profile } = stockData;
     
     const peRatio = quote.price / (profile.eps || 1);

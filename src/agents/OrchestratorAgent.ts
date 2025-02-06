@@ -1,3 +1,4 @@
+
 import { FundamentalAnalysisAgent } from './FundamentalAnalysisAgent';
 import { TechnicalAnalysisAgent } from './TechnicalAnalysisAgent';
 import { NewsAnalysisAgent } from './NewsAnalysisAgent';
@@ -30,9 +31,13 @@ interface AgentResult {
   error?: string;
 }
 
+type AgentResults = Map<string, AgentResult>;
+
 export class OrchestratorAgent {
+  private static results: AgentResults = new Map();
+
   static async orchestrateAnalysis(stockData: any) {
-    const results = new Map<string, AgentResult>();
+    this.results.clear();
 
     try {
       const agentPromises = [
@@ -69,7 +74,7 @@ export class OrchestratorAgent {
       return this.formatOutput({
         symbol: stockData.quote.symbol,
         companyName: stockData.profile.companyName,
-        results: Object.fromEntries(results)
+        results: Object.fromEntries(this.results)
       });
     } catch (error) {
       console.error('Error in orchestration:', error);
@@ -80,10 +85,10 @@ export class OrchestratorAgent {
   private static async executeAgent(name: string, agentFn: () => Promise<any>): Promise<void> {
     try {
       const result = await agentFn();
-      results.set(name, { data: result });
+      this.results.set(name, { data: result });
     } catch (error) {
       console.error(`Error in ${name} agent:`, error);
-      results.set(name, { 
+      this.results.set(name, { 
         data: null, 
         error: `${name} analysis failed: ${error.message}` 
       });
@@ -221,14 +226,5 @@ ${this.formatSection(data.results.socialMedia?.data, 'Scraped social media data 
       .filter(([_, v]) => v !== undefined && v !== null)
       .map(([k, v]) => `• ${k}: ${v}`)
       .join('\n');
-  }
-
-  private static formatLargeNumber(num: number | null | undefined): string {
-    if (num === null || num === undefined) return 'N/A';
-    
-    if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
-    if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
-    if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
-    return `$${num.toLocaleString()}`;
   }
 }
