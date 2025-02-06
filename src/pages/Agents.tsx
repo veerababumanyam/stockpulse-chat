@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { AgentCard } from "@/components/agents/AgentCard";
 import { AgentConfigDialog } from "@/components/agents/AgentConfigDialog";
@@ -116,8 +116,10 @@ const defaultAgents: AgentConfig[] = agentClassNames.map(className => ({
   active: true
 }));
 
+const STORAGE_KEY = 'ai-agents-config';
+
 const Agents = () => {
-  const [agents, setAgents] = useState<AgentConfig[]>(defaultAgents);
+  const [agents, setAgents] = useState<AgentConfig[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<AgentConfig | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -125,6 +127,24 @@ const Agents = () => {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [activeFilter, setActiveFilter] = useState<boolean | null>(null);
   const { toast } = useToast();
+
+  // Load agents from localStorage on initial render
+  useEffect(() => {
+    const savedAgents = localStorage.getItem(STORAGE_KEY);
+    if (savedAgents) {
+      setAgents(JSON.parse(savedAgents));
+    } else {
+      setAgents(defaultAgents);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultAgents));
+    }
+  }, []);
+
+  // Save agents to localStorage whenever they change
+  useEffect(() => {
+    if (agents.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(agents));
+    }
+  }, [agents]);
 
   const handleAddAgent = () => {
     setSelectedAgent(null);
@@ -138,11 +158,14 @@ const Agents = () => {
 
   const handleSaveAgent = (config: AgentConfig) => {
     setAgents(prev => {
-      if (config.id && prev.find(a => a.id === config.id)) {
-        return prev.map(a => a.id === config.id ? config : a);
-      }
-      return [...prev, { ...config, id: crypto.randomUUID() }];
+      const newAgents = config.id && prev.find(a => a.id === config.id)
+        ? prev.map(a => a.id === config.id ? config : a)
+        : [...prev, { ...config, id: crypto.randomUUID() }];
+      
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newAgents));
+      return newAgents;
     });
+    
     setIsDialogOpen(false);
     toast({
       title: "Success",
@@ -151,17 +174,24 @@ const Agents = () => {
   };
 
   const handleToggleAgent = (agentId: string) => {
-    setAgents(prev =>
-      prev.map(agent =>
+    setAgents(prev => {
+      const newAgents = prev.map(agent =>
         agent.id === agentId
           ? { ...agent, active: !agent.active }
           : agent
-      )
-    );
+      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newAgents));
+      return newAgents;
+    });
   };
 
   const handleDeleteAgent = (agentId: string) => {
-    setAgents(prev => prev.filter(agent => agent.id !== agentId));
+    setAgents(prev => {
+      const newAgents = prev.filter(agent => agent.id !== agentId);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newAgents));
+      return newAgents;
+    });
+    
     toast({
       title: "Agent Deleted",
       description: "The agent has been removed successfully.",
@@ -289,4 +319,3 @@ const Agents = () => {
 };
 
 export default Agents;
-
