@@ -22,37 +22,44 @@ interface ApiKeys {
   fmp?: string;
 }
 
+const defaultProviders: LLMProvider[] = [
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    isEnabled: true,
+    description: 'Leading AI technology provider offering state-of-the-art language models',
+    capabilities: [
+      'Advanced natural language understanding',
+      'Context-aware responses',
+      'Code generation and analysis',
+      'Multi-modal capabilities with vision models'
+    ],
+    models: ['gpt-4', 'gpt-4-turbo-preview', 'gpt-4-vision-preview', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k']
+  },
+  {
+    id: 'deepseek',
+    name: 'Deepseek',
+    isEnabled: false,
+    description: 'Specialized AI models focused on deep learning and specific domain expertise',
+    capabilities: [
+      'Specialized code understanding',
+      'Mathematical reasoning',
+      'Domain-specific analysis',
+      'Technical documentation generation'
+    ],
+    models: ['deepseek-chat', 'deepseek-coder', 'deepseek-reasoner', 'deepseek-english', 'deepseek-math']
+  }
+];
+
 export const LLMProviderSection = () => {
   const [providers, setProviders] = useState<LLMProvider[]>(() => {
-    const savedProviders = localStorage.getItem('llm-providers');
-    return savedProviders ? JSON.parse(savedProviders) : [
-      {
-        id: 'openai',
-        name: 'OpenAI',
-        isEnabled: true,
-        description: 'Leading AI technology provider offering state-of-the-art language models',
-        capabilities: [
-          'Advanced natural language understanding',
-          'Context-aware responses',
-          'Code generation and analysis',
-          'Multi-modal capabilities with vision models'
-        ],
-        models: ['gpt-4', 'gpt-4-turbo-preview', 'gpt-4-vision-preview', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k']
-      },
-      {
-        id: 'deepseek',
-        name: 'Deepseek',
-        isEnabled: false,
-        description: 'Specialized AI models focused on deep learning and specific domain expertise',
-        capabilities: [
-          'Specialized code understanding',
-          'Mathematical reasoning',
-          'Domain-specific analysis',
-          'Technical documentation generation'
-        ],
-        models: ['deepseek-chat', 'deepseek-coder', 'deepseek-reasoner', 'deepseek-english', 'deepseek-math']
-      }
-    ];
+    try {
+      const savedProviders = localStorage.getItem('llm-providers');
+      return savedProviders ? JSON.parse(savedProviders) : defaultProviders;
+    } catch (error) {
+      console.error('Error parsing saved providers:', error);
+      return defaultProviders;
+    }
   });
 
   const { toast } = useToast();
@@ -72,7 +79,6 @@ export const LLMProviderSection = () => {
   }, []);
 
   const handleProviderToggle = (providerId: string) => {
-    // Check if the API key exists and is a non-empty string
     const hasValidApiKey = apiKeys && apiKeys[providerId as keyof ApiKeys];
     
     if (!hasValidApiKey) {
@@ -99,10 +105,6 @@ export const LLMProviderSection = () => {
       description: "Provider settings have been updated successfully.",
     });
   };
-
-  if (!providers) {
-    return <div>Loading providers...</div>;
-  }
 
   return (
     <div className="space-y-6">
@@ -132,7 +134,7 @@ export const LLMProviderSection = () => {
       </Alert>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {providers.map((provider) => (
+        {providers && providers.map((provider) => (
           <Card key={provider.id} className="relative">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -156,7 +158,7 @@ export const LLMProviderSection = () => {
                     Key Capabilities
                   </h3>
                   <ul className="space-y-1 list-disc list-inside text-sm text-muted-foreground">
-                    {provider.capabilities.map((capability, index) => (
+                    {provider.capabilities && provider.capabilities.map((capability, index) => (
                       <li key={index}>{capability}</li>
                     ))}
                   </ul>
@@ -164,7 +166,7 @@ export const LLMProviderSection = () => {
                 <div>
                   <h3 className="font-medium mb-2">Available Models</h3>
                   <div className="grid grid-cols-2 gap-2">
-                    {provider.models.map((model) => (
+                    {provider.models && provider.models.map((model) => (
                       <div
                         key={model}
                         className="text-sm px-2 py-1 bg-secondary rounded-md text-muted-foreground"
