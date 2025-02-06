@@ -12,6 +12,7 @@ interface AgentListProps {
   onEdit: (agent: AgentConfig) => void;
   onToggle: (agentId: string) => void;
   onDelete: (agentId: string) => void;
+  onTest: (agent: AgentConfig) => void;
 }
 
 export const AgentList = ({
@@ -22,7 +23,8 @@ export const AgentList = ({
   activeFilter,
   onEdit,
   onToggle,
-  onDelete
+  onDelete,
+  onTest
 }: AgentListProps) => {
   const filteredAndSortedAgents = useMemo(() => {
     return agents
@@ -50,6 +52,7 @@ export const AgentList = ({
           onEdit={() => onEdit(agent)}
           onToggle={() => onToggle(agent.id)}
           onDelete={() => onDelete(agent.id)}
+          onTest={() => onTest(agent)}
         />
       ))}
     </div>
