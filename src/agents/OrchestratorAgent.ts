@@ -6,11 +6,14 @@ import { AnalystRecommendationsAgent } from './AnalystRecommendationsAgent';
 import { MarketSentimentAgent } from './MarketSentimentAgent';
 import { RiskAssessmentAgent } from './RiskAssessmentAgent';
 import { MacroeconomicAnalysisAgent } from './MacroeconomicAnalysisAgent';
+import { DataCleansingAgent } from './DataCleansingAgent';
+import { CompetitiveAnalysisAgent } from './CompetitiveAnalysisAgent';
+import { ESGAnalysisAgent } from './ESGAnalysisAgent';
 
 export class OrchestratorAgent {
   static async orchestrateAnalysis(stockData: any) {
     try {
-      // Run core analyses in parallel
+      // Run all analyses in parallel
       const [
         fundamentalAnalysis,
         technicalAnalysis,
@@ -18,7 +21,10 @@ export class OrchestratorAgent {
         analystAnalysis,
         marketSentiment,
         riskAssessment,
-        macroAnalysis
+        macroAnalysis,
+        dataQuality,
+        competitiveAnalysis,
+        esgAnalysis
       ] = await Promise.all([
         FundamentalAnalysisAgent.analyze(stockData),
         TechnicalAnalysisAgent.analyze(stockData),
@@ -26,7 +32,10 @@ export class OrchestratorAgent {
         AnalystRecommendationsAgent.analyze(stockData.quote.symbol),
         MarketSentimentAgent.analyze(stockData.quote.symbol),
         RiskAssessmentAgent.analyze(stockData),
-        MacroeconomicAnalysisAgent.analyze(stockData.quote.symbol)
+        MacroeconomicAnalysisAgent.analyze(stockData.quote.symbol),
+        DataCleansingAgent.analyze(stockData),
+        CompetitiveAnalysisAgent.analyze(stockData.quote.symbol),
+        ESGAnalysisAgent.analyze(stockData.quote.symbol)
       ]);
 
       return this.formatOutput({
@@ -38,7 +47,10 @@ export class OrchestratorAgent {
         analyst: analystAnalysis,
         sentiment: marketSentiment,
         risk: riskAssessment,
-        macro: macroAnalysis
+        macro: macroAnalysis,
+        dataQuality: dataQuality,
+        competitive: competitiveAnalysis,
+        esg: esgAnalysis
       });
     } catch (error) {
       console.error('Error in orchestration:', error);
@@ -58,6 +70,10 @@ ${this.formatSection(data.fundamental, 'Fundamental metrics and company health')
 ------------------------
 ${this.formatSection(data.technical, 'Technical indicators and price action')}
 
+🏢 Competitive Analysis
+------------------------
+${this.formatSection(data.competitive, 'Competitive position and peer comparison')}
+
 📰 News & Sentiment Analysis
 ------------------------
 ${this.formatSection(data.news, 'Recent news and market sentiment')}
@@ -75,12 +91,21 @@ ${this.formatSection(data.risk, 'Risk metrics and warnings')}
 ------------------------
 ${this.formatSection(data.macro, 'Macroeconomic factors and impact')}
 
+🌱 ESG Analysis
+------------------------
+${this.formatSection(data.esg, 'Environmental, Social, and Governance metrics')}
+
+📊 Data Quality
+------------------------
+${this.formatSection(data.dataQuality, 'Data quality assessment')}
+
 🎯 Summary & Recommendations
 ------------------------
 • Technical Outlook: ${data.technical.analysis.signals?.overallSignal || 'N/A'}
 • Fundamental Position: ${data.fundamental.analysis.recommendation || 'N/A'}
 • Risk Level: ${data.risk.analysis.riskLevel || 'N/A'}
 • Market Sentiment: ${data.sentiment.analysis.overallSentiment || 'N/A'}
+• ESG Rating: ${data.esg.analysis.overallESGRating || 'N/A'}
 `;
   }
 
