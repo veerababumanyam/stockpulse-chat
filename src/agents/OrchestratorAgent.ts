@@ -50,6 +50,9 @@ import { TechnologicalDisruptionAgent } from './TechnologicalDisruptionAgent';
 import { DemographicTrendAgent } from './DemographicTrendAgent';
 import { AgentResult, AgentResults } from './types/AgentTypes';
 import { OutputFormatter } from './utils/OutputFormatter';
+import { AlternativeDataAnalysisAgent } from './AlternativeDataAnalysisAgent';
+import { SeasonalityAnalysisAgent } from './SeasonalityAnalysisAgent';
+import { LiquidityAnalysisAgent } from './LiquidityAnalysisAgent';
 
 export class OrchestratorAgent {
   private static results: AgentResults = new Map();
@@ -123,7 +126,12 @@ export class OrchestratorAgent {
         this.executeAgent('currencyImpact', () => CurrencyImpactAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('commodityImpact', () => CommodityImpactAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('technologicalDisruption', () => TechnologicalDisruptionAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('demographicTrend', () => DemographicTrendAgent.analyze(stockData.quote.symbol))
+        this.executeAgent('demographicTrend', () => DemographicTrendAgent.analyze(stockData.quote.symbol)),
+        
+        // Add new agents
+        this.executeAgent('alternativeData', () => AlternativeDataAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('seasonality', () => SeasonalityAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('liquidity', () => LiquidityAnalysisAgent.analyze(stockData.quote.symbol)),
       ];
 
       await Promise.all(agentPromises);
