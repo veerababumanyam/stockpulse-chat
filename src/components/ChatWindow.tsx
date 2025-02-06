@@ -68,13 +68,17 @@ const ChatWindow = () => {
         throw new Error('No stock data found for the query');
       }
 
+      console.log('Retrieved stock data:', stockData);
+
       const analysis = await OrchestratorAgent.orchestrateAnalysis(stockData);
+      console.log('Orchestrator analysis result:', analysis);
       
       if (!analysis || typeof analysis === 'string') {
         throw new Error('Invalid analysis response');
       }
 
       const analysisResult = analysis as unknown as AnalysisResult;
+      console.log('Formatted analysis result:', analysisResult);
 
       const aiMessage: MessageType = {
         content: analysisResult.textOutput,
@@ -90,6 +94,12 @@ const ChatWindow = () => {
         description: error instanceof Error ? error.message : "Failed to analyze stock data",
         variant: "destructive",
       });
+
+      const errorMessage: MessageType = {
+        content: error instanceof Error ? error.message : "Failed to analyze stock data",
+        isUser: false
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }

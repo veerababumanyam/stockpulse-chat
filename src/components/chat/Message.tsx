@@ -37,4 +37,3 @@ const Message = ({ message, onDownload }: MessageProps) => {
 };
 
 export default Message;
-
