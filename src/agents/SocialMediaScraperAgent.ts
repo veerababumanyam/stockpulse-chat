@@ -121,11 +121,15 @@ export class SocialMediaScraperAgent extends BaseAgent {
       };
     }
 
-    const dates = data
-      .map(item => new Date(item.publishedDate))
-      .filter(date => !isNaN(date.getTime()));
+    // Convert valid dates to timestamps
+    const timestamps: number[] = data
+      .map(item => {
+        const date = new Date(item.publishedDate);
+        return !isNaN(date.getTime()) ? date.getTime() : null;
+      })
+      .filter((timestamp): timestamp is number => timestamp !== null);
 
-    if (dates.length === 0) {
+    if (timestamps.length === 0) {
       return { 
         daysSpan: 0,
         newest: 'Invalid dates',
@@ -133,8 +137,8 @@ export class SocialMediaScraperAgent extends BaseAgent {
       };
     }
 
-    const newest = Math.max(...dates.map(d => d.getTime()));
-    const oldest = Math.min(...dates.map(d => d.getTime()));
+    const newest = Math.max(...timestamps);
+    const oldest = Math.min(...timestamps);
     
     const daysSpan = Math.ceil((newest - oldest) / (1000 * 60 * 60 * 24)) || 0;
 
@@ -169,7 +173,7 @@ export class SocialMediaScraperAgent extends BaseAgent {
         return {
           source,
           mentions,
-          recentMention: recentDate 
+          recentMention: recentDate && !isNaN(recentDate.getTime())
             ? this.formatDate(recentDate)
             : 'Date not available'
         };
