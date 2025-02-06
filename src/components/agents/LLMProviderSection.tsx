@@ -17,9 +17,9 @@ interface LLMProvider {
 }
 
 interface ApiKeys {
-  openai: string;
-  deepseek: string;
-  fmp: string;
+  openai?: string;
+  deepseek?: string;
+  fmp?: string;
 }
 
 export const LLMProviderSection = () => {
@@ -56,17 +56,26 @@ export const LLMProviderSection = () => {
   });
 
   const { toast } = useToast();
-  const [apiKeys, setApiKeys] = useState<ApiKeys | null>(null);
+  const [apiKeys, setApiKeys] = useState<ApiKeys>({});
 
   useEffect(() => {
     const savedApiKeys = localStorage.getItem('apiKeys');
     if (savedApiKeys) {
-      setApiKeys(JSON.parse(savedApiKeys));
+      try {
+        const parsed = JSON.parse(savedApiKeys);
+        setApiKeys(parsed || {});
+      } catch (error) {
+        console.error('Error parsing API keys:', error);
+        setApiKeys({});
+      }
     }
   }, []);
 
   const handleProviderToggle = (providerId: string) => {
-    if (!apiKeys?.[providerId as keyof ApiKeys]) {
+    // Check if the API key exists and is a non-empty string
+    const hasValidApiKey = apiKeys && apiKeys[providerId as keyof ApiKeys];
+    
+    if (!hasValidApiKey) {
       toast({
         title: "API Key Required",
         description: "Please set up your API key in the API Keys page first.",
@@ -90,6 +99,10 @@ export const LLMProviderSection = () => {
       description: "Provider settings have been updated successfully.",
     });
   };
+
+  if (!providers) {
+    return <div>Loading providers...</div>;
+  }
 
   return (
     <div className="space-y-6">
