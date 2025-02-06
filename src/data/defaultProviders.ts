@@ -45,6 +45,20 @@ export const defaultProviders: LLMProvider[] = [
     selectedModels: []
   },
   {
+    id: 'gemini',
+    name: 'Google Gemini',
+    isEnabled: false,
+    description: 'Google\'s advanced multimodal AI model with strong reasoning capabilities',
+    capabilities: [
+      'Multimodal understanding',
+      'Advanced reasoning',
+      'Code generation and analysis',
+      'Real-time information processing'
+    ],
+    models: [],
+    selectedModels: []
+  },
+  {
     id: 'deepseek',
     name: 'Deepseek',
     isEnabled: false,

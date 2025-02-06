@@ -14,5 +14,6 @@ export interface ApiKeys {
   anthropic?: string;
   openrouter?: string;
   deepseek?: string;
+  gemini?: string;
   fmp?: string;
 }
