@@ -1,15 +1,16 @@
-
 import { useState, useEffect } from "react";
-import { Send } from "lucide-react";
+import { Send, Download } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useToast } from "./ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
+import { generateAnalysisPDF } from "@/utils/pdfGenerator";
 
 interface Message {
   content: string;
   isUser: boolean;
+  data?: any;
 }
 
 interface ApiKeys {
@@ -74,6 +75,23 @@ const ChatWindow = () => {
     }
   };
 
+  const handleDownloadPDF = async (analysisData: any) => {
+    try {
+      await generateAnalysisPDF(analysisData);
+      toast({
+        title: "Success",
+        description: "Analysis report downloaded successfully",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF report",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -90,12 +108,13 @@ const ChatWindow = () => {
         throw new Error('No stock data found for the query');
       }
 
-      // Use the OrchestratorAgent to analyze the stock data
       const analysis = await OrchestratorAgent.orchestrateAnalysis(stockData);
+      const { textOutput, formattedData } = analysis;
 
       const aiMessage: Message = {
-        content: analysis,
+        content: textOutput,
         isUser: false,
+        data: formattedData
       };
 
       setMessages(prev => [...prev, aiMessage]);
@@ -115,15 +134,25 @@ const ChatWindow = () => {
     <div className="h-[90vh] glass-panel flex flex-col bg-[#F1F0FB]/80 border-[#E5DEFF]">
       <div className="flex-1 overflow-y-auto p-4 scrollbar-none">
         {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`mb-4 p-3 rounded-lg ${
-              message.isUser 
-                ? "bg-[#8B5CF6]/10 ml-auto w-fit max-w-[95%]" 
-                : "bg-[#E5DEFF]/50 mr-auto w-fit max-w-[95%] whitespace-pre-line"
-            }`}
-          >
-            {message.content}
+          <div key={index} className="mb-4">
+            <div
+              className={`p-3 rounded-lg ${
+                message.isUser 
+                  ? "bg-[#8B5CF6]/10 ml-auto w-fit max-w-[95%]" 
+                  : "bg-[#E5DEFF]/50 mr-auto w-fit max-w-[95%] whitespace-pre-line"
+              }`}
+            >
+              {message.content}
+            </div>
+            {!message.isUser && message.data && (
+              <Button
+                onClick={() => handleDownloadPDF(message.data)}
+                className="mt-2 bg-[#8B5CF6] hover:bg-[#7C3AED] flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Download PDF Report
+              </Button>
+            )}
           </div>
         ))}
         {isLoading && (
