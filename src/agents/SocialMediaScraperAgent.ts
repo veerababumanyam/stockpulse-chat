@@ -1,3 +1,4 @@
+
 import { BaseAgent, AnalysisResult } from './BaseAgent';
 
 export class SocialMediaScraperAgent extends BaseAgent {
@@ -134,8 +135,8 @@ export class SocialMediaScraperAgent extends BaseAgent {
     const newest = Math.max(...timestamps);
     const oldest = Math.min(...timestamps);
     
-    // Convert milliseconds to days and ensure we're working with numbers
-    const daysSpan = Math.ceil((Number(newest) - Number(oldest)) / (1000 * 60 * 60 * 24));
+    // Convert milliseconds to days
+    const daysSpan = Math.ceil((newest - oldest) / (1000 * 60 * 60 * 24));
 
     return {
       daysSpan,
