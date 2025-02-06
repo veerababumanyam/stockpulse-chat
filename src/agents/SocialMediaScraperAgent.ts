@@ -1,4 +1,3 @@
-
 import { BaseAgent, AnalysisResult } from './BaseAgent';
 
 export class SocialMediaScraperAgent extends BaseAgent {
@@ -120,6 +119,31 @@ export class SocialMediaScraperAgent extends BaseAgent {
     };
   }
 
+  private static calculateTimeDistribution(data: any[]): { daysSpan: number; newest?: string; oldest?: string } {
+    if (!Array.isArray(data) || data.length === 0) return { daysSpan: 0 };
+
+    const timestamps = data
+      .map(item => {
+        const date = new Date(item.publishedDate);
+        return !isNaN(date.getTime()) ? date.getTime() : null;
+      })
+      .filter((timestamp): timestamp is number => timestamp !== null);
+
+    if (timestamps.length === 0) return { daysSpan: 0 };
+
+    const newest = Math.max(...timestamps);
+    const oldest = Math.min(...timestamps);
+    
+    // Convert milliseconds to days and ensure we're working with numbers
+    const daysSpan = Math.ceil((Number(newest) - Number(oldest)) / (1000 * 60 * 60 * 24));
+
+    return {
+      daysSpan,
+      newest: this.formatDate(new Date(newest)),
+      oldest: this.formatDate(new Date(oldest))
+    };
+  }
+
   private static analyzeInfluencerMentions(data: any[]): any[] {
     if (!Array.isArray(data)) return [];
 
@@ -138,28 +162,5 @@ export class SocialMediaScraperAgent extends BaseAgent {
           data.find(item => item.site === source)?.publishedDate || new Date()
         )
       }));
-  }
-
-  private static calculateTimeDistribution(data: any[]): { daysSpan: number; newest?: string; oldest?: string } {
-    if (!Array.isArray(data) || data.length === 0) return { daysSpan: 0 };
-
-    const timestamps: number[] = data
-      .map(item => {
-        const date = new Date(item.publishedDate);
-        return !isNaN(date.getTime()) ? date.getTime() : null;
-      })
-      .filter((timestamp): timestamp is number => timestamp !== null);
-
-    if (timestamps.length === 0) return { daysSpan: 0 };
-
-    const newest = Math.max(...timestamps);
-    const oldest = Math.min(...timestamps);
-    const daysSpan = Math.ceil((newest - oldest) / (1000 * 60 * 60 * 24));
-
-    return {
-      daysSpan,
-      newest: this.formatDate(new Date(newest)),
-      oldest: this.formatDate(new Date(oldest))
-    };
   }
 }
