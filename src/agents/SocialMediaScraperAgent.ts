@@ -123,9 +123,9 @@ export class SocialMediaScraperAgent extends BaseAgent {
   private static calculateTimeDistribution(data: any[]): { daysSpan: number; newest?: string; oldest?: string } {
     if (!Array.isArray(data) || data.length === 0) return { daysSpan: 0 };
 
-    const validDates = data
+    const validDates: number[] = data
       .map(item => new Date(item.publishedDate).getTime())
-      .filter(timestamp => !isNaN(timestamp));
+      .filter((timestamp): timestamp is number => !isNaN(timestamp));
 
     if (validDates.length === 0) return { daysSpan: 0 };
 
