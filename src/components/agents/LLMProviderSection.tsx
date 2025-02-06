@@ -101,12 +101,31 @@ export const LLMProviderSection = () => {
           'Content-Type': 'application/json',
         },
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      
+      // Filter out deprecated models and get all available models
       return data.data
-        .filter((model: any) => 
-          model.id.includes('gpt-4') || 
-          model.id.includes('gpt-3.5-turbo'))
-        .map((model: any) => model.id);
+        .map((model: any) => model.id)
+        .filter((modelId: string) => (
+          !modelId.includes('instruct') && // Filter out instruct models
+          !modelId.includes('davinci') && // Filter out older davinci models
+          !modelId.includes('curie') && // Filter out older curie models
+          !modelId.includes('babbage') && // Filter out older babbage models
+          !modelId.includes('ada') && // Filter out older ada models
+          !modelId.includes('embedding') && // Filter out embedding models
+          !modelId.includes('similarity') && // Filter out similarity models
+          !modelId.includes('search') && // Filter out search models
+          !modelId.includes('edit') && // Filter out edit models
+          !modelId.includes('2020') && // Filter out old models
+          !modelId.includes('2021') && // Filter out old models
+          !modelId.includes('2022') // Filter out old models
+        ))
+        .sort((a: string, b: string) => a.localeCompare(b)); // Sort alphabetically
     } catch (error) {
       console.error('Error fetching OpenAI models:', error);
       throw error;
@@ -143,6 +162,7 @@ export const LLMProviderSection = () => {
           let models: string[] = [];
           if (provider.id === 'openai') {
             models = await fetchOpenAIModels(apiKeys.openai!);
+            console.log('Fetched OpenAI models:', models); // Debug log
           } else if (provider.id === 'deepseek') {
             models = await fetchDeepseekModels(apiKeys.deepseek!);
           }
