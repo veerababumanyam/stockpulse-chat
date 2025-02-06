@@ -15,6 +15,8 @@ import { DataIntegrationAgent } from './DataIntegrationAgent';
 import { ValuationAnalysisAgent } from './ValuationAnalysisAgent';
 import { CashFlowAnalysisAgent } from './CashFlowAnalysisAgent';
 import { VolatilityAnalysisAgent } from './VolatilityAnalysisAgent';
+import { GrowthTrendAnalysisAgent } from './GrowthTrendAnalysisAgent';
+import { DividendAnalysisAgent } from './DividendAnalysisAgent';
 
 export class OrchestratorAgent {
   static async orchestrateAnalysis(stockData: any) {
@@ -36,7 +38,9 @@ export class OrchestratorAgent {
         dataIntegration,
         valuation,
         cashFlow,
-        volatility
+        volatility,
+        growthTrends,
+        dividend
       ] = await Promise.all([
         FundamentalAnalysisAgent.analyze(stockData),
         TechnicalAnalysisAgent.analyze(stockData),
@@ -53,7 +57,9 @@ export class OrchestratorAgent {
         DataIntegrationAgent.analyze(stockData),
         ValuationAnalysisAgent.analyze(stockData.quote.symbol),
         CashFlowAnalysisAgent.analyze(stockData.quote.symbol),
-        VolatilityAnalysisAgent.analyze(stockData.quote.symbol)
+        VolatilityAnalysisAgent.analyze(stockData.quote.symbol),
+        GrowthTrendAnalysisAgent.analyze(stockData.quote.symbol),
+        DividendAnalysisAgent.analyze(stockData.quote.symbol)
       ]);
 
       return this.formatOutput({
@@ -74,7 +80,9 @@ export class OrchestratorAgent {
         dataIntegration,
         valuation,
         cashFlow,
-        volatility
+        volatility,
+        growthTrends,
+        dividend
       });
     } catch (error) {
       console.error('Error in orchestration:', error);
