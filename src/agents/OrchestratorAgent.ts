@@ -16,10 +16,14 @@ import { CashFlowAnalysisAgent } from './CashFlowAnalysisAgent';
 import { VolatilityAnalysisAgent } from './VolatilityAnalysisAgent';
 import { GrowthTrendAnalysisAgent } from './GrowthTrendAnalysisAgent';
 import { DividendAnalysisAgent } from './DividendAnalysisAgent';
-// New imports
 import { NewsScraperAgent } from './NewsScraperAgent';
 import { FinancialStatementAgent } from './FinancialStatementAgent';
 import { ETFFlowAgent } from './ETFFlowAgent';
+// New imports
+import { LegalDocumentAgent } from './LegalDocumentAgent';
+import { PatentAnalysisAgent } from './PatentAnalysisAgent';
+import { BigPlayerTrackingAgent } from './BigPlayerTrackingAgent';
+import { SocialMediaScraperAgent } from './SocialMediaScraperAgent';
 
 export class OrchestratorAgent {
   static async orchestrateAnalysis(stockData: any) {
@@ -44,10 +48,14 @@ export class OrchestratorAgent {
         volatility,
         growthTrends,
         dividend,
-        // New analyses
         newsScraper,
         financialStatement,
-        etfFlow
+        etfFlow,
+        // New analyses
+        legalDocument,
+        patentAnalysis,
+        bigPlayerTracking,
+        socialMediaScraper
       ] = await Promise.all([
         FundamentalAnalysisAgent.analyze(stockData),
         TechnicalAnalysisAgent.analyze(stockData),
@@ -67,10 +75,14 @@ export class OrchestratorAgent {
         VolatilityAnalysisAgent.analyze(stockData.quote.symbol),
         GrowthTrendAnalysisAgent.analyze(stockData.quote.symbol),
         DividendAnalysisAgent.analyze(stockData.quote.symbol),
-        // New agent calls
         NewsScraperAgent.analyze(stockData.quote.symbol),
         FinancialStatementAgent.analyze(stockData.quote.symbol),
-        ETFFlowAgent.analyze(stockData.quote.symbol)
+        ETFFlowAgent.analyze(stockData.quote.symbol),
+        // New agent calls
+        LegalDocumentAgent.analyze(stockData.quote.symbol),
+        PatentAnalysisAgent.analyze(stockData.quote.symbol),
+        BigPlayerTrackingAgent.analyze(stockData.quote.symbol),
+        SocialMediaScraperAgent.analyze(stockData.quote.symbol)
       ]);
 
       return this.formatOutput({
@@ -94,10 +106,14 @@ export class OrchestratorAgent {
         volatility,
         growthTrends,
         dividend,
-        // New analysis results
         newsScraper,
         financialStatement,
-        etfFlow
+        etfFlow,
+        // New analysis results
+        legalDocument,
+        patentAnalysis,
+        bigPlayerTracking,
+        socialMediaScraper
       });
     } catch (error) {
       console.error('Error in orchestration:', error);
@@ -169,6 +185,22 @@ ${this.formatSection(data.esg, 'Environmental, Social, and Governance metrics')}
 ------------------------
 ${this.formatSection(data.dataQuality, 'Data quality assessment')}
 ${this.formatSection(data.dataIntegration, 'Integrated data analysis')}
+
+🏛️ Legal Document Analysis
+------------------------
+${this.formatSection(data.legalDocument, 'Analysis of legal filings and documents')}
+
+🧪 Patent Analysis
+------------------------
+${this.formatSection(data.patentAnalysis, 'Analysis of company patents and innovation')}
+
+🐳 Big Player Tracking
+------------------------
+${this.formatSection(data.bigPlayerTracking, 'Tracking of institutional and big player holdings')}
+
+📱 Social Media Scraping
+------------------------
+${this.formatSection(data.socialMediaScraper, 'Scraped social media data and sentiment')}
 
 🎯 Summary & Recommendations
 ------------------------
