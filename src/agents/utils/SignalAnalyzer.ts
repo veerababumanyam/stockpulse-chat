@@ -6,52 +6,66 @@ export class SignalAnalyzer {
     let totalSignals = 0;
 
     // Technical Analysis
-    if (data.results.technical?.data?.analysis.signals?.overallSignal) {
+    if (data.results.technical?.analysis?.signals?.overallSignal) {
       totalSignals++;
-      const signal = data.results.technical.data.analysis.signals.overallSignal.toLowerCase();
+      const signal = data.results.technical.analysis.signals.overallSignal.toLowerCase();
       if (signal.includes('buy')) buySignals++;
       if (signal.includes('sell')) sellSignals++;
     }
 
     // Fundamental Analysis
-    if (data.results.fundamental?.data?.analysis.recommendation) {
+    if (data.results.fundamental?.analysis?.summary?.recommendation) {
       totalSignals++;
-      const rec = data.results.fundamental.data.analysis.recommendation.toLowerCase();
-      if (rec.includes('undervalued') || rec.includes('buy')) buySignals++;
-      if (rec.includes('overvalued') || rec.includes('sell')) sellSignals++;
+      const rec = data.results.fundamental.analysis.summary.recommendation.toLowerCase();
+      if (rec.includes('buy') || rec.includes('undervalued')) buySignals++;
+      if (rec.includes('sell') || rec.includes('overvalued')) sellSignals++;
     }
 
     // Sentiment Analysis
-    if (data.results.sentiment?.data?.analysis.overallSentiment) {
+    if (data.results.sentiment?.analysis?.overallSentiment) {
       totalSignals++;
-      const sentiment = data.results.sentiment.data.analysis.overallSentiment.toLowerCase();
-      if (sentiment.includes('positive')) buySignals++;
-      if (sentiment.includes('negative')) sellSignals++;
+      const sentiment = data.results.sentiment.analysis.overallSentiment.toLowerCase();
+      if (sentiment.includes('bullish') || sentiment.includes('positive')) buySignals++;
+      if (sentiment.includes('bearish') || sentiment.includes('negative')) sellSignals++;
     }
 
     // Risk Assessment
-    if (data.results.risk?.data?.analysis.riskLevel) {
+    if (data.results.risk?.analysis?.riskLevel) {
       totalSignals++;
-      const risk = data.results.risk.data.analysis.riskLevel.toLowerCase();
-      if (risk === 'low') buySignals++;
-      if (risk === 'high') sellSignals++;
+      const risk = data.results.risk.analysis.riskLevel.toLowerCase();
+      if (risk === 'low') buySignals += 0.5;
+      if (risk === 'high') sellSignals += 0.5;
     }
 
-    // Valuation Analysis
-    if (data.results.valuation?.data?.analysis.intrinsicValue) {
+    // Analyst Recommendations
+    if (data.results.analyst?.analysis?.consensus) {
       totalSignals++;
-      const valuation = data.results.valuation.data.analysis.intrinsicValue.toLowerCase();
-      if (valuation.includes('undervalued')) buySignals++;
-      if (valuation.includes('overvalued')) sellSignals++;
+      const consensus = data.results.analyst.analysis.consensus.toLowerCase();
+      if (consensus.includes('buy')) buySignals++;
+      if (consensus.includes('sell')) sellSignals++;
     }
 
-    const buyPercentage = (buySignals / totalSignals) * 100;
-    const sellPercentage = (sellSignals / totalSignals) * 100;
+    // Market Sentiment
+    if (data.results.marketSentiment?.analysis?.overallSentiment) {
+      totalSignals++;
+      const marketSentiment = data.results.marketSentiment.analysis.overallSentiment.toLowerCase();
+      if (marketSentiment.includes('bullish')) buySignals++;
+      if (marketSentiment.includes('bearish')) sellSignals++;
+    }
 
-    if (buyPercentage > 60) return '🟢 STRONG BUY';
-    if (buyPercentage > 40) return '🟡 MODERATE BUY';
-    if (sellPercentage > 60) return '🔴 STRONG SELL';
-    if (sellPercentage > 40) return '🟠 MODERATE SELL';
+    // Calculate percentages only if we have signals
+    if (totalSignals > 0) {
+      const buyPercentage = (buySignals / totalSignals) * 100;
+      const sellPercentage = (sellSignals / totalSignals) * 100;
+
+      // Strong signals require higher thresholds
+      if (buyPercentage > 60) return '🟢 STRONG BUY';
+      if (buyPercentage > 40) return '🟡 MODERATE BUY';
+      if (sellPercentage > 60) return '🔴 STRONG SELL';
+      if (sellPercentage > 40) return '🟠 MODERATE SELL';
+    }
+
+    // Default to HOLD only if we have no clear signals
     return '⚪ HOLD';
   }
 }
