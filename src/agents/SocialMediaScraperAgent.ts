@@ -1,3 +1,4 @@
+
 import { BaseAgent, AnalysisResult } from './BaseAgent';
 
 export class SocialMediaScraperAgent extends BaseAgent {
@@ -44,7 +45,7 @@ export class SocialMediaScraperAgent extends BaseAgent {
   private static async analyzeSocialSentiment(data: any[]): Promise<any> {
     if (!Array.isArray(data) || data.length === 0) {
       return {
-        overallSentiment: 'Neutral',
+        overallSentiment: 'No data available',
         sentimentScore: 0,
         distribution: {
           positive: '0%',
@@ -72,7 +73,7 @@ export class SocialMediaScraperAgent extends BaseAgent {
     } catch (error) {
       console.error('Error in Deepseek sentiment analysis:', error);
       return {
-        overallSentiment: 'Neutral',
+        overallSentiment: 'Analysis unavailable',
         sentimentScore: 0,
         distribution: {
           positive: '0%',
@@ -84,17 +85,26 @@ export class SocialMediaScraperAgent extends BaseAgent {
   }
 
   private static calculateSocialMetrics(data: any[]): any {
-    if (!Array.isArray(data)) return {};
+    if (!Array.isArray(data) || data.length === 0) {
+      return {
+        totalMentions: 0,
+        uniqueSources: 0,
+        mentionsPerDay: 'No data available',
+        sourceDistribution: []
+      };
+    }
 
     const sources = new Set(data.map(item => item.site));
     const timeDistribution = this.calculateTimeDistribution(data);
 
+    const mentionsPerDay = timeDistribution.daysSpan > 0 
+      ? (data.length / timeDistribution.daysSpan).toFixed(2)
+      : 'No timeline available';
+
     return {
       totalMentions: data.length,
       uniqueSources: sources.size,
-      mentionsPerDay: timeDistribution.daysSpan > 0 
-        ? (data.length / timeDistribution.daysSpan).toFixed(2)
-        : '0',
+      mentionsPerDay,
       sourceDistribution: Array.from(sources).map(source => ({
         source,
         count: data.filter(item => item.site === source).length
@@ -103,21 +113,30 @@ export class SocialMediaScraperAgent extends BaseAgent {
   }
 
   private static calculateTimeDistribution(data: any[]): { daysSpan: number; newest?: string; oldest?: string } {
-    if (!Array.isArray(data) || data.length === 0) return { daysSpan: 0 };
+    if (!Array.isArray(data) || data.length === 0) {
+      return { 
+        daysSpan: 0,
+        newest: 'No data available',
+        oldest: 'No data available'
+      };
+    }
 
-    const timestamps: number[] = data
-      .map(item => {
-        const date = new Date(item.publishedDate);
-        return isNaN(date.getTime()) ? null : date.getTime();
-      })
-      .filter((timestamp): timestamp is number => timestamp !== null);
+    const dates = data
+      .map(item => new Date(item.publishedDate))
+      .filter(date => !isNaN(date.getTime()));
 
-    if (timestamps.length === 0) return { daysSpan: 0 };
+    if (dates.length === 0) {
+      return { 
+        daysSpan: 0,
+        newest: 'Invalid dates',
+        oldest: 'Invalid dates'
+      };
+    }
 
-    const newest = Math.max(...timestamps);
-    const oldest = Math.min(...timestamps);
+    const newest = Math.max(...dates.map(d => d.getTime()));
+    const oldest = Math.min(...dates.map(d => d.getTime()));
     
-    const daysSpan = Math.ceil((newest - oldest) / (1000 * 60 * 60 * 24));
+    const daysSpan = Math.ceil((newest - oldest) / (1000 * 60 * 60 * 24)) || 0;
 
     return {
       daysSpan,
@@ -127,10 +146,14 @@ export class SocialMediaScraperAgent extends BaseAgent {
   }
 
   private static analyzeInfluencerMentions(data: any[]): any[] {
-    if (!Array.isArray(data)) return [];
+    if (!Array.isArray(data) || data.length === 0) {
+      return [];
+    }
 
     const sources = data.reduce((acc: Record<string, number>, item) => {
-      acc[item.site] = (acc[item.site] || 0) + 1;
+      if (item.site) {
+        acc[item.site] = (acc[item.site] || 0) + 1;
+      }
       return acc;
     }, {});
 
@@ -139,18 +162,22 @@ export class SocialMediaScraperAgent extends BaseAgent {
       .slice(0, 5)
       .map(([source, mentions]) => {
         const sourceItem = data.find(item => item.site === source);
-        const recentDate = sourceItem ? new Date(sourceItem.publishedDate) : new Date();
+        const recentDate = sourceItem?.publishedDate 
+          ? new Date(sourceItem.publishedDate) 
+          : null;
         
         return {
           source,
           mentions,
-          recentMention: this.formatDate(recentDate)
+          recentMention: recentDate 
+            ? this.formatDate(recentDate)
+            : 'Date not available'
         };
       });
   }
 
   private static extractTrendingTopics(data: any[]): string[] {
-    if (!Array.isArray(data)) return [];
+    if (!Array.isArray(data) || data.length === 0) return [];
 
     const words = data
       .map(item => (item.title + ' ' + item.text).toLowerCase())
