@@ -98,7 +98,7 @@ export class SocialMediaScraperAgent extends BaseAgent {
     const timeDistribution = this.calculateTimeDistribution(data);
 
     const mentionsPerDay = timeDistribution.daysSpan > 0 
-      ? (data.length / timeDistribution.daysSpan).toFixed(2)
+      ? Number((data.length / timeDistribution.daysSpan).toFixed(2))
       : 'No timeline available';
 
     return {
@@ -200,3 +200,4 @@ export class SocialMediaScraperAgent extends BaseAgent {
       .map(([word]) => word);
   }
 }
+
