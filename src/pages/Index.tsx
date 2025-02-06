@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
@@ -7,6 +6,17 @@ import { Sun, Moon, LineChart, TrendingUp, ShieldCheck, Mail, ArrowRight, Globe,
 const Index = () => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+
+  const handleNavigation = (path: string) => {
+    const apiKeys = localStorage.getItem('apiKeys');
+    const hasApiKeys = apiKeys && JSON.parse(apiKeys).openai && JSON.parse(apiKeys).fmp;
+    
+    if (!hasApiKeys) {
+      navigate('/api-keys');
+    } else {
+      navigate(path);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -21,7 +31,7 @@ const Index = () => {
           <div className="flex items-center gap-4">
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => handleNavigation('/dashboard')}
               className="text-muted-foreground hover:text-foreground"
             >
               Dashboard
@@ -67,7 +77,7 @@ const Index = () => {
               <Button 
                 size="lg" 
                 className="text-lg px-8 group"
-                onClick={() => navigate('/dashboard')}
+                onClick={() => handleNavigation('/dashboard')}
               >
                 Start Trading Now
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -209,7 +219,7 @@ const Index = () => {
               <Button 
                 size="lg" 
                 className="text-lg px-8"
-                onClick={() => navigate('/dashboard')}
+                onClick={() => handleNavigation('/dashboard')}
               >
                 Get Started Now
               </Button>
