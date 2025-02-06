@@ -9,6 +9,7 @@ import { Plus } from "lucide-react";
 import { AgentListFilters } from "@/components/agents/AgentListFilters";
 import { AgentList } from "@/components/agents/AgentList";
 import { useAgents, type AgentConfig } from "@/hooks/useAgents";
+import { AgentTestDialog } from "@/components/agents/AgentTestDialog";
 import {
   Tabs,
   TabsContent,
@@ -23,6 +24,7 @@ const Agents = () => {
   const [sortField, setSortField] = useState<"name" | "model">("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [activeFilter, setActiveFilter] = useState<boolean | null>(null);
+  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
 
   const { agents, handleSaveAgent, handleToggleAgent, handleDeleteAgent } = useAgents();
 
@@ -34,6 +36,11 @@ const Agents = () => {
   const handleEditAgent = (agent: AgentConfig) => {
     setSelectedAgent(agent);
     setIsDialogOpen(true);
+  };
+
+  const handleTestAgent = (agent: AgentConfig) => {
+    setSelectedAgent(agent);
+    setIsTestDialogOpen(true);
   };
 
   return (
@@ -85,6 +92,7 @@ const Agents = () => {
               onEdit={handleEditAgent}
               onToggle={handleToggleAgent}
               onDelete={handleDeleteAgent}
+              onTest={handleTestAgent}
             />
           </TabsContent>
 
@@ -103,9 +111,18 @@ const Agents = () => {
           agent={selectedAgent}
           onSave={handleSaveAgent}
         />
+
+        {selectedAgent && (
+          <AgentTestDialog
+            open={isTestDialogOpen}
+            onOpenChange={setIsTestDialogOpen}
+            agent={selectedAgent}
+          />
+        )}
       </main>
     </div>
   );
 };
 
 export default Agents;
+
