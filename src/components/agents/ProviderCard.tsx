@@ -23,6 +23,10 @@ export const ProviderCard = ({
   onModelSelection,
   onRefresh
 }: ProviderCardProps) => {
+  if (!provider) {
+    return null;
+  }
+
   return (
     <Card className="relative">
       <CardHeader>
@@ -47,7 +51,7 @@ export const ProviderCard = ({
               Key Capabilities
             </h3>
             <ul className="space-y-1 list-disc list-inside text-sm text-muted-foreground">
-              {provider.capabilities.map((capability, index) => (
+              {provider.capabilities?.map((capability, index) => (
                 <li key={index}>{capability}</li>
               ))}
             </ul>
@@ -75,7 +79,7 @@ export const ProviderCard = ({
               </Dialog>
             </div>
             <div className="flex flex-wrap gap-2">
-              {(provider.selectedModels || []).map((model) => (
+              {Array.isArray(provider.selectedModels) && provider.selectedModels.map((model) => (
                 <Badge key={model} variant="secondary">
                   {model}
                 </Badge>
