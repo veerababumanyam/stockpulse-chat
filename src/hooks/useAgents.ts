@@ -1,6 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
+import { BaseAnalysisAgent } from "@/agents/types/AgentTypes";
 
 interface AgentConfig {
   id: string;
@@ -106,10 +107,27 @@ export const useAgents = () => {
   useEffect(() => {
     const savedAgents = localStorage.getItem(STORAGE_KEY);
     if (savedAgents) {
-      setAgents(JSON.parse(savedAgents));
+      const parsedAgents = JSON.parse(savedAgents);
+      setAgents(parsedAgents);
+      
+      // Register existing agents with orchestrator
+      parsedAgents.forEach((agent: AgentConfig) => {
+        if (agent.active) {
+          const dynamicAgent = new BaseAnalysisAgent();
+          OrchestratorAgent.registerAgent(agent.id, dynamicAgent);
+        }
+      });
     } else {
       setAgents(defaultAgents);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultAgents));
+      
+      // Register default agents with orchestrator
+      defaultAgents.forEach(agent => {
+        if (agent.active) {
+          const dynamicAgent = new BaseAnalysisAgent();
+          OrchestratorAgent.registerAgent(agent.id, dynamicAgent);
+        }
+      });
     }
   }, []);
 
@@ -120,6 +138,13 @@ export const useAgents = () => {
         : [...prev, { ...config, id: crypto.randomUUID() }];
       
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newAgents));
+
+      // Register new/updated agent with orchestrator if active
+      if (config.active) {
+        const dynamicAgent = new BaseAnalysisAgent();
+        OrchestratorAgent.registerAgent(config.id || crypto.randomUUID(), dynamicAgent);
+      }
+
       return newAgents;
     });
     
@@ -137,6 +162,16 @@ export const useAgents = () => {
           : agent
       );
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newAgents));
+
+      // Update agent registration based on new active state
+      const updatedAgent = newAgents.find(a => a.id === agentId);
+      if (updatedAgent) {
+        if (updatedAgent.active) {
+          const dynamicAgent = new BaseAnalysisAgent();
+          OrchestratorAgent.registerAgent(agentId, dynamicAgent);
+        }
+      }
+
       return newAgents;
     });
   };

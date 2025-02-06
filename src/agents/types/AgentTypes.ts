@@ -11,3 +11,14 @@ export interface AnalysisOutput {
   companyName: string;
   results: Record<string, any>;
 }
+
+export interface DynamicAgent {
+  analyze: (input: any) => Promise<any>;
+}
+
+export class BaseAnalysisAgent implements DynamicAgent {
+  async analyze(input: any): Promise<any> {
+    return { status: 'Not implemented' };
+  }
+}
+

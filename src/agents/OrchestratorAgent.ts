@@ -1,3 +1,5 @@
+import { AgentResult, AgentResults, BaseAnalysisAgent, DynamicAgent } from './types/AgentTypes';
+import { OutputFormatter } from './utils/OutputFormatter';
 import { FundamentalAnalysisAgent } from './FundamentalAnalysisAgent';
 import { TechnicalAnalysisAgent } from './TechnicalAnalysisAgent';
 import { NewsAnalysisAgent } from './NewsAnalysisAgent';
@@ -48,17 +50,14 @@ import { CurrencyImpactAgent } from './CurrencyImpactAgent';
 import { CommodityImpactAgent } from './CommodityImpactAgent';
 import { TechnologicalDisruptionAgent } from './TechnologicalDisruptionAgent';
 import { DemographicTrendAgent } from './DemographicTrendAgent';
-import { AgentResult, AgentResults } from './types/AgentTypes';
-import { OutputFormatter } from './utils/OutputFormatter';
-import { AlternativeDataAnalysisAgent } from './AlternativeDataAnalysisAgent';
-import { SeasonalityAnalysisAgent } from './SeasonalityAnalysisAgent';
-import { LiquidityAnalysisAgent } from './LiquidityAnalysisAgent';
-import { OptionsMarketAnalysisAgent } from './OptionsMarketAnalysisAgent';
-import { RegulatoryComplianceAgent } from './RegulatoryComplianceAgent';
-import { InsiderTradingAgent } from './InsiderTradingAgent';
 
 export class OrchestratorAgent {
   private static results: AgentResults = new Map();
+  private static dynamicAgents: Map<string, DynamicAgent> = new Map();
+
+  static registerAgent(id: string, agent: DynamicAgent) {
+    this.dynamicAgents.set(id, agent);
+  }
 
   private static async executeAgent(name: string, agentFn: () => Promise<any>): Promise<void> {
     try {
@@ -120,24 +119,10 @@ export class OrchestratorAgent {
         this.executeAgent('ensembleModeling', () => EnsembleModelingAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('bayesianInference', () => BayesianInferenceAgent.analyze(stockData.quote.symbol)),
         
-        // Add new specialized analysis agents
-        this.executeAgent('investmentTrend', () => InvestmentTrendAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('legalImpact', () => LegalImpactAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('patentValue', () => PatentValueAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('supplyDemand', () => SupplyDemandAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('geopoliticalImpact', () => GeopoliticalImpactAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('currencyImpact', () => CurrencyImpactAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('commodityImpact', () => CommodityImpactAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('technologicalDisruption', () => TechnologicalDisruptionAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('demographicTrend', () => DemographicTrendAgent.analyze(stockData.quote.symbol)),
-        
-        // Add new agents
-        this.executeAgent('alternativeData', () => AlternativeDataAnalysisAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('seasonality', () => SeasonalityAnalysisAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('liquidity', () => LiquidityAnalysisAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('optionsMarket', () => OptionsMarketAnalysisAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('regulatoryCompliance', () => RegulatoryComplianceAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('insiderTrading', () => InsiderTradingAgent.analyze(stockData.quote.symbol)),
+        // Add dynamic agents
+        ...Array.from(this.dynamicAgents.entries()).map(([id, agent]) =>
+          this.executeAgent(id, () => agent.analyze(stockData))
+        )
       ];
 
       await Promise.all(agentPromises);
