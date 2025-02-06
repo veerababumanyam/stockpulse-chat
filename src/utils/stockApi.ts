@@ -16,23 +16,66 @@ export const fetchStockData = async (query: string, apiKey: string) => {
       const symbol = searchResults[0].symbol;
       console.log('Found symbol:', symbol);
       
-      const [quoteResponse, profileResponse, metricsResponse] = await Promise.all([
+      const [
+        quoteResponse,
+        profileResponse,
+        metricsResponse,
+        ratiosResponse,
+        analystResponse,
+        insiderResponse,
+        upgradesResponse,
+        technicalResponse,
+        dividendResponse,
+        earningsResponse
+      ] = await Promise.all([
         fetch(`https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${apiKey}`),
         fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKey}`),
-        fetch(`https://financialmodelingprep.com/api/v3/key-metrics/${symbol}?limit=1&apikey=${apiKey}`)
+        fetch(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${symbol}?apikey=${apiKey}`),
+        fetch(`https://financialmodelingprep.com/api/v3/ratios-ttm/${symbol}?apikey=${apiKey}`),
+        fetch(`https://financialmodelingprep.com/api/v3/analyst-estimates/${symbol}?limit=4&apikey=${apiKey}`),
+        fetch(`https://financialmodelingprep.com/api/v3/insider-trading/${symbol}?apikey=${apiKey}`),
+        fetch(`https://financialmodelingprep.com/api/v3/upgrades-downgrades/${symbol}?apikey=${apiKey}`),
+        fetch(`https://financialmodelingprep.com/api/v3/technical_indicator/daily/${symbol}?period=10&type=rsi&apikey=${apiKey}`),
+        fetch(`https://financialmodelingprep.com/api/v3/historical-price-full/stock_dividend/${symbol}?apikey=${apiKey}`),
+        fetch(`https://financialmodelingprep.com/api/v3/earnings-surprises/${symbol}?apikey=${apiKey}`)
       ]);
 
-      const [quoteData, profileData, metricsData] = await Promise.all([
+      const [
+        quoteData,
+        profileData,
+        metricsData,
+        ratiosData,
+        analystData,
+        insiderData,
+        upgradesData,
+        technicalData,
+        dividendData,
+        earningsData
+      ] = await Promise.all([
         quoteResponse.json(),
         profileResponse.json(),
-        metricsResponse.json()
+        metricsResponse.json(),
+        ratiosResponse.json(),
+        analystResponse.json(),
+        insiderResponse.json(),
+        upgradesResponse.json(),
+        technicalResponse.json(),
+        dividendResponse.json(),
+        earningsResponse.json()
       ]);
 
       if (quoteData[0] && profileData[0]) {
         return {
           quote: quoteData[0],
           profile: profileData[0],
-          metrics: metricsData[0] || {}
+          metrics: metricsData[0] || {},
+          ratios: ratiosData[0] || {},
+          analyst: analystData || [],
+          insider: insiderData || [],
+          upgrades: upgradesData || [],
+          technical: technicalData || [],
+          dividend: dividendData.historical || [],
+          earnings: earningsData || []
         };
       }
     }
