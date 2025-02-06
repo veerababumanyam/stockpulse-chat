@@ -4,7 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Link } from "react-router-dom";
-import { AlertCircle, Info, Settings2 } from "lucide-react";
+import { AlertCircle, Info, Settings2, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,8 +45,8 @@ const defaultProviders: LLMProvider[] = [
       'Code generation and analysis',
       'Multi-modal capabilities with vision models'
     ],
-    models: ['gpt-4', 'gpt-4-turbo-preview', 'gpt-4-vision-preview', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k'],
-    selectedModels: ['gpt-4', 'gpt-3.5-turbo']
+    models: [],
+    selectedModels: []
   },
   {
     id: 'deepseek',
@@ -59,8 +59,8 @@ const defaultProviders: LLMProvider[] = [
       'Domain-specific analysis',
       'Technical documentation generation'
     ],
-    models: ['deepseek-chat', 'deepseek-coder', 'deepseek-reasoner', 'deepseek-english', 'deepseek-math'],
-    selectedModels: ['deepseek-chat', 'deepseek-coder']
+    models: [],
+    selectedModels: []
   }
 ];
 
@@ -74,7 +74,8 @@ export const LLMProviderSection = () => {
       return defaultProviders;
     }
   });
-
+  
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const [apiKeys, setApiKeys] = useState<ApiKeys>({});
   const [selectedProvider, setSelectedProvider] = useState<LLMProvider | null>(null);
@@ -91,6 +92,86 @@ export const LLMProviderSection = () => {
       }
     }
   }, []);
+
+  const fetchOpenAIModels = async (apiKey: string) => {
+    try {
+      const response = await fetch('https://api.openai.com/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+      return data.data
+        .filter((model: any) => 
+          model.id.includes('gpt-4') || 
+          model.id.includes('gpt-3.5-turbo'))
+        .map((model: any) => model.id);
+    } catch (error) {
+      console.error('Error fetching OpenAI models:', error);
+      throw error;
+    }
+  };
+
+  const fetchDeepseekModels = async (apiKey: string) => {
+    try {
+      const response = await fetch('https://api.deepseek.com/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+      return data.data.map((model: any) => model.id);
+    } catch (error) {
+      console.error('Error fetching Deepseek models:', error);
+      throw error;
+    }
+  };
+
+  const refreshModels = async () => {
+    setIsLoading(true);
+    try {
+      const updatedProviders = [...providers];
+
+      for (const provider of updatedProviders) {
+        if (!apiKeys[provider.id as keyof ApiKeys]) {
+          continue;
+        }
+
+        try {
+          let models: string[] = [];
+          if (provider.id === 'openai') {
+            models = await fetchOpenAIModels(apiKeys.openai!);
+          } else if (provider.id === 'deepseek') {
+            models = await fetchDeepseekModels(apiKeys.deepseek!);
+          }
+
+          provider.models = models;
+          provider.selectedModels = provider.selectedModels?.filter(model => 
+            models.includes(model)
+          ) || [];
+        } catch (error) {
+          console.error(`Error fetching models for ${provider.name}:`, error);
+          toast({
+            title: `Error Fetching Models`,
+            description: `Could not fetch models for ${provider.name}. Please check your API key.`,
+            variant: "destructive",
+          });
+        }
+      }
+
+      setProviders(updatedProviders);
+      localStorage.setItem('llm-providers', JSON.stringify(updatedProviders));
+      
+      toast({
+        title: "Models Updated",
+        description: "Available models have been refreshed successfully.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleProviderToggle = (providerId: string) => {
     const hasValidApiKey = apiKeys && apiKeys[providerId as keyof ApiKeys];
@@ -151,6 +232,14 @@ export const LLMProviderSection = () => {
             Configure your AI providers to enhance agent capabilities
           </p>
         </div>
+        <Button
+          onClick={refreshModels}
+          disabled={isLoading}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh Models
+        </Button>
       </div>
 
       <Alert>
@@ -222,25 +311,31 @@ export const LLMProviderSection = () => {
                           <p className="text-sm text-muted-foreground">
                             Select the models you want to use with your AI agents
                           </p>
-                          <div className="space-y-2">
-                            {provider.models && provider.models.map((model) => (
-                              <div key={model} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`${provider.id}-${model}`}
-                                  checked={(provider.selectedModels || []).includes(model)}
-                                  onCheckedChange={(checked) => 
-                                    handleModelSelection(provider.id, model, checked as boolean)
-                                  }
-                                />
-                                <label
-                                  htmlFor={`${provider.id}-${model}`}
-                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                >
-                                  {model}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
+                          {provider.models.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">
+                              No models available. Click the "Refresh Models" button to fetch available models.
+                            </p>
+                          ) : (
+                            <div className="space-y-2">
+                              {provider.models.map((model) => (
+                                <div key={model} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`${provider.id}-${model}`}
+                                    checked={(provider.selectedModels || []).includes(model)}
+                                    onCheckedChange={(checked) => 
+                                      handleModelSelection(provider.id, model, checked as boolean)
+                                    }
+                                  />
+                                  <label
+                                    htmlFor={`${provider.id}-${model}`}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  >
+                                    {model}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </DialogContent>
                     </Dialog>
