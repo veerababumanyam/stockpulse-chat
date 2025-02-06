@@ -16,10 +16,29 @@ interface ApiKeys {
 }
 
 interface StockData {
-  symbol: string;
-  price: number;
-  change: number;
-  companyName: string;
+  quote: {
+    symbol: string;
+    price: number;
+    change: number;
+    changesPercentage: number;
+    dayLow: number;
+    dayHigh: number;
+    yearHigh: number;
+    yearLow: number;
+    marketCap: number;
+    volume: number;
+    avgVolume: number;
+  };
+  profile: {
+    companyName: string;
+    sector: string;
+    industry: string;
+    description: string;
+    ceo: string;
+    website: string;
+    mktCap: number;
+    volAvg: number;
+  };
 }
 
 export const ChatWindow = () => {
@@ -47,33 +66,44 @@ export const ChatWindow = () => {
     });
   };
 
-  const fetchStockData = async (query: string) => {
+  const fetchStockData = async (query: string): Promise<StockData | null> => {
     try {
-      // First try to fetch specific stock data
+      // Clean and prepare the search query
+      const cleanQuery = query.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+      
+      // Extract potential stock symbols or company names
+      const words = cleanQuery.split(' ');
+      const searchTerm = words.find(word => word.length >= 2) || cleanQuery;
+
+      console.log('Searching for:', searchTerm);
+
+      // Search for the stock
       const searchResponse = await fetch(
-        `https://financialmodelingprep.com/api/v3/search?query=${query}&limit=1&apikey=${apiKeys.fmp}`
+        `https://financialmodelingprep.com/api/v3/search?query=${searchTerm}&limit=1&apikey=${apiKeys.fmp}`
       );
       const searchResults = await searchResponse.json();
       
       if (searchResults && searchResults.length > 0) {
         const symbol = searchResults[0].symbol;
+        console.log('Found symbol:', symbol);
         
         // Fetch detailed quote data
-        const quoteResponse = await fetch(
-          `https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${apiKeys.fmp}`
-        );
-        const quoteData = await quoteResponse.json();
+        const [quoteResponse, profileResponse] = await Promise.all([
+          fetch(`https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${apiKeys.fmp}`),
+          fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKeys.fmp}`)
+        ]);
 
-        // Fetch additional company profile data
-        const profileResponse = await fetch(
-          `https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKeys.fmp}`
-        );
-        const profileData = await profileResponse.json();
+        const [quoteData, profileData] = await Promise.all([
+          quoteResponse.json(),
+          profileResponse.json()
+        ]);
 
-        return {
-          quote: quoteData[0],
-          profile: profileData[0],
-        };
+        if (quoteData[0] && profileData[0]) {
+          return {
+            quote: quoteData[0],
+            profile: profileData[0]
+          };
+        }
       }
       return null;
     } catch (error) {
@@ -96,9 +126,20 @@ export const ChatWindow = () => {
       const stockData = await fetchStockData(input);
       
       // Prepare context with stock data
-      const context = stockData 
-        ? `Current stock data: ${JSON.stringify(stockData, null, 2)}`
-        : "No specific stock data found for the query.";
+      let context = "No specific stock data found for the query.";
+      if (stockData) {
+        const { quote, profile } = stockData;
+        context = `Current stock data for ${profile.companyName} (${quote.symbol}):
+- Current Price: $${quote.price}
+- Price Change: $${quote.change} (${quote.changesPercentage.toFixed(2)}%)
+- Market Cap: $${(quote.marketCap / 1e9).toFixed(2)}B
+- Volume: ${quote.volume.toLocaleString()}
+- 52-Week Range: $${quote.yearLow} - $${quote.yearHigh}
+- Sector: ${profile.sector}
+- Industry: ${profile.industry}
+- CEO: ${profile.ceo}
+- Description: ${profile.description}`;
+      }
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -111,7 +152,9 @@ export const ChatWindow = () => {
           messages: [
             {
               role: 'system',
-              content: 'You are a stock market expert assistant. Analyze the provided stock data and answer user questions accurately and concisely. Include specific numbers and data points when relevant.'
+              content: `You are a stock market expert assistant. Analyze the provided stock data and answer user questions accurately and concisely. 
+Include specific numbers and data points when relevant. If no stock data is found, provide general market insights or clarify the query.
+Format numbers appropriately (e.g., millions as 'M', billions as 'B'). Always include relevant metrics like price, change percentage, and market cap when discussing a specific stock.`
             },
             {
               role: 'user',
