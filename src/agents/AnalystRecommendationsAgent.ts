@@ -8,23 +8,34 @@ export class AnalystRecommendationsAgent {
       }
       const { fmp } = JSON.parse(savedKeys);
 
-      const response = await fetch(
-        `https://financialmodelingprep.com/api/v3/analyst-recommendations/${symbol}?apikey=${fmp}`
-      );
+      // Fetch both recommendations and estimates in parallel
+      const [recommendationsResponse, estimatesResponse] = await Promise.all([
+        fetch(`https://financialmodelingprep.com/api/v3/analyst-stock-recommendations/${symbol}?apikey=${fmp}`),
+        fetch(`https://financialmodelingprep.com/api/v3/analyst-estimates/${symbol}?apikey=${fmp}`)
+      ]);
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!recommendationsResponse.ok) {
+        const errorData = await recommendationsResponse.json();
         throw new Error(errorData.Error || 'Failed to fetch analyst recommendations');
       }
 
-      const recommendationsData = await response.json();
+      if (!estimatesResponse.ok) {
+        const errorData = await estimatesResponse.json();
+        throw new Error(errorData.Error || 'Failed to fetch analyst estimates');
+      }
+
+      const [recommendationsData, estimatesData] = await Promise.all([
+        recommendationsResponse.json(),
+        estimatesResponse.json()
+      ]);
       
       if (!Array.isArray(recommendationsData) || recommendationsData.length === 0) {
         return {
           type: 'analyst',
           analysis: {
             recommendations: [],
-            consensus: 'No analyst recommendations available'
+            estimates: [],
+            consensus: 'No analyst data available'
           }
         };
       }
@@ -34,20 +45,28 @@ export class AnalystRecommendationsAgent {
         analysis: {
           recommendations: recommendationsData.slice(0, 5).map((rec: any) => ({
             date: new Date(rec.date).toLocaleDateString(),
-            company: rec.analystCompany,
+            company: rec.analyst || rec.analystCompany,
             recommendation: rec.recommendation,
-            targetPrice: rec.targetPrice
+            targetPrice: rec.priceTarget
+          })),
+          estimates: estimatesData.slice(0, 3).map((est: any) => ({
+            date: new Date(est.date).toLocaleDateString(),
+            estimatedEPS: est.estimatedEps,
+            actualEPS: est.actualEps,
+            estimatedRevenue: est.estimatedRevenue,
+            actualRevenue: est.actualRevenue
           })),
           consensus: this.getConsensusRecommendation(recommendationsData)
         }
       };
     } catch (error) {
-      console.error('Error fetching analyst recommendations:', error);
+      console.error('Error fetching analyst data:', error);
       return {
         type: 'analyst',
         analysis: {
           recommendations: [],
-          consensus: 'Unable to fetch analyst recommendations'
+          estimates: [],
+          consensus: 'Unable to fetch analyst data'
         }
       };
     }
@@ -61,14 +80,20 @@ export class AnalystRecommendationsAgent {
     };
     
     recommendations.forEach((rec: any) => {
-      const recommendation = rec.recommendation.toLowerCase();
-      if (recommendation.includes('buy')) counts.buy++;
-      else if (recommendation.includes('sell')) counts.sell++;
+      const recommendation = (rec.recommendation || '').toLowerCase();
+      if (recommendation.includes('buy') || recommendation.includes('strong buy')) counts.buy++;
+      else if (recommendation.includes('sell') || recommendation.includes('strong sell')) counts.sell++;
       else counts.hold++;
     });
     
-    if (counts.buy > counts.sell && counts.buy > counts.hold) return 'Strong Buy';
-    if (counts.sell > counts.buy && counts.sell > counts.hold) return 'Strong Sell';
+    const total = counts.buy + counts.sell + counts.hold;
+    const buyPercentage = (counts.buy / total) * 100;
+    const sellPercentage = (counts.sell / total) * 100;
+    
+    if (buyPercentage > 60) return 'Strong Buy';
+    if (buyPercentage > 40) return 'Buy';
+    if (sellPercentage > 60) return 'Strong Sell';
+    if (sellPercentage > 40) return 'Sell';
     return 'Hold';
   }
 }

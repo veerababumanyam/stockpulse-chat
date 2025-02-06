@@ -72,12 +72,20 @@ Sentiment: ${news.sentiment}
 
 Overall News Sentiment: ${data.news.analysis.overallSentiment}
 
-👥 Analyst Recommendations
+👥 Analyst Coverage
 ------------------------
+Recent Recommendations:
 ${data.analyst.analysis.recommendations.map((rec: any) => `
 ${rec.date}: ${rec.company}
 • Recommendation: ${rec.recommendation}
 • Target Price: $${rec.targetPrice}
+`).join('\n')}
+
+Recent Estimates:
+${data.analyst.analysis.estimates.map((est: any) => `
+${est.date}:
+• EPS: Est. $${est.estimatedEPS} | Act. $${est.actualEPS || 'N/A'}
+• Revenue: Est. ${this.formatLargeNumber(est.estimatedRevenue)} | Act. ${est.actualRevenue ? this.formatLargeNumber(est.actualRevenue) : 'N/A'}
 `).join('\n')}
 
 Consensus: ${data.analyst.analysis.consensus}
