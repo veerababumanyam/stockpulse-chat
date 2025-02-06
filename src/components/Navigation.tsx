@@ -1,9 +1,9 @@
 
-import { Home, Sun, Moon, UserCog } from "lucide-react";
+import { Home, Sun, Moon, UserCog, LayoutDashboard } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import {
   DropdownMenu,
@@ -18,6 +18,7 @@ export const Navigation = () => {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -29,7 +30,6 @@ export const Navigation = () => {
       title: "Profile Settings",
       description: "Opening profile settings panel",
     });
-    // Navigate to profile settings page (you can change the route as needed)
     navigate("/profile");
   };
 
@@ -38,7 +38,6 @@ export const Navigation = () => {
       title: "Preferences",
       description: "Opening preferences panel",
     });
-    // Navigate to preferences page
     navigate("/preferences");
   };
 
@@ -47,7 +46,6 @@ export const Navigation = () => {
       title: "Security Settings",
       description: "Opening security settings panel",
     });
-    // Navigate to security page
     navigate("/security");
   };
 
@@ -56,7 +54,6 @@ export const Navigation = () => {
       title: "Signing out",
       description: "You have been signed out successfully",
     });
-    // Add sign out logic here (clear session, cookies, etc)
     navigate("/");
   };
 
@@ -67,15 +64,27 @@ export const Navigation = () => {
   return (
     <nav className="fixed top-0 left-0 w-full p-4 glass-panel z-50" role="navigation" aria-label="Main navigation">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
-        <Button 
-          variant="ghost" 
-          className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-          aria-label="Go to home page"
-          onClick={() => navigate("/")}
-        >
-          <Home className="w-5 h-5" aria-hidden="true" />
-          <span className="font-medium">Home</span>
-        </Button>
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+            aria-label="Go to home page"
+            onClick={() => navigate("/")}
+          >
+            <Home className="w-5 h-5" aria-hidden="true" />
+            <span className="font-medium">Home</span>
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+            aria-label="Go to dashboard"
+            onClick={() => navigate("/dashboard")}
+          >
+            <LayoutDashboard className="w-5 h-5" aria-hidden="true" />
+            <span className="font-medium">Dashboard</span>
+          </Button>
+        </div>
         
         <div className="flex items-center gap-2">
           <Button
