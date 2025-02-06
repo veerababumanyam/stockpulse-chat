@@ -12,10 +12,10 @@ const Message = ({ message, onDownload }: MessageProps) => {
   return (
     <div className="mb-4">
       <div
-        className={`p-3 rounded-lg ${
+        className={`p-3 rounded-lg inline-block max-w-[95%] ${
           message.isUser 
-            ? "bg-[#8B5CF6]/10 ml-auto w-fit max-w-[95%]" 
-            : "bg-[#E5DEFF]/50 mr-auto w-fit max-w-[95%] whitespace-pre-line"
+            ? "bg-[#8B5CF6]/10 ml-auto" 
+            : "bg-[#E5DEFF]/50 mr-auto whitespace-pre-line"
         }`}
       >
         {message.content}
@@ -37,3 +37,4 @@ const Message = ({ message, onDownload }: MessageProps) => {
 };
 
 export default Message;
+
