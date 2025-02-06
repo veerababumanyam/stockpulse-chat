@@ -4,8 +4,9 @@ import ChatWindow from "@/components/ChatWindow";
 import { TrendingUp, DollarSign, LineChart } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { ToastAction } from "@/components/ui/toast";
 
 const Dashboard = () => {
   const [hasApiKey, setHasApiKey] = useState(() => {
@@ -20,15 +21,15 @@ const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Instead of automatically redirecting, show a message and provide a button
   const handleSetupApiKey = () => {
     toast({
       title: "API Key Required",
       description: "You'll need to set up your API key to access market data.",
-      action: {
-        label: "Set up now",
-        onClick: () => navigate('/api-keys')
-      },
+      action: (
+        <ToastAction altText="Set up API key" onClick={() => navigate('/api-keys')}>
+          Set up now
+        </ToastAction>
+      ),
     });
   };
 
