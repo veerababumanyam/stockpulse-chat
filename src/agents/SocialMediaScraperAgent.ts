@@ -140,7 +140,7 @@ export class SocialMediaScraperAgent extends BaseAgent {
     
     // Calculate days span using milliseconds to days conversion
     const millisecondsPerDay = 24 * 60 * 60 * 1000; // milliseconds in a day
-    const daysSpan = Math.ceil((newestTimestamp - oldestTimestamp) / millisecondsPerDay);
+    const daysSpan = Math.ceil(Math.abs(newestTimestamp - oldestTimestamp) / millisecondsPerDay);
 
     return {
       daysSpan,
