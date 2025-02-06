@@ -21,38 +21,27 @@ export class AnalystRecommendationsAgent {
         recommendationsResponse.json(),
         estimatesResponse.json()
       ]);
+
+      console.log('Analyst recommendations:', recommendationsData);
+      console.log('Analyst estimates:', estimatesData);
       
       // Filter out recommendations with missing essential data
-      const filteredRecommendations = (recommendationsData || [])
-        .filter((rec: any) => rec.date && (rec.recommendation || rec.targetPrice))
-        .slice(0, 5)
-        .map((rec: any) => ({
-          date: new Date(rec.date).toLocaleDateString(),
-          company: rec.analyst || rec.analystCompany || 'Unknown Analyst',
-          recommendation: rec.recommendation || 'No Recommendation',
-          targetPrice: rec.priceTarget
-        }));
-
-      // Filter out estimates with missing essential data
-      const filteredEstimates = (estimatesData || [])
-        .filter((est: any) => est.date && (est.estimatedEps || est.estimatedRevenue))
-        .slice(0, 3)
-        .map((est: any) => ({
-          date: new Date(est.date).toLocaleDateString(),
-          estimatedEPS: est.estimatedEps,
-          actualEPS: est.actualEps,
-          estimatedRevenue: est.estimatedRevenue,
-          actualRevenue: est.actualRevenue
-        }));
+      const latestRecommendations = recommendationsData?.[0] || {};
       
       return {
         type: 'analyst',
         analysis: {
-          recommendations: filteredRecommendations,
-          estimates: filteredEstimates,
-          consensus: filteredRecommendations.length > 0 
-            ? this.getConsensusRecommendation(recommendationsData)
-            : 'No analyst recommendations available'
+          signals: {
+            overallSignal: this.getConsensusRecommendation(latestRecommendations),
+          },
+          recommendations: {
+            strongBuy: latestRecommendations.strongBuy || 0,
+            buy: latestRecommendations.buy || 0,
+            hold: latestRecommendations.hold || 0,
+            sell: latestRecommendations.sell || 0,
+            strongSell: latestRecommendations.strongSell || 0
+          },
+          consensus: this.getConsensusRecommendation(latestRecommendations)
         }
       };
     } catch (error) {
@@ -60,42 +49,34 @@ export class AnalystRecommendationsAgent {
       return {
         type: 'analyst',
         analysis: {
-          recommendations: [],
-          estimates: [],
-          consensus: 'Unable to fetch analyst data'
+          signals: {
+            overallSignal: 'HOLD'
+          },
+          recommendations: {},
+          consensus: 'HOLD'
         }
       };
     }
   }
 
-  private static getConsensusRecommendation(recommendations: any[]): string {
-    if (!Array.isArray(recommendations) || recommendations.length === 0) {
-      return 'No consensus available';
-    }
+  private static getConsensusRecommendation(recommendations: any): string {
+    const strongBuy = recommendations.strongBuy || 0;
+    const buy = recommendations.buy || 0;
+    const hold = recommendations.hold || 0;
+    const sell = recommendations.sell || 0;
+    const strongSell = recommendations.strongSell || 0;
 
-    const counts = {
-      buy: 0,
-      sell: 0,
-      hold: 0
-    };
-    
-    recommendations.forEach((rec: any) => {
-      const recommendation = (rec.recommendation || '').toLowerCase();
-      if (recommendation.includes('buy') || recommendation.includes('strong buy')) counts.buy++;
-      else if (recommendation.includes('sell') || recommendation.includes('strong sell')) counts.sell++;
-      else if (recommendation.includes('hold') || recommendation.includes('neutral')) counts.hold++;
-    });
-    
-    const total = counts.buy + counts.sell + counts.hold;
-    if (total === 0) return 'No consensus available';
+    const total = strongBuy + buy + hold + sell + strongSell;
+    if (total === 0) return 'HOLD';
 
-    const buyPercentage = (counts.buy / total) * 100;
-    const sellPercentage = (counts.sell / total) * 100;
-    
-    if (buyPercentage > 60) return 'Strong Buy';
-    if (buyPercentage > 40) return 'Buy';
-    if (sellPercentage > 60) return 'Strong Sell';
-    if (sellPercentage > 40) return 'Sell';
-    return 'Hold';
+    const buyRatio = ((strongBuy * 2 + buy) / (total * 2)) * 100;
+    const sellRatio = ((strongSell * 2 + sell) / (total * 2)) * 100;
+
+    if (buyRatio > 60) return 'STRONG BUY';
+    if (buyRatio > 40) return 'BUY';
+    if (sellRatio > 60) return 'STRONG SELL';
+    if (sellRatio > 40) return 'SELL';
+    return 'HOLD';
   }
 }
+

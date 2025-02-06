@@ -15,9 +15,17 @@ export class CashFlowAnalysisAgent extends BaseAgent {
         fmp
       );
 
+      console.log('Cash flow data:', cashFlowResponse);
+
       return {
         type: 'cash-flow',
         analysis: {
+          summary: {
+            recommendation: this.generateRecommendation(cashFlowResponse),
+          },
+          signals: {
+            overallSignal: this.assessCashFlowStrength(cashFlowResponse)
+          },
           operatingCashFlow: this.analyzeCashFlow(cashFlowResponse),
           cashFlowStrength: this.assessCashFlowStrength(cashFlowResponse),
           sustainability: this.evaluateSustainability(cashFlowResponse)
@@ -28,6 +36,12 @@ export class CashFlowAnalysisAgent extends BaseAgent {
       return {
         type: 'cash-flow',
         analysis: {
+          summary: {
+            recommendation: 'HOLD'
+          },
+          signals: {
+            overallSignal: 'HOLD'
+          },
           operatingCashFlow: 'Data unavailable',
           cashFlowStrength: 'Unable to assess',
           sustainability: 'Cannot evaluate'
@@ -43,13 +57,13 @@ export class CashFlowAnalysisAgent extends BaseAgent {
   }
 
   private static assessCashFlowStrength(data: any[]): string {
-    if (!Array.isArray(data) || data.length < 2) return 'Insufficient data';
+    if (!Array.isArray(data) || data.length < 2) return 'HOLD';
     const [current, previous] = data;
     const growth = ((current.operatingCashFlow - previous.operatingCashFlow) / Math.abs(previous.operatingCashFlow)) * 100;
     
-    if (growth > 20) return 'Strong';
-    if (growth > 0) return 'Stable';
-    return 'Weak';
+    if (growth > 20) return 'BUY';
+    if (growth > 0) return 'HOLD';
+    return 'SELL';
   }
 
   private static evaluateSustainability(data: any[]): string {
@@ -57,6 +71,16 @@ export class CashFlowAnalysisAgent extends BaseAgent {
     const latestData = data[0];
     const freeCashFlow = latestData.operatingCashFlow - latestData.capitalExpenditure;
     return freeCashFlow > 0 ? 'Sustainable' : 'Unsustainable';
+  }
+
+  private static generateRecommendation(data: any[]): string {
+    if (!Array.isArray(data) || data.length < 2) return 'HOLD';
+    const [current, previous] = data;
+    const growth = ((current.operatingCashFlow - previous.operatingCashFlow) / Math.abs(previous.operatingCashFlow)) * 100;
+    
+    if (growth > 20 && current.operatingCashFlow > 0) return 'BUY';
+    if (growth < -20 || current.operatingCashFlow < 0) return 'SELL';
+    return 'HOLD';
   }
 }
 
