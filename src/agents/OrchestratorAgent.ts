@@ -28,6 +28,9 @@ import { SectorRotationAgent } from './SectorRotationAgent';
 import { MarketBreadthAgent } from './MarketBreadthAgent';
 import { TrendAnalysisAgent } from './TrendAnalysisAgent';
 import { MomentumAnalysisAgent } from './MomentumAnalysisAgent';
+import { TechnicalDepthAgent } from './TechnicalDepthAgent';
+import { FundamentalForensicAgent } from './FundamentalForensicAgent';
+import { SentimentSynthesizerAgent } from './SentimentSynthesizerAgent';
 
 interface AgentResult {
   data: any;
@@ -86,7 +89,10 @@ export class OrchestratorAgent {
         this.executeAgent('sectorRotation', () => SectorRotationAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('marketBreadth', () => MarketBreadthAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('trendAnalysis', () => TrendAnalysisAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('momentumAnalysis', () => MomentumAnalysisAgent.analyze(stockData.quote.symbol))
+        this.executeAgent('momentumAnalysis', () => MomentumAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('technicalDepth', () => TechnicalDepthAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('fundamentalForensic', () => FundamentalForensicAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('sentimentSynthesizer', () => SentimentSynthesizerAgent.analyze(stockData.quote.symbol))
       ];
 
       await Promise.all(agentPromises);

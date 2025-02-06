@@ -120,15 +120,12 @@ export class SocialMediaScraperAgent extends BaseAgent {
       };
     }
 
-    // Convert valid dates to timestamps
-    const timestamps: number[] = data
-      .map(item => {
-        const date = new Date(item.publishedDate);
-        return !isNaN(date.getTime()) ? date.getTime() : null;
-      })
-      .filter((timestamp): timestamp is number => timestamp !== null);
+    // Convert valid dates to timestamps and filter out invalid ones
+    const validDates = data
+      .map(item => new Date(item.publishedDate))
+      .filter(date => !isNaN(date.getTime()));
 
-    if (timestamps.length === 0) {
+    if (validDates.length === 0) {
       return { 
         daysSpan: 0,
         newest: 'Invalid dates',
@@ -136,6 +133,7 @@ export class SocialMediaScraperAgent extends BaseAgent {
       };
     }
 
+    const timestamps = validDates.map(date => date.getTime());
     const newestTimestamp = Math.max(...timestamps);
     const oldestTimestamp = Math.min(...timestamps);
     
