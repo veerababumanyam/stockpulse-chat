@@ -15,6 +15,7 @@ import { NewsTab } from "@/components/search/tabs/NewsTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
+import { formatLargeNumber, getPriceChangeColor } from "@/utils/formatting";
 
 const SearchResults = () => {
   const location = useLocation();
