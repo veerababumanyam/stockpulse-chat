@@ -1,4 +1,3 @@
-
 import { DEEPSEEK_BASE_URL } from '@/utils/deepseekAPI';
 
 export interface AnalysisResult {
@@ -47,6 +46,44 @@ export abstract class BaseAgent {
     const lastValue = values[values.length - 1];
     
     return firstValue !== 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
+  }
+
+  protected static determineEconomicCondition(data: any[]): string {
+    const gdpTrend = this.calculateTrend(data, 'GDP');
+    const inflationTrend = this.calculateTrend(data, 'CPI');
+    const unemploymentRate = this.findLatestValue(data, 'UNEMPLOYMENT');
+
+    if (gdpTrend > 2 && inflationTrend < 3 && unemploymentRate < 5) {
+      return 'Strong Growth';
+    } else if (gdpTrend > 0 && inflationTrend < 5 && unemploymentRate < 7) {
+      return 'Moderate Growth';
+    } else if (gdpTrend < 0 || inflationTrend > 5 || unemploymentRate > 7) {
+      return 'Economic Challenges';
+    }
+    return 'Stable';
+  }
+
+  protected static getGeographicBreakdown(countries: string[]): Record<string, number> {
+    const regions: Record<string, number> = {};
+    countries.forEach(country => {
+      const region = this.getRegion(country);
+      regions[region] = (regions[region] || 0) + 1;
+    });
+    return regions;
+  }
+
+  private static getRegion(country: string): string {
+    const regionMap: Record<string, string> = {
+      'United States': 'North America',
+      'Canada': 'North America',
+      'United Kingdom': 'Europe',
+      'Germany': 'Europe',
+      'France': 'Europe',
+      'Japan': 'Asia',
+      'China': 'Asia',
+      'Australia': 'Asia Pacific'
+    };
+    return regionMap[country] || 'Other';
   }
 
   protected static async analyzeWithDeepseek(prompt: string): Promise<string> {
@@ -128,4 +165,3 @@ export abstract class BaseAgent {
     return standardDeviations === 0 ? 0 : sum / standardDeviations;
   }
 }
-
