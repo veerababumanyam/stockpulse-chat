@@ -17,7 +17,7 @@ export const Navigation = () => {
   }
 
   return (
-    <nav className="fixed top-0 left-0 w-[75%] p-4 glass-panel z-50" role="navigation" aria-label="Main navigation">
+    <nav className="fixed top-0 left-0 w-full p-4 glass-panel z-50" role="navigation" aria-label="Main navigation">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <Button 
           variant="ghost" 

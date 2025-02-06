@@ -48,7 +48,7 @@ const Index = () => {
         </div>
       </main>
       {/* Chat window fixed to right 25% */}
-      <aside className="fixed top-0 right-0 w-[25%] h-screen pt-20">
+      <aside className="fixed top-[72px] right-0 w-[25%] h-[calc(100vh-72px)]">
         <ChatWindow />
       </aside>
     </div>
