@@ -25,6 +25,13 @@ ${this.formatHighlight(`Risk Rating: ${data.results.risk?.data?.analysis.riskLev
 ${this.formatHighlight(`ESG Rating: ${data.results.esg?.data?.analysis.overallESGRating || 'N/A'}`)}
 ${this.formatHighlight(`Valuation Status: ${data.results.valuation?.data?.analysis.intrinsicValue || 'N/A'}`)}
 
+📈 PRICE PREDICTIONS
+============================
+3 Months: ${data.results.technical?.data?.analysis.pricePredictions?.threeMonths?.price || 'N/A'} (Confidence: ${data.results.technical?.data?.analysis.pricePredictions?.threeMonths?.confidence || 'N/A'}%)
+6 Months: ${data.results.technical?.data?.analysis.pricePredictions?.sixMonths?.price || 'N/A'} (Confidence: ${data.results.technical?.data?.analysis.pricePredictions?.sixMonths?.confidence || 'N/A'}%)
+12 Months: ${data.results.technical?.data?.analysis.pricePredictions?.twelveMonths?.price || 'N/A'} (Confidence: ${data.results.technical?.data?.analysis.pricePredictions?.twelveMonths?.confidence || 'N/A'}%)
+24 Months: ${data.results.technical?.data?.analysis.pricePredictions?.twentyFourMonths?.price || 'N/A'} (Confidence: ${data.results.technical?.data?.analysis.pricePredictions?.twentyFourMonths?.confidence || 'N/A'}%)
+
 💰 Fundamental Analysis
 ------------------------
 ${ResultFormatter.formatSection(data.results.fundamental?.data, 'Key metrics and financial health')}

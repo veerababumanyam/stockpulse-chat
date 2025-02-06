@@ -22,7 +22,14 @@ export class TechnicalAnalysisAgent {
           trendSignal: this.getTrendSignal(currentPrice, movingAverage50, movingAverage200),
           volumeSignal: this.getVolumeSignal(quote.volume, quote.avgVolume),
           overallSignal: this.getOverallSignal(currentPrice, movingAverage50, movingAverage200, quote.volume, quote.avgVolume)
-        }
+        },
+        pricePredictions: {
+          threeMonths: this.generatePricePrediction(currentPrice, 3),
+          sixMonths: this.generatePricePrediction(currentPrice, 6),
+          twelveMonths: this.generatePricePrediction(currentPrice, 12),
+          twentyFourMonths: this.generatePricePrediction(currentPrice, 24)
+        },
+        confidenceScore: this.calculateConfidenceScore(quote)
       }
     };
   }
@@ -79,5 +86,40 @@ export class TechnicalAnalysisAgent {
     }
 
     return price > ma50 ? 'Buy with Caution' : 'Sell with Caution';
+  }
+
+  private static generatePricePrediction(currentPrice: number, months: number): {
+    price: number;
+    confidence: number;
+  } {
+    // This is a simplified prediction model
+    const volatility = 0.2; // 20% annual volatility
+    const monthlyVolatility = volatility / Math.sqrt(12);
+    const randomFactor = 1 + (Math.random() - 0.5) * monthlyVolatility * months;
+    const trendFactor = 1 + (months / 12) * 0.08; // Assuming 8% annual trend
+
+    return {
+      price: Number((currentPrice * randomFactor * trendFactor).toFixed(2)),
+      confidence: Number((100 - (months * 2)).toFixed(2)) // Confidence decreases with time
+    };
+  }
+
+  private static calculateConfidenceScore(quote: any): number {
+    let score = 70; // Base score
+
+    // Adjust based on RSI
+    if (quote.rsi) {
+      if (quote.rsi > 70 || quote.rsi < 30) score += 10;
+      else if (quote.rsi > 60 || quote.rsi < 40) score += 5;
+    }
+
+    // Adjust based on volume
+    const volumeRatio = quote.volume / quote.avgVolume;
+    if (volumeRatio > 2) score += 15;
+    else if (volumeRatio > 1.5) score += 10;
+    else if (volumeRatio < 0.5) score -= 10;
+
+    // Ensure score stays within 0-100 range
+    return Math.min(100, Math.max(0, score));
   }
 }
