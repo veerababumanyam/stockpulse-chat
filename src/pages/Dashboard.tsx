@@ -1,18 +1,38 @@
 
 import { Navigation } from "@/components/Navigation";
 import ChatWindow from "@/components/ChatWindow";
-import ApiKeyInput from "@/components/ApiKeyInput";
 import { TrendingUp, DollarSign, LineChart } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useState, useEffect } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const [hasApiKey, setHasApiKey] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const apiKey = localStorage.getItem('fmp_api_key');
-    setHasApiKey(!!apiKey);
-  }, []);
+    const savedKeys = localStorage.getItem('apiKeys');
+    if (savedKeys) {
+      const parsedKeys = JSON.parse(savedKeys);
+      if (!parsedKeys.fmp) {
+        toast({
+          title: "API Key Required",
+          description: "Please set up your FMP API key to continue",
+        });
+        navigate('/api-keys');
+      } else {
+        setHasApiKey(true);
+      }
+    } else {
+      toast({
+        title: "API Key Required",
+        description: "Please set up your FMP API key to continue",
+      });
+      navigate('/api-keys');
+    }
+  }, [navigate, toast]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -22,11 +42,7 @@ const Dashboard = () => {
           <ResizablePanel defaultSize={75}>
             <main className="p-8">
               <div className="max-w-4xl mx-auto space-y-12">
-                {!hasApiKey ? (
-                  <div className="animate-fadeIn">
-                    <ApiKeyInput />
-                  </div>
-                ) : (
+                {hasApiKey && (
                   <>
                     <div className="space-y-4 animate-fadeIn">
                       <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
