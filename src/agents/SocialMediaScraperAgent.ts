@@ -1,3 +1,4 @@
+
 import { BaseAgent, AnalysisResult } from './BaseAgent';
 
 export class SocialMediaScraperAgent extends BaseAgent {
@@ -123,17 +124,15 @@ export class SocialMediaScraperAgent extends BaseAgent {
     if (!Array.isArray(data) || data.length === 0) return { daysSpan: 0 };
 
     const validDates = data
-      .map(item => new Date(item.publishedDate))
-      .filter(date => !isNaN(date.getTime()))
-      .map(date => date.getTime());
+      .map(item => new Date(item.publishedDate).getTime())
+      .filter(timestamp => !isNaN(timestamp));
 
     if (validDates.length === 0) return { daysSpan: 0 };
 
     const newest = Math.max(...validDates);
     const oldest = Math.min(...validDates);
     
-    // Convert milliseconds to days, ensuring numeric operation
-    const daysSpan = Math.ceil((Number(newest) - Number(oldest)) / (1000 * 60 * 60 * 24));
+    const daysSpan = Math.ceil((newest - oldest) / (1000 * 60 * 60 * 24));
 
     return {
       daysSpan,
