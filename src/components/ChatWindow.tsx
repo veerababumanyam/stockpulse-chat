@@ -82,11 +82,18 @@ const ChatWindow = () => {
       if (!analysisData) {
         throw new Error('No analysis data available');
       }
-      await generateAnalysisPDF(analysisData);
-      toast({
-        title: "Success",
-        description: "Analysis report downloaded successfully",
-      });
+      
+      // Wait for the PDF generation to complete
+      const success = await generateAnalysisPDF(analysisData);
+      
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Analysis report downloaded successfully",
+        });
+      } else {
+        throw new Error('PDF generation failed');
+      }
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast({
@@ -120,7 +127,7 @@ const ChatWindow = () => {
       }
 
       const aiMessage: Message = {
-        content: analysis.textOutput || '',
+        content: String(analysis.textOutput || ''),
         isUser: false,
         data: analysis.formattedData || null
       };

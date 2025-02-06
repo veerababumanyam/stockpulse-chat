@@ -1,7 +1,7 @@
 
 import html2pdf from 'html2pdf.js';
 
-export const generateAnalysisPDF = async (analysisData: any) => {
+export const generateAnalysisPDF = async (analysisData: any): Promise<boolean> => {
   if (!analysisData) {
     throw new Error('No analysis data provided');
   }
@@ -68,22 +68,27 @@ export const generateAnalysisPDF = async (analysisData: any) => {
   container.innerHTML = content;
   document.body.appendChild(container);
 
-  const options = {
-    margin: 10,
-    filename: `${analysisData.symbol}_analysis_report.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-
   try {
-    await html2pdf().from(container).set(options).save();
+    const worker = html2pdf()
+      .from(container)
+      .set({
+        margin: 10,
+        filename: `${analysisData.symbol}_analysis_report.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2,
+          logging: true,
+          useCORS: true
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      });
+
+    await worker.save();
     console.log('PDF generated successfully');
-    // Clean up
     document.body.removeChild(container);
+    return true;
   } catch (error) {
     console.error('Error generating PDF:', error);
-    // Clean up
     document.body.removeChild(container);
     throw error;
   }
