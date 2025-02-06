@@ -1,5 +1,5 @@
 
-import { Home, Sun, Moon, UserCog, LayoutDashboard } from "lucide-react";
+import { Home, Sun, Moon, UserCog, LayoutDashboard, Key } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,14 @@ export const Navigation = () => {
       description: "Opening profile settings panel",
     });
     navigate("/profile");
+  };
+
+  const handleApiKeys = () => {
+    toast({
+      title: "API Keys",
+      description: "Opening API keys management",
+    });
+    navigate("/api-keys");
   };
 
   const handlePreferences = () => {
@@ -83,6 +91,16 @@ export const Navigation = () => {
           >
             <LayoutDashboard className="w-5 h-5" aria-hidden="true" />
             <span className="font-medium">Dashboard</span>
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+            aria-label="Manage API Keys"
+            onClick={() => navigate("/api-keys")}
+          >
+            <Key className="w-5 h-5" aria-hidden="true" />
+            <span className="font-medium">API Keys</span>
           </Button>
         </div>
         

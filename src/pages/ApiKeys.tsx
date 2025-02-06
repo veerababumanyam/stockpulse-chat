@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -12,11 +13,10 @@ interface ApiKeys {
   fmp: string;
 }
 
-const Profile = () => {
+const ApiKeys = () => {
   const [apiKeys, setApiKeys] = useState<ApiKeys>({ openai: "", fmp: "" });
   const { toast } = useToast();
 
-  // Load API keys on component mount
   useEffect(() => {
     const savedKeys = localStorage.getItem('apiKeys');
     if (savedKeys) {
@@ -39,7 +39,6 @@ const Profile = () => {
       });
       return;
     }
-    // Save API keys to localStorage
     localStorage.setItem('apiKeys', JSON.stringify(apiKeys));
     toast({
       title: "Success",
@@ -100,4 +99,4 @@ const Profile = () => {
   );
 };
 
-export default Profile;
+export default ApiKeys;
