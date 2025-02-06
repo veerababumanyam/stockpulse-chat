@@ -1,7 +1,20 @@
+
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
-import { Sun, Moon, LineChart, TrendingUp, ShieldCheck, Mail, ArrowRight, Globe, Lock } from "lucide-react";
+import { 
+  Sun, 
+  Moon, 
+  BrainCircuit, 
+  TrendingUp, 
+  ShieldCheck, 
+  Mail, 
+  ArrowRight, 
+  Database,
+  ChartBar,
+  Scale,
+  Search
+} from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -102,40 +115,70 @@ const Index = () => {
       <section className="py-24 relative overflow-hidden">
         <div className="container px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Powerful Features</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">AI-Powered Analysis Suite</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Everything you need to make informed investment decisions
+              Comprehensive market analysis powered by specialized AI agents
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="group p-6 rounded-2xl glass-panel space-y-4 hover:scale-105 transition-transform">
               <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-                <LineChart className="w-6 h-6 text-primary" />
+                <BrainCircuit className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">Real-time Analysis</h3>
+              <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">Fundamental Analysis</h3>
               <p className="text-muted-foreground">
-                Get instant insights on market trends and stock performance with our advanced analytics
+                Deep analysis of financial statements, cash flows, and company fundamentals using advanced AI models
               </p>
             </div>
             
+            <div className="group p-6 rounded-2xl glass-panel space-y-4 hover:scale-105 transition-transform">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+                <ChartBar className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">Technical Analysis</h3>
+              <p className="text-muted-foreground">
+                Advanced pattern recognition, trend analysis, and technical indicators powered by machine learning
+              </p>
+            </div>
+            
+            <div className="group p-6 rounded-2xl glass-panel space-y-4 hover:scale-105 transition-transform">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+                <Search className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">Market Research</h3>
+              <p className="text-muted-foreground">
+                Comprehensive market research combining news analysis, sentiment tracking, and competitive intelligence
+              </p>
+            </div>
+
+            <div className="group p-6 rounded-2xl glass-panel space-y-4 hover:scale-105 transition-transform">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+                <Scale className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">Risk Assessment</h3>
+              <p className="text-muted-foreground">
+                Sophisticated risk analysis covering volatility, market conditions, and geopolitical factors
+              </p>
+            </div>
+
+            <div className="group p-6 rounded-2xl glass-panel space-y-4 hover:scale-105 transition-transform">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+                <Database className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">Data Integration</h3>
+              <p className="text-muted-foreground">
+                Seamless integration of multiple data sources including financial statements, market data, and alternative data
+              </p>
+            </div>
+
             <div className="group p-6 rounded-2xl glass-panel space-y-4 hover:scale-105 transition-transform">
               <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
                 <TrendingUp className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">AI Predictions</h3>
+              <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">Predictive Analytics</h3>
               <p className="text-muted-foreground">
-                Our AI algorithms predict market movements with exceptional accuracy
-              </p>
-            </div>
-            
-            <div className="group p-6 rounded-2xl glass-panel space-y-4 hover:scale-105 transition-transform">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-                <Globe className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">Global Markets</h3>
-              <p className="text-muted-foreground">
-                Access real-time data from markets worldwide, all in one place
+                Advanced forecasting using machine learning and deep learning models for market trends
               </p>
             </div>
           </div>
@@ -280,3 +323,4 @@ const Index = () => {
 };
 
 export default Index;
+
