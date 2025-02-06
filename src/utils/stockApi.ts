@@ -11,7 +11,7 @@ export const fetchStockData = async (query: string, apiKey: string) => {
 
     console.log('Searching for:', searchTerm);
 
-    // Test the API key and connectivity first
+    // Test the API key and connectivity first with market status
     const testResponse = await fetch(
       `https://financialmodelingprep.com/api/v3/is-the-market-open?apikey=${apiKey}`
     );
@@ -20,15 +20,18 @@ export const fetchStockData = async (query: string, apiKey: string) => {
       if (testResponse.status === 403) {
         throw new Error('Invalid or expired FMP API key');
       }
-      throw new Error(`FMP API connectivity issue: ${testResponse.statusText}`);
+      throw new Error('FMP API connectivity issue. Status: ' + testResponse.status);
     }
+
+    const marketStatus = await testResponse.json();
+    console.log('Market status:', marketStatus);
 
     const searchResponse = await fetch(
       `https://financialmodelingprep.com/api/v3/search?query=${searchTerm}&limit=1&apikey=${apiKey}`
     );
 
     if (!searchResponse.ok) {
-      throw new Error('Failed to search for stock');
+      throw new Error('Failed to search for stock. Status: ' + searchResponse.status);
     }
 
     const searchResults = await searchResponse.json();
@@ -88,8 +91,7 @@ export const fetchStockData = async (query: string, apiKey: string) => {
       insider: [],
       upgrades: [],
       technical: [],
-      dividend: [],
-      earnings: []
+      dividend: []
     };
 
   } catch (error) {
