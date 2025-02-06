@@ -35,6 +35,10 @@ import { MachineLearningAgent } from './MachineLearningAgent';
 import { NLPAgent } from './NLPAgent';
 import { TimeSeriesForecasterAgent } from './TimeSeriesForecasterAgent';
 import { ScenarioAnalysisAgent } from './ScenarioAnalysisAgent';
+import { DeepLearningAgent } from './DeepLearningAgent';
+import { ReinforcementLearningAgent } from './ReinforcementLearningAgent';
+import { EnsembleModelingAgent } from './EnsembleModelingAgent';
+import { BayesianInferenceAgent } from './BayesianInferenceAgent';
 
 interface AgentResult {
   data: any;
@@ -100,7 +104,11 @@ export class OrchestratorAgent {
         this.executeAgent('machineLearning', () => MachineLearningAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('nlp', () => NLPAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('timeSeries', () => TimeSeriesForecasterAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('scenario', () => ScenarioAnalysisAgent.analyze(stockData.quote.symbol))
+        this.executeAgent('scenario', () => ScenarioAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('deepLearning', () => DeepLearningAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('reinforcementLearning', () => ReinforcementLearningAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('ensembleModeling', () => EnsembleModelingAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('bayesianInference', () => BayesianInferenceAgent.analyze(stockData.quote.symbol))
       ];
 
       await Promise.all(agentPromises);
