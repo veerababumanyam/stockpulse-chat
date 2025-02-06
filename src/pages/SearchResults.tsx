@@ -660,7 +660,7 @@ const SearchResults = () => {
 
               <TabsContent value="ai-analysis">
                 <div className="grid grid-cols-1 gap-4">
-                  {aiAnalysis ? (
+                  {aiAnalysis && aiAnalysis.results ? (
                     Object.entries(aiAnalysis.results).map(([agentName, result]: [string, any]) => (
                       <Card key={agentName}>
                         <CardHeader>
@@ -669,11 +669,11 @@ const SearchResults = () => {
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
-                          {result.error ? (
+                          {result?.error ? (
                             <p className="text-destructive">{result.error}</p>
                           ) : (
                             <div className="space-y-4">
-                              {result.data?.analysis?.signals && (
+                              {result?.data?.analysis?.signals && (
                                 <div>
                                   <h4 className="font-medium mb-2">Signals</h4>
                                   {Object.entries(result.data.analysis.signals).map(([key, value]: [string, any]) => (
@@ -693,7 +693,7 @@ const SearchResults = () => {
                                 </div>
                               )}
                               
-                              {result.data?.analysis?.metrics && (
+                              {result?.data?.analysis?.metrics && (
                                 <div>
                                   <h4 className="font-medium mb-2">Metrics</h4>
                                   {Object.entries(result.data.analysis.metrics).map(([key, value]: [string, any]) => (
@@ -701,13 +701,13 @@ const SearchResults = () => {
                                       <span className="capitalize text-muted-foreground">
                                         {key.replace(/([A-Z])/g, ' $1').trim()}
                                       </span>
-                                      <span>{JSON.stringify(value)}</span>
+                                      <span>{typeof value === 'object' ? JSON.stringify(value) : value}</span>
                                     </div>
                                   ))}
                                 </div>
                               )}
 
-                              {result.data?.analysis?.trends && (
+                              {result?.data?.analysis?.trends && Array.isArray(result.data.analysis.trends) && (
                                 <div>
                                   <h4 className="font-medium mb-2">Trends</h4>
                                   <ul className="list-disc list-inside space-y-1">
@@ -726,7 +726,7 @@ const SearchResults = () => {
                     <Card>
                       <CardContent className="pt-6">
                         <p className="text-center text-muted-foreground">
-                          AI analysis is being generated...
+                          {isLoading ? "AI analysis is being generated..." : "No AI analysis available"}
                         </p>
                       </CardContent>
                     </Card>
