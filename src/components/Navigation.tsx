@@ -1,11 +1,12 @@
 
-import { Home, Sun, Moon, UserCog, LayoutDashboard, Key, Briefcase, Star, Filter, Cpu, Search, MessageSquare } from "lucide-react";
+import { Home, Sun, Moon, UserCog, LayoutDashboard, Key, Briefcase, Star, Filter, Cpu, Search, MessageSquare, Menu } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { SearchBar } from "@/components/SearchBar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export const Navigation = () => {
   const { theme, setTheme } = useTheme();
@@ -21,26 +29,11 @@ export const Navigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const handleProfileSettings = () => {
-    toast({
-      title: "Profile Settings",
-      description: "Opening profile settings panel",
-    });
-    navigate("/profile");
-  };
-
-  const handleApiKeys = () => {
-    toast({
-      title: "API Keys",
-      description: "Opening API keys management",
-    });
-    navigate("/api-keys");
-  };
 
   const handleChat = () => {
     try {
@@ -59,112 +52,71 @@ export const Navigation = () => {
     }
   };
 
-  const handlePreferences = () => {
-    toast({
-      title: "Preferences",
-      description: "Opening preferences panel",
-    });
-    navigate("/preferences");
-  };
-
-  const handleSecurity = () => {
-    toast({
-      title: "Security Settings",
-      description: "Opening security settings panel",
-    });
-    navigate("/security");
-  };
-
-  const handleSignOut = () => {
-    toast({
-      title: "Signing out",
-      description: "You have been signed out successfully",
-    });
-    navigate("/");
-  };
+  const navigationItems = [
+    { icon: <Home className="w-5 h-5" />, label: "Home", path: "/" },
+    { icon: <LayoutDashboard className="w-5 h-5" />, label: "Dashboard", path: "/dashboard" },
+    { icon: <Briefcase className="w-5 h-5" />, label: "Portfolio", path: "/portfolio" },
+    { icon: <Star className="w-5 h-5" />, label: "Watchlist", path: "/watchlist" },
+    { icon: <Filter className="w-5 h-5" />, label: "Screener", path: "/screener" },
+    { icon: <Cpu className="w-5 h-5" />, label: "Agents", path: "/agents" },
+    { icon: <MessageSquare className="w-5 h-5" />, label: "Chat", onClick: handleChat },
+  ];
 
   if (!mounted) {
     return null;
   }
 
+  const renderNavigationContent = () => (
+    <>
+      {navigationItems.map((item, index) => (
+        <Button
+          key={index}
+          variant="ghost"
+          className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+          aria-label={item.label}
+          onClick={item.onClick || (() => navigate(item.path))}
+        >
+          {item.icon}
+          {!isMobile && <span className="font-medium">{item.label}</span>}
+        </Button>
+      ))}
+    </>
+  );
+
   return (
     <nav className="fixed top-0 left-0 w-full p-4 glass-panel z-50" role="navigation" aria-label="Main navigation">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-            aria-label="Go to home page"
-            onClick={() => navigate("/")}
-          >
-            <Home className="w-5 h-5" aria-hidden="true" />
-            <span className="font-medium">Home</span>
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-            aria-label="Go to dashboard"
-            onClick={() => navigate("/dashboard")}
-          >
-            <LayoutDashboard className="w-5 h-5" aria-hidden="true" />
-            <span className="font-medium">Dashboard</span>
-          </Button>
-
-          <Button 
-            variant="ghost" 
-            className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-            aria-label="Go to portfolio"
-            onClick={() => navigate("/portfolio")}
-          >
-            <Briefcase className="w-5 h-5" aria-hidden="true" />
-            <span className="font-medium">Portfolio</span>
-          </Button>
-
-          <Button 
-            variant="ghost" 
-            className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-            aria-label="Go to watchlist"
-            onClick={() => navigate("/watchlist")}
-          >
-            <Star className="w-5 h-5" aria-hidden="true" />
-            <span className="font-medium">Watchlist</span>
-          </Button>
-
-          <Button 
-            variant="ghost" 
-            className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-            aria-label="Go to screener"
-            onClick={() => navigate("/screener")}
-          >
-            <Filter className="w-5 h-5" aria-hidden="true" />
-            <span className="font-medium">Screener</span>
-          </Button>
-
-          <Button 
-            variant="ghost" 
-            className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-            aria-label="Go to agents"
-            onClick={() => navigate("/agents")}
-          >
-            <Cpu className="w-5 h-5" aria-hidden="true" />
-            <span className="font-medium">Agents</span>
-          </Button>
-
-          <Button 
-            variant="ghost" 
-            className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-            aria-label="Open chat"
-            onClick={handleChat}
-          >
-            <MessageSquare className="w-5 h-5" aria-hidden="true" />
-            <span className="font-medium">Chat</span>
-          </Button>
-        </div>
-
-        <div className="flex-1 flex justify-center mx-4">
-          <SearchBar />
-        </div>
+        {isMobile ? (
+          <>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="lg:hidden">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[240px] sm:w-[280px]">
+                <SheetHeader>
+                  <SheetTitle>Navigation</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col gap-2 mt-4">
+                  {renderNavigationContent()}
+                </div>
+              </SheetContent>
+            </Sheet>
+            <div className="flex-1 flex justify-center mx-4">
+              <SearchBar />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-4">
+              {renderNavigationContent()}
+            </div>
+            <div className="flex-1 flex justify-center mx-4">
+              <SearchBar />
+            </div>
+          </>
+        )}
         
         <div className="flex items-center gap-2">
           <Button
@@ -172,6 +124,7 @@ export const Navigation = () => {
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             className="relative p-2 hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+            size="icon"
           >
             {theme === "dark" ? (
               <Sun className="w-5 h-5 text-yellow-500 transition-transform duration-200 hover:rotate-12" aria-hidden="true" />
@@ -186,6 +139,7 @@ export const Navigation = () => {
                 variant="outline"
                 className="relative p-2 hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
                 aria-label="Open profile settings"
+                size="icon"
               >
                 <UserCog className="w-5 h-5" aria-hidden="true" />
               </Button>
@@ -225,3 +179,4 @@ export const Navigation = () => {
     </nav>
   );
 };
+
