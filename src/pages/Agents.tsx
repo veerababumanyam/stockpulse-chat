@@ -1,17 +1,9 @@
-
 import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { AgentCard } from "@/components/agents/AgentCard";
 import { AgentConfigDialog } from "@/components/agents/AgentConfigDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 
 interface AgentConfig {
@@ -41,6 +33,87 @@ const defaultAgents: AgentConfig[] = [
     model: "gpt-4o-mini",
     temperature: 0.4,
     systemPrompt: "You are a sentiment analysis expert. Analyze market sentiment and provide insights.",
+    active: true
+  },
+  {
+    id: "anomaly-detection",
+    name: "Anomaly Detection Agent",
+    description: "Detects unusual patterns and market anomalies",
+    model: "gpt-4o-mini",
+    temperature: 0.3,
+    systemPrompt: "You are an anomaly detection expert. Identify unusual patterns in market data.",
+    active: true
+  },
+  {
+    id: "bayesian-inference",
+    name: "Bayesian Inference Agent",
+    description: "Applies Bayesian analysis to market predictions",
+    model: "gpt-4o-mini",
+    temperature: 0.4,
+    systemPrompt: "You are a Bayesian analysis expert. Apply probabilistic reasoning to market data.",
+    active: true
+  },
+  {
+    id: "big-player-tracking",
+    name: "Big Player Tracking Agent",
+    description: "Tracks institutional investor movements",
+    model: "gpt-4o-mini",
+    temperature: 0.3,
+    systemPrompt: "You are an institutional investor tracking expert. Monitor large market movements.",
+    active: true
+  },
+  {
+    id: "commodity-impact",
+    name: "Commodity Impact Agent",
+    description: "Analyzes commodity price impacts on markets",
+    model: "gpt-4o-mini",
+    temperature: 0.4,
+    systemPrompt: "You are a commodity market expert. Analyze commodity price impacts.",
+    active: true
+  },
+  {
+    id: "competitive-analysis",
+    name: "Competitive Analysis Agent",
+    description: "Analyzes competitive landscape and market positioning",
+    model: "gpt-4o-mini",
+    temperature: 0.4,
+    systemPrompt: "You are a competitive analysis expert. Evaluate market positioning.",
+    active: true
+  },
+  {
+    id: "correlation-analysis",
+    name: "Correlation Analysis Agent",
+    description: "Identifies correlations between different assets",
+    model: "gpt-4o-mini",
+    temperature: 0.3,
+    systemPrompt: "You are a correlation analysis expert. Identify relationships between assets.",
+    active: true
+  },
+  {
+    id: "currency-exchange",
+    name: "Currency Exchange Agent",
+    description: "Analyzes currency exchange impacts",
+    model: "gpt-4o-mini",
+    temperature: 0.4,
+    systemPrompt: "You are a currency exchange expert. Analyze forex market impacts.",
+    active: true
+  },
+  {
+    id: "data-cleansing",
+    name: "Data Cleansing Agent",
+    description: "Cleanses and validates market data",
+    model: "gpt-4o-mini",
+    temperature: 0.2,
+    systemPrompt: "You are a data cleansing expert. Clean and validate market data.",
+    active: true
+  },
+  {
+    id: "volatility-analysis",
+    name: "Volatility Analysis Agent",
+    description: "Analyzes market volatility patterns",
+    model: "gpt-4o-mini",
+    temperature: 0.4,
+    systemPrompt: "You are a volatility analysis expert. Analyze market volatility patterns.",
     active: true
   }
 ];
