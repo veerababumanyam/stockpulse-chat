@@ -19,6 +19,23 @@ interface ApiKeys {
   fmp: string;
 }
 
+interface AnalysisResult {
+  textOutput: string;
+  formattedData: {
+    symbol: string;
+    companyName: string;
+    recommendation: string;
+    confidenceScore: number;
+    priceProjections: {
+      threeMonths: number;
+      sixMonths: number;
+      twelveMonths: number;
+      twentyFourMonths: number;
+    };
+    results: Record<string, any>;
+  };
+}
+
 const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -120,16 +137,16 @@ const ChatWindow = () => {
         throw new Error('No stock data found for the query');
       }
 
-      const analysis = await OrchestratorAgent.orchestrateAnalysis(stockData);
+      const analysis = await OrchestratorAgent.orchestrateAnalysis(stockData) as AnalysisResult;
       
       if (!analysis || typeof analysis === 'string') {
         throw new Error('Invalid analysis response');
       }
 
       const aiMessage: Message = {
-        content: String(analysis.textOutput || ''),
+        content: analysis.textOutput,
         isUser: false,
-        data: analysis.formattedData || null
+        data: analysis.formattedData
       };
 
       setMessages(prev => [...prev, aiMessage]);
