@@ -11,17 +11,6 @@ interface MessageProps {
 const Message = ({ message, onDownload }: MessageProps) => {
   return (
     <div className="mb-4">
-      {!message.isUser && message.data && (
-        <div className="mb-2">
-          <Button
-            onClick={() => onDownload?.(message.data)}
-            className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] flex items-center justify-center gap-2 mb-4"
-          >
-            <Download className="w-4 h-4" />
-            Download Analysis Report
-          </Button>
-        </div>
-      )}
       <div
         className={`p-3 rounded-lg ${
           message.isUser 
@@ -31,8 +20,21 @@ const Message = ({ message, onDownload }: MessageProps) => {
       >
         {message.content}
       </div>
+      
+      {!message.isUser && message.data && (
+        <div className="mt-2">
+          <Button
+            onClick={() => onDownload?.(message.data)}
+            className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] flex items-center justify-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Download Analysis Report
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
 
 export default Message;
+
