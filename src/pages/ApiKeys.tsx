@@ -6,23 +6,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Key } from "lucide-react";
+import { ExternalLink, Key } from "lucide-react";
 
 interface ApiKeys {
   openai: string;
-  fmp: string;
+  anthropic: string;
+  openrouter: string;
   deepseek: string;
+  fmp: string;
 }
 
 const ApiKeys = () => {
-  const [apiKeys, setApiKeys] = useState<ApiKeys>({ openai: "", fmp: "", deepseek: "" });
+  const [apiKeys, setApiKeys] = useState<ApiKeys>({ 
+    openai: "", 
+    anthropic: "", 
+    openrouter: "", 
+    deepseek: "", 
+    fmp: "" 
+  });
   const { toast } = useToast();
 
   useEffect(() => {
     const savedKeys = localStorage.getItem('apiKeys');
     if (savedKeys) {
       const parsedKeys = JSON.parse(savedKeys);
-      setApiKeys(parsedKeys);
+      setApiKeys(prev => ({ ...prev, ...parsedKeys }));
       toast({
         title: "API Keys Loaded",
         description: "Your saved API keys have been loaded successfully",
@@ -32,19 +40,32 @@ const ApiKeys = () => {
 
   const handleApiKeySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!apiKeys.openai || !apiKeys.fmp || !apiKeys.deepseek) {
-      toast({
-        title: "Error",
-        description: "Please enter all API keys",
-        variant: "destructive",
-      });
-      return;
-    }
     localStorage.setItem('apiKeys', JSON.stringify(apiKeys));
     toast({
       title: "Success",
       description: "API keys saved successfully",
     });
+  };
+
+  const renderApiKeyLink = (provider: string) => {
+    const links: Record<string, string> = {
+      openai: "https://platform.openai.com/api-keys",
+      anthropic: "https://console.anthropic.com/account/keys",
+      openrouter: "https://openrouter.ai/keys",
+      deepseek: "https://platform.deepseek.com/api-keys",
+      fmp: "https://site.financialmodelingprep.com/developer/docs/api-keys",
+    };
+
+    return (
+      <a
+        href={links[provider]}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-xs text-purple-600 hover:text-purple-700 flex items-center gap-1"
+      >
+        Get API Key <ExternalLink className="h-3 w-3" />
+      </a>
+    );
   };
 
   return (
@@ -67,7 +88,10 @@ const ApiKeys = () => {
             
             <form onSubmit={handleApiKeySubmit} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">OpenAI API Key</label>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">OpenAI API Key</label>
+                  {renderApiKeyLink('openai')}
+                </div>
                 <Input
                   type="password"
                   value={apiKeys.openai}
@@ -76,18 +100,40 @@ const ApiKeys = () => {
                   className="bg-white/70 border-[#E5DEFF]"
                 />
               </div>
+
               <div className="space-y-2">
-                <label className="text-sm font-medium">FMP API Key</label>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">Anthropic API Key</label>
+                  {renderApiKeyLink('anthropic')}
+                </div>
                 <Input
                   type="password"
-                  value={apiKeys.fmp}
-                  onChange={(e) => setApiKeys(prev => ({ ...prev, fmp: e.target.value }))}
-                  placeholder="Enter FMP API Key"
+                  value={apiKeys.anthropic}
+                  onChange={(e) => setApiKeys(prev => ({ ...prev, anthropic: e.target.value }))}
+                  placeholder="Enter Anthropic API Key"
                   className="bg-white/70 border-[#E5DEFF]"
                 />
               </div>
+
               <div className="space-y-2">
-                <label className="text-sm font-medium">Deepseek API Key</label>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">OpenRouter API Key</label>
+                  {renderApiKeyLink('openrouter')}
+                </div>
+                <Input
+                  type="password"
+                  value={apiKeys.openrouter}
+                  onChange={(e) => setApiKeys(prev => ({ ...prev, openrouter: e.target.value }))}
+                  placeholder="Enter OpenRouter API Key"
+                  className="bg-white/70 border-[#E5DEFF]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">Deepseek API Key</label>
+                  {renderApiKeyLink('deepseek')}
+                </div>
                 <Input
                   type="password"
                   value={apiKeys.deepseek}
@@ -96,6 +142,21 @@ const ApiKeys = () => {
                   className="bg-white/70 border-[#E5DEFF]"
                 />
               </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">FMP API Key</label>
+                  {renderApiKeyLink('fmp')}
+                </div>
+                <Input
+                  type="password"
+                  value={apiKeys.fmp}
+                  onChange={(e) => setApiKeys(prev => ({ ...prev, fmp: e.target.value }))}
+                  placeholder="Enter FMP API Key"
+                  className="bg-white/70 border-[#E5DEFF]"
+                />
+              </div>
+
               <Button 
                 type="submit" 
                 className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"

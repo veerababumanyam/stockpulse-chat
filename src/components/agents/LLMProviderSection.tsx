@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useState, useEffect } from "react";
@@ -30,6 +29,8 @@ interface LLMProvider {
 
 interface ApiKeys {
   openai?: string;
+  anthropic?: string;
+  openrouter?: string;
   deepseek?: string;
   fmp?: string;
 }
@@ -45,6 +46,34 @@ const defaultProviders: LLMProvider[] = [
       'Context-aware responses',
       'Code generation and analysis',
       'Multi-modal capabilities with vision models'
+    ],
+    models: [],
+    selectedModels: []
+  },
+  {
+    id: 'anthropic',
+    name: 'Anthropic',
+    isEnabled: false,
+    description: 'Provider of Claude models known for their safety and reliability',
+    capabilities: [
+      'Constitutional AI principles',
+      'Long context windows',
+      'Factual responses',
+      'Complex reasoning tasks'
+    ],
+    models: [],
+    selectedModels: []
+  },
+  {
+    id: 'openrouter',
+    name: 'OpenRouter',
+    isEnabled: false,
+    description: 'Gateway to multiple AI models with unified API access',
+    capabilities: [
+      'Access to multiple model providers',
+      'Unified API interface',
+      'Cost optimization',
+      'Model performance comparison'
     ],
     models: [],
     selectedModels: []
@@ -133,6 +162,48 @@ export const LLMProviderSection = () => {
     }
   };
 
+const fetchAnthropicModels = async (apiKey: string) => {
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/models', {
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.models.map((model: any) => model.id).sort();
+  } catch (error) {
+    console.error('Error fetching Anthropic models:', error);
+    throw error;
+  }
+};
+
+const fetchOpenRouterModels = async (apiKey: string) => {
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/models', {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.data.map((model: any) => model.id).sort();
+  } catch (error) {
+    console.error('Error fetching OpenRouter models:', error);
+    throw error;
+  }
+};
+
   const fetchDeepseekModels = async (apiKey: string) => {
     try {
       const response = await fetch('https://api.deepseek.com/v1/models', {
@@ -149,50 +220,62 @@ export const LLMProviderSection = () => {
     }
   };
 
-  const refreshModels = async () => {
-    setIsLoading(true);
-    try {
-      const updatedProviders = [...providers];
+const refreshModels = async () => {
+  setIsLoading(true);
+  try {
+    const updatedProviders = [...providers];
 
-      for (const provider of updatedProviders) {
-        if (!apiKeys[provider.id as keyof ApiKeys]) {
-          continue;
-        }
-
-        try {
-          let models: string[] = [];
-          if (provider.id === 'openai') {
-            models = await fetchOpenAIModels(apiKeys.openai!);
-            console.log('Fetched OpenAI models:', models); // Debug log
-          } else if (provider.id === 'deepseek') {
-            models = await fetchDeepseekModels(apiKeys.deepseek!);
-          }
-
-          provider.models = models;
-          provider.selectedModels = provider.selectedModels?.filter(model => 
-            models.includes(model)
-          ) || [];
-        } catch (error) {
-          console.error(`Error fetching models for ${provider.name}:`, error);
-          toast({
-            title: `Error Fetching Models`,
-            description: `Could not fetch models for ${provider.name}. Please check your API key.`,
-            variant: "destructive",
-          });
-        }
+    for (const provider of updatedProviders) {
+      if (!apiKeys[provider.id as keyof ApiKeys]) {
+        continue;
       }
 
-      setProviders(updatedProviders);
-      localStorage.setItem('llm-providers', JSON.stringify(updatedProviders));
-      
-      toast({
-        title: "Models Updated",
-        description: "Available models have been refreshed successfully.",
-      });
-    } finally {
-      setIsLoading(false);
+      try {
+        let models: string[] = [];
+        switch (provider.id) {
+          case 'openai':
+            models = await fetchOpenAIModels(apiKeys.openai!);
+            console.log('Fetched OpenAI models:', models);
+            break;
+          case 'anthropic':
+            models = await fetchAnthropicModels(apiKeys.anthropic!);
+            console.log('Fetched Anthropic models:', models);
+            break;
+          case 'openrouter':
+            models = await fetchOpenRouterModels(apiKeys.openrouter!);
+            console.log('Fetched OpenRouter models:', models);
+            break;
+          case 'deepseek':
+            models = await fetchDeepseekModels(apiKeys.deepseek!);
+            console.log('Fetched Deepseek models:', models);
+            break;
+        }
+
+        provider.models = models;
+        provider.selectedModels = provider.selectedModels?.filter(model => 
+          models.includes(model)
+        ) || [];
+      } catch (error) {
+        console.error(`Error fetching models for ${provider.name}:`, error);
+        toast({
+          title: `Error Fetching Models`,
+          description: `Could not fetch models for ${provider.name}. Please check your API key.`,
+          variant: "destructive",
+        });
+      }
     }
-  };
+
+    setProviders(updatedProviders);
+    localStorage.setItem('llm-providers', JSON.stringify(updatedProviders));
+    
+    toast({
+      title: "Models Updated",
+      description: "Available models have been refreshed successfully.",
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleProviderToggle = (providerId: string) => {
     const hasValidApiKey = apiKeys && apiKeys[providerId as keyof ApiKeys];
@@ -381,4 +464,3 @@ export const LLMProviderSection = () => {
     </div>
   );
 };
-
