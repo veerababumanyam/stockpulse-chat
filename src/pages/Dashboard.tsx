@@ -1,6 +1,6 @@
 
 import { Navigation } from "@/components/Navigation";
-import { ChatWindow } from "@/components/ChatWindow";
+import ChatWindow from "@/components/ChatWindow";
 import { TrendingUp, DollarSign, LineChart } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
@@ -67,4 +67,3 @@ const Index = () => {
 };
 
 export default Index;
-
