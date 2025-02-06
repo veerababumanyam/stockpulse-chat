@@ -2,8 +2,14 @@
 export class NewsAnalysisAgent {
   static async analyze(symbol: string) {
     try {
+      const savedKeys = localStorage.getItem('apiKeys');
+      if (!savedKeys) {
+        throw new Error('API keys not found');
+      }
+      const { fmp } = JSON.parse(savedKeys);
+      
       const response = await fetch(
-        `https://financialmodelingprep.com/api/v3/stock_news?tickers=${symbol}&limit=5&apikey=${localStorage.getItem('fmp_api_key')}`
+        `https://financialmodelingprep.com/api/v3/stock_news?tickers=${symbol}&limit=5&apikey=${fmp}`
       );
       const newsData = await response.json();
       
