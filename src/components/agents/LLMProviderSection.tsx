@@ -4,8 +4,18 @@ import { Switch } from "@/components/ui/switch";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Link } from "react-router-dom";
-import { AlertCircle, Info } from "lucide-react";
+import { AlertCircle, Info, Settings2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface LLMProvider {
   id: string;
@@ -14,6 +24,7 @@ interface LLMProvider {
   models: string[];
   description: string;
   capabilities: string[];
+  selectedModels?: string[];
 }
 
 interface ApiKeys {
@@ -34,7 +45,8 @@ const defaultProviders: LLMProvider[] = [
       'Code generation and analysis',
       'Multi-modal capabilities with vision models'
     ],
-    models: ['gpt-4', 'gpt-4-turbo-preview', 'gpt-4-vision-preview', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k']
+    models: ['gpt-4', 'gpt-4-turbo-preview', 'gpt-4-vision-preview', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k'],
+    selectedModels: ['gpt-4', 'gpt-3.5-turbo']
   },
   {
     id: 'deepseek',
@@ -47,7 +59,8 @@ const defaultProviders: LLMProvider[] = [
       'Domain-specific analysis',
       'Technical documentation generation'
     ],
-    models: ['deepseek-chat', 'deepseek-coder', 'deepseek-reasoner', 'deepseek-english', 'deepseek-math']
+    models: ['deepseek-chat', 'deepseek-coder', 'deepseek-reasoner', 'deepseek-english', 'deepseek-math'],
+    selectedModels: ['deepseek-chat', 'deepseek-coder']
   }
 ];
 
@@ -64,6 +77,7 @@ export const LLMProviderSection = () => {
 
   const { toast } = useToast();
   const [apiKeys, setApiKeys] = useState<ApiKeys>({});
+  const [selectedProvider, setSelectedProvider] = useState<LLMProvider | null>(null);
 
   useEffect(() => {
     const savedApiKeys = localStorage.getItem('apiKeys');
@@ -103,6 +117,28 @@ export const LLMProviderSection = () => {
     toast({
       title: "Provider Updated",
       description: "Provider settings have been updated successfully.",
+    });
+  };
+
+  const handleModelSelection = (providerId: string, model: string, isSelected: boolean) => {
+    setProviders(prev => {
+      const updated = prev.map(provider => {
+        if (provider.id === providerId) {
+          const selectedModels = provider.selectedModels || [];
+          const updatedModels = isSelected
+            ? [...selectedModels, model]
+            : selectedModels.filter(m => m !== model);
+          
+          return {
+            ...provider,
+            selectedModels: updatedModels
+          };
+        }
+        return provider;
+      });
+      
+      localStorage.setItem('llm-providers', JSON.stringify(updated));
+      return updated;
     });
   };
 
@@ -164,15 +200,56 @@ export const LLMProviderSection = () => {
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-medium mb-2">Available Models</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {provider.models && provider.models.map((model) => (
-                      <div
-                        key={model}
-                        className="text-sm px-2 py-1 bg-secondary rounded-md text-muted-foreground"
-                      >
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium">Available Models</h3>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="flex items-center gap-2"
+                          onClick={() => setSelectedProvider(provider)}
+                        >
+                          <Settings2 className="h-4 w-4" />
+                          Configure Models
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Configure Models for {provider.name}</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 mt-4">
+                          <p className="text-sm text-muted-foreground">
+                            Select the models you want to use with your AI agents
+                          </p>
+                          <div className="space-y-2">
+                            {provider.models && provider.models.map((model) => (
+                              <div key={model} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`${provider.id}-${model}`}
+                                  checked={(provider.selectedModels || []).includes(model)}
+                                  onCheckedChange={(checked) => 
+                                    handleModelSelection(provider.id, model, checked as boolean)
+                                  }
+                                />
+                                <label
+                                  htmlFor={`${provider.id}-${model}`}
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                >
+                                  {model}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {provider.selectedModels && provider.selectedModels.map((model) => (
+                      <Badge key={model} variant="secondary">
                         {model}
-                      </div>
+                      </Badge>
                     ))}
                   </div>
                 </div>
