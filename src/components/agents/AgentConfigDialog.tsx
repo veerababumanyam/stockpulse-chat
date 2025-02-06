@@ -7,14 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { LLMProvider } from "@/types/llm";
 
 interface AgentConfig {
@@ -49,7 +54,9 @@ export const AgentConfigDialog = ({
     active: true,
   });
 
+  const [openCombobox, setOpenCombobox] = useState(false);
   const [availableModels, setAvailableModels] = useState<Array<{ provider: string; models: string[] }>>([]);
+  const [flatModels, setFlatModels] = useState<string[]>([]);
 
   useEffect(() => {
     const loadModels = () => {
@@ -64,9 +71,13 @@ export const AgentConfigDialog = ({
           })).filter(p => p.models.length > 0);
           setAvailableModels(models);
           
+          // Flatten models for searchable list
+          const allModels = models.flatMap(provider => provider.models);
+          setFlatModels(allModels);
+          
           // If no model is selected and we have available models, select the first one
-          if (!config.model && models.length > 0 && models[0].models.length > 0) {
-            setConfig(prev => ({ ...prev, model: models[0].models[0] }));
+          if (!config.model && allModels.length > 0) {
+            setConfig(prev => ({ ...prev, model: allModels[0] }));
           }
         } catch (error) {
           console.error('Error parsing providers:', error);
@@ -75,7 +86,7 @@ export const AgentConfigDialog = ({
     };
 
     loadModels();
-  }, [open]); // Reload when dialog opens
+  }, [open]);
 
   useEffect(() => {
     if (agent) {
@@ -84,13 +95,13 @@ export const AgentConfigDialog = ({
       setConfig({
         name: "",
         description: "",
-        model: availableModels[0]?.models[0] || "",
+        model: flatModels[0] || "",
         temperature: 0.7,
         systemPrompt: "",
         active: true,
       });
     }
-  }, [agent, availableModels]);
+  }, [agent, flatModels]);
 
   const handleSave = () => {
     if (!config.name || !config.description || !config.systemPrompt || !config.model) {
@@ -133,27 +144,48 @@ export const AgentConfigDialog = ({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="model">Model</Label>
-            <Select
-              value={config.model}
-              onValueChange={(value) => setConfig({ ...config, model: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a model" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableModels.map(({ provider, models }) => (
-                  <SelectGroup key={provider}>
-                    <SelectLabel>{provider}</SelectLabel>
-                    {models.map((model) => (
-                      <SelectItem key={model} value={model}>
-                        {model}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Model</Label>
+            <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openCombobox}
+                  className="w-full justify-between"
+                >
+                  {config.model || "Select model..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command>
+                  <CommandInput placeholder="Search model..." />
+                  <CommandEmpty>No model found.</CommandEmpty>
+                  {availableModels.map(({ provider, models }) => (
+                    <CommandGroup key={provider} heading={provider}>
+                      {models.map((model) => (
+                        <CommandItem
+                          key={model}
+                          value={model}
+                          onSelect={(currentValue) => {
+                            setConfig({ ...config, model: currentValue });
+                            setOpenCombobox(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              config.model === model ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {model}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  ))}
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="space-y-2">
             <Label>Temperature ({config.temperature})</Label>
