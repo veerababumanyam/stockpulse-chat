@@ -1,8 +1,16 @@
 
-import { Home, Sun, Moon } from "lucide-react";
+import { Home, Sun, Moon, UserCog } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Navigation = () => {
   const { theme, setTheme } = useTheme();
@@ -28,18 +36,49 @@ export const Navigation = () => {
           <span className="font-medium">Home</span>
         </Button>
         
-        <Button
-          variant="outline"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          className="relative p-2 hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-        >
-          {theme === "dark" ? (
-            <Sun className="w-5 h-5 text-yellow-500 transition-transform duration-200 hover:rotate-12" aria-hidden="true" />
-          ) : (
-            <Moon className="w-5 h-5 text-slate-700 transition-transform duration-200 hover:-rotate-12" aria-hidden="true" />
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="relative p-2 hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+          >
+            {theme === "dark" ? (
+              <Sun className="w-5 h-5 text-yellow-500 transition-transform duration-200 hover:rotate-12" aria-hidden="true" />
+            ) : (
+              <Moon className="w-5 h-5 text-slate-700 transition-transform duration-200 hover:-rotate-12" aria-hidden="true" />
+            )}
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="relative p-2 hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+                aria-label="Open profile settings"
+              >
+                <UserCog className="w-5 h-5" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="flex items-center gap-2">
+                Profile Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem className="flex items-center gap-2">
+                Preferences
+              </DropdownMenuItem>
+              <DropdownMenuItem className="flex items-center gap-2">
+                Security
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="flex items-center gap-2 text-destructive">
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </nav>
   );
