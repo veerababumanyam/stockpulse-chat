@@ -59,3 +59,4 @@ export class CashFlowAnalysisAgent extends BaseAgent {
     return freeCashFlow > 0 ? 'Sustainable' : 'Unsustainable';
   }
 }
+
