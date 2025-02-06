@@ -4,13 +4,38 @@ import { BaseAgent, AnalysisResult } from './BaseAgent';
 export class BayesianInferenceAgent extends BaseAgent {
   static async analyze(symbol: string): Promise<AnalysisResult> {
     try {
+      const savedKeys = localStorage.getItem('apiKeys');
+      if (!savedKeys) {
+        throw new Error('API keys not found');
+      }
+      const { fmp } = JSON.parse(savedKeys);
+
+      const [quote, profile] = await Promise.all([
+        this.fetchData(
+          `https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${fmp}`,
+          fmp
+        ),
+        this.fetchData(
+          `https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${fmp}`,
+          fmp
+        )
+      ]);
+
+      if (!quote[0] || !profile[0]) {
+        throw new Error('Insufficient data for analysis');
+      }
+
+      const priorBeliefs = this.calculatePriorBeliefs(quote[0], profile[0]);
+      const evidenceStrength = this.calculateEvidenceStrength(quote[0]);
+      const posteriorDistribution = this.updatePosteriorDistribution(priorBeliefs, evidenceStrength);
+
       return {
         type: 'bayesian-inference',
         analysis: {
-          posteriorDistribution: this.calculatePosteriorDistribution(),
-          priorBeliefs: this.getPriorBeliefs(),
-          evidenceStrength: this.assessEvidenceStrength(),
-          uncertaintyMetrics: this.getUncertaintyMetrics()
+          posteriorDistribution,
+          priorBeliefs,
+          evidenceStrength,
+          uncertaintyMetrics: this.calculateUncertaintyMetrics(quote[0], profile[0])
         }
       };
     } catch (error) {
@@ -27,34 +52,63 @@ export class BayesianInferenceAgent extends BaseAgent {
     }
   }
 
-  private static calculatePosteriorDistribution(): any {
+  private static calculatePriorBeliefs(quote: any, profile: any): any {
+    const beta = profile.beta || 1;
+    const volatility = quote.changesPercentage || 0;
+    
     return {
-      mean: Math.random() * 100 + 100,
-      variance: Math.random() * 20,
+      expectedReturn: Number((quote.changesPercentage || 0).toFixed(2)),
+      volatility: Number(Math.abs(volatility).toFixed(2)),
+      marketCondition: this.determineMarketCondition(quote),
+      sectorOutlook: this.determineSectorOutlook(profile)
+    };
+  }
+
+  private static calculateEvidenceStrength(quote: any): number {
+    const volumeStrength = quote.volume > quote.avgVolume ? 0.2 : 0.1;
+    const priceStrength = Math.abs(quote.changesPercentage) > 2 ? 0.2 : 0.1;
+    const baseStrength = 0.6;
+
+    return Number((baseStrength + volumeStrength + priceStrength).toFixed(2));
+  }
+
+  private static updatePosteriorDistribution(priors: any, evidenceStrength: number): any {
+    const currentPrice = priors.currentPrice || 100;
+    const volatility = priors.volatility || 1;
+    
+    return {
+      mean: Number((currentPrice * (1 + priors.expectedReturn / 100)).toFixed(2)),
+      variance: Number((volatility * (1 - evidenceStrength)).toFixed(2)),
       credibleIntervals: {
-        lower95: Math.random() * 90 + 50,
-        upper95: Math.random() * 90 + 150
+        lower95: Number((currentPrice * (1 - 2 * volatility / 100)).toFixed(2)),
+        upper95: Number((currentPrice * (1 + 2 * volatility / 100)).toFixed(2))
       }
     };
   }
 
-  private static getPriorBeliefs(): any {
+  private static calculateUncertaintyMetrics(quote: any, profile: any): any {
+    const baseUncertainty = 0.3;
+    const marketUncertainty = Math.abs(quote.changesPercentage) > 2 ? 0.2 : 0.1;
+    const sectorUncertainty = profile.beta > 1.2 ? 0.2 : 0.1;
+
     return {
-      expectedReturn: Math.random() * 0.2,
-      volatility: Math.random() * 0.1,
-      marketCondition: Math.random() > 0.5 ? 'bullish' : 'bearish'
+      modelUncertainty: Number((baseUncertainty + marketUncertainty).toFixed(2)),
+      dataUncertainty: Number((baseUncertainty + sectorUncertainty).toFixed(2)),
+      totalUncertainty: Number((baseUncertainty + marketUncertainty + sectorUncertainty).toFixed(2))
     };
   }
 
-  private static assessEvidenceStrength(): number {
-    return Math.random() * 0.3 + 0.7; // Returns 0.7-1.0
+  private static determineMarketCondition(quote: any): string {
+    const change = quote.changesPercentage || 0;
+    if (change > 2) return 'bullish';
+    if (change < -2) return 'bearish';
+    return 'neutral';
   }
 
-  private static getUncertaintyMetrics(): any {
-    return {
-      modelUncertainty: Math.random() * 0.5,
-      dataUncertainty: Math.random() * 0.3,
-      totalUncertainty: Math.random() * 0.4
-    };
+  private static determineSectorOutlook(profile: any): string {
+    const beta = profile.beta || 1;
+    if (beta > 1.2) return 'volatile';
+    if (beta < 0.8) return 'defensive';
+    return 'stable';
   }
 }

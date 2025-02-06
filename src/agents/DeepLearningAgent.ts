@@ -1,16 +1,41 @@
 
 import { BaseAgent, AnalysisResult } from './BaseAgent';
+import { generatePricePrediction } from './utils/pricePrediction';
 
 export class DeepLearningAgent extends BaseAgent {
   static async analyze(symbol: string): Promise<AnalysisResult> {
     try {
+      const savedKeys = localStorage.getItem('apiKeys');
+      if (!savedKeys) {
+        throw new Error('API keys not found');
+      }
+      const { fmp } = JSON.parse(savedKeys);
+
+      const stockData = await this.fetchData(
+        `https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${fmp}`,
+        fmp
+      );
+
+      if (!stockData || !stockData[0]) {
+        throw new Error('No stock data available');
+      }
+
+      const currentPrice = stockData[0].price;
+      const baseConfidence = 85; // Starting confidence for short-term predictions
+
+      const predictions = {
+        shortTerm: generatePricePrediction(currentPrice, 1, baseConfidence),
+        mediumTerm: generatePricePrediction(currentPrice, 3, baseConfidence),
+        longTerm: generatePricePrediction(currentPrice, 6, baseConfidence)
+      };
+
       return {
         type: 'deep-learning',
         analysis: {
-          neuralNetworkPredictions: this.generatePredictions(),
+          predictions,
           featureImportance: this.calculateFeatureImportance(),
-          modelConfidence: this.assessModelConfidence(),
-          layerActivations: this.getLayerActivations()
+          modelConfidence: this.assessModelConfidence(predictions),
+          predictionFactors: this.getPredictionFactors()
         }
       };
     } catch (error) {
@@ -18,44 +43,41 @@ export class DeepLearningAgent extends BaseAgent {
       return {
         type: 'deep-learning',
         analysis: {
-          neuralNetworkPredictions: {},
+          predictions: {},
           featureImportance: [],
           modelConfidence: 0,
-          layerActivations: []
+          predictionFactors: []
         }
       };
     }
   }
 
-  private static generatePredictions(): any {
-    return {
-      shortTerm: Math.random() * 100 + 100,
-      mediumTerm: Math.random() * 150 + 100,
-      longTerm: Math.random() * 200 + 100,
-      confidence: Math.random() * 0.3 + 0.7
-    };
-  }
-
   private static calculateFeatureImportance(): string[] {
     return [
-      'Price History',
-      'Volume Patterns',
-      'Market Sentiment',
+      'Historical Price Patterns',
+      'Volume Analysis',
+      'Market Sentiment Indicators',
       'Technical Indicators',
       'Fundamental Metrics'
     ];
   }
 
-  private static assessModelConfidence(): number {
-    return Math.random() * 0.3 + 0.7; // Returns 0.7-1.0
+  private static assessModelConfidence(predictions: any): number {
+    const confidences = [
+      predictions.shortTerm.confidence,
+      predictions.mediumTerm.confidence,
+      predictions.longTerm.confidence
+    ];
+    return Number((confidences.reduce((a, b) => a + b, 0) / 3).toFixed(2));
   }
 
-  private static getLayerActivations(): any[] {
+  private static getPredictionFactors(): string[] {
     return [
-      { layer: 'input', activation: Math.random() },
-      { layer: 'hidden1', activation: Math.random() },
-      { layer: 'hidden2', activation: Math.random() },
-      { layer: 'output', activation: Math.random() }
+      'Price Momentum',
+      'Market Volatility',
+      'Trading Volume Trends',
+      'Market Sentiment Analysis',
+      'Technical Pattern Recognition'
     ];
   }
 }
