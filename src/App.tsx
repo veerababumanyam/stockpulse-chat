@@ -14,6 +14,7 @@ import Watchlist from "./pages/Watchlist";
 import Screener from "./pages/Screener";
 import Agents from "./pages/Agents";
 import SearchResults from "./pages/SearchResults";
+import Chat from "./pages/Chat";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/screener" element={<Screener />} />
           <Route path="/agents" element={<Agents />} />
           <Route path="/search" element={<SearchResults />} />
+          <Route path="/chat" element={<Chat />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

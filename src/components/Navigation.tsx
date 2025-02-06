@@ -1,5 +1,5 @@
 
-import { Home, Sun, Moon, UserCog, LayoutDashboard, Key, Briefcase, Star, Filter, Cpu, Search } from "lucide-react";
+import { Home, Sun, Moon, UserCog, LayoutDashboard, Key, Briefcase, Star, Filter, Cpu, Search, MessageSquare } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,23 @@ export const Navigation = () => {
       description: "Opening API keys management",
     });
     navigate("/api-keys");
+  };
+
+  const handleChat = () => {
+    try {
+      toast({
+        title: "Opening Chat",
+        description: "Launching chat window",
+      });
+      navigate("/chat");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to open chat window",
+        variant: "destructive",
+      });
+      console.error("Chat navigation error:", error);
+    }
   };
 
   const handlePreferences = () => {
@@ -132,6 +149,16 @@ export const Navigation = () => {
           >
             <Cpu className="w-5 h-5" aria-hidden="true" />
             <span className="font-medium">Agents</span>
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+            aria-label="Open chat"
+            onClick={handleChat}
+          >
+            <MessageSquare className="w-5 h-5" aria-hidden="true" />
+            <span className="font-medium">Chat</span>
           </Button>
         </div>
 
