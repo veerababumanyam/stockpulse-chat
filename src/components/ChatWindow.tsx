@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { MessageSquare, Send } from "lucide-react";
+import { createClient } from "@supabase/supabase-js";
 
 interface Message {
   content: string;
@@ -10,23 +11,48 @@ interface Message {
 export const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
 
-    const newMessage: Message = { content: input, isUser: true };
-    setMessages([...messages, newMessage]);
+    const userMessage: Message = { content: input, isUser: true };
+    setMessages(prev => [...prev, userMessage]);
     setInput("");
+    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: Message = {
-        content: "I'm processing your request about the stock market...",
+    try {
+      const response = await fetch('/api/stock-chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: input }),
+      });
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      const aiMessage: Message = {
+        content: data.answer,
         isUser: false,
       };
-      setMessages((prev) => [...prev, aiResponse]);
-    }, 1000);
+
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error:', error);
+      const errorMessage: Message = {
+        content: "Sorry, I encountered an error while processing your request. Please try again.",
+        isUser: false,
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -49,6 +75,11 @@ export const ChatWindow = () => {
             {message.content}
           </div>
         ))}
+        {isLoading && (
+          <div className="bg-muted/50 mr-auto max-w-[80%] mb-4 p-3 rounded-lg">
+            Analyzing stock data...
+          </div>
+        )}
       </div>
 
       <form
@@ -62,10 +93,14 @@ export const ChatWindow = () => {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about stocks..."
             className="flex-1 p-2 rounded-lg bg-background/50 border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+            disabled={isLoading}
           />
           <button
             type="submit"
-            className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            className={`p-2 rounded-lg bg-primary text-primary-foreground transition-colors ${
+              isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary/90'
+            }`}
+            disabled={isLoading}
           >
             <Send className="w-5 h-5" />
           </button>
