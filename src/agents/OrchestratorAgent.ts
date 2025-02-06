@@ -3,106 +3,124 @@ import { FundamentalAnalysisAgent } from './FundamentalAnalysisAgent';
 import { TechnicalAnalysisAgent } from './TechnicalAnalysisAgent';
 import { NewsAnalysisAgent } from './NewsAnalysisAgent';
 import { AnalystRecommendationsAgent } from './AnalystRecommendationsAgent';
+import { MarketSentimentAgent } from './MarketSentimentAgent';
+import { RiskAssessmentAgent } from './RiskAssessmentAgent';
+import { MacroeconomicAnalysisAgent } from './MacroeconomicAnalysisAgent';
 
 export class OrchestratorAgent {
   static async orchestrateAnalysis(stockData: any) {
     try {
-      // Run all analyses in parallel
+      // Run core analyses in parallel
       const [
         fundamentalAnalysis,
         technicalAnalysis,
         newsAnalysis,
-        analystAnalysis
+        analystAnalysis,
+        marketSentiment,
+        riskAssessment,
+        macroAnalysis
       ] = await Promise.all([
         FundamentalAnalysisAgent.analyze(stockData),
         TechnicalAnalysisAgent.analyze(stockData),
         NewsAnalysisAgent.analyze(stockData.quote.symbol),
-        AnalystRecommendationsAgent.analyze(stockData.quote.symbol)
+        AnalystRecommendationsAgent.analyze(stockData.quote.symbol),
+        MarketSentimentAgent.analyze(stockData.quote.symbol),
+        RiskAssessmentAgent.analyze(stockData),
+        MacroeconomicAnalysisAgent.analyze(stockData.quote.symbol)
       ]);
 
-      // Combine all analyses into a formatted output
       return this.formatOutput({
         symbol: stockData.quote.symbol,
         companyName: stockData.profile.companyName,
         fundamental: fundamentalAnalysis,
         technical: technicalAnalysis,
         news: newsAnalysis,
-        analyst: analystAnalysis
+        analyst: analystAnalysis,
+        sentiment: marketSentiment,
+        risk: riskAssessment,
+        macro: macroAnalysis
       });
     } catch (error) {
       console.error('Error in orchestration:', error);
-      return 'Error analyzing stock data. Please try again.';
+      throw new Error('Error analyzing stock data. Please try again.');
     }
   }
 
   private static formatOutput(data: any): string {
-    // Filter out sections with no data
-    const hasNews = data.news.analysis.recentNews && data.news.analysis.recentNews.length > 0;
-    const hasRecommendations = data.analyst.analysis.recommendations && data.analyst.analysis.recommendations.length > 0;
-    const hasEstimates = data.analyst.analysis.estimates && data.analyst.analysis.estimates.length > 0;
-
     return `
-📊 Analysis Report for ${data.companyName} (${data.symbol})
+📊 Comprehensive Analysis Report for ${data.companyName} (${data.symbol})
 
 🔎 Fundamental Analysis
 ------------------------
-${data.fundamental.analysis.valuationMetrics ? `Valuation Metrics:
-• P/E Ratio: ${data.fundamental.analysis.valuationMetrics.peRatio || 'N/A'}
-• Market Cap: ${data.fundamental.analysis.valuationMetrics.marketCap ? this.formatLargeNumber(data.fundamental.analysis.valuationMetrics.marketCap) : 'N/A'}` : 'Valuation metrics not available'}
-
-${data.fundamental.analysis.financialHealth ? `Financial Health:
-• Debt to Equity: ${data.fundamental.analysis.financialHealth.debtToEquity || 'N/A'}
-• Current Ratio: ${data.fundamental.analysis.financialHealth.currentRatio || 'N/A'}` : 'Financial health metrics not available'}
-
-Recommendation: ${data.fundamental.analysis.recommendation || 'No recommendation available'}
+${this.formatSection(data.fundamental, 'Fundamental metrics and company health')}
 
 📈 Technical Analysis
 ------------------------
-${data.technical.analysis.priceAction ? `Price Action:
-• Current Price: $${data.technical.analysis.priceAction.currentPrice || 'N/A'}
-• 50-day MA: $${data.technical.analysis.priceAction.ma50 || 'N/A'}
-• 200-day MA: $${data.technical.analysis.priceAction.ma200 || 'N/A'}` : 'Price action data not available'}
+${this.formatSection(data.technical, 'Technical indicators and price action')}
 
-${data.technical.analysis.signals ? `Signals:
-• Trend: ${data.technical.analysis.signals.trendSignal || 'N/A'}
-• Volume: ${data.technical.analysis.signals.volumeSignal || 'N/A'}
-• Overall: ${data.technical.analysis.signals.overallSignal || 'N/A'}` : 'Technical signals not available'}
-
-${hasNews ? `📰 Recent News Analysis
+📰 News & Sentiment Analysis
 ------------------------
-${data.news.analysis.recentNews.map((news: any) => `
-${news.date}: ${news.title}
-${news.summary || ''}
-Sentiment: ${news.sentiment}
-`).join('\n')}
+${this.formatSection(data.news, 'Recent news and market sentiment')}
+${this.formatSection(data.sentiment, 'Overall market sentiment')}
 
-Overall News Sentiment: ${data.news.analysis.overallSentiment}` : ''}
-
-${hasRecommendations || hasEstimates ? `👥 Analyst Coverage
+👥 Expert Analysis
 ------------------------
-${hasRecommendations ? `Recent Recommendations:
-${data.analyst.analysis.recommendations.map((rec: any) => `
-${rec.date}: ${rec.company}
-• Recommendation: ${rec.recommendation}
-• Target Price: ${rec.targetPrice ? `$${rec.targetPrice}` : 'Not provided'}
-`).join('\n')}` : 'No recent analyst recommendations available'}
+${this.formatSection(data.analyst, 'Analyst recommendations and forecasts')}
 
-${hasEstimates ? `Recent Estimates:
-${data.analyst.analysis.estimates.map((est: any) => `
-${est.date}:
-• EPS: ${est.estimatedEPS ? `Est. $${est.estimatedEPS}` : 'Est. N/A'} | ${est.actualEPS ? `Act. $${est.actualEPS}` : 'Act. pending'}
-• Revenue: ${est.estimatedRevenue ? `Est. ${this.formatLargeNumber(est.estimatedRevenue)}` : 'Est. N/A'} | ${est.actualRevenue ? `Act. ${this.formatLargeNumber(est.actualRevenue)}` : 'Act. pending'}
-`).join('\n')}` : 'No recent analyst estimates available'}
-
-Consensus: ${data.analyst.analysis.consensus}` : ''}
-
-🎯 Overall Assessment
+⚠️ Risk Assessment
 ------------------------
-• Fundamental Outlook: ${data.fundamental.analysis.recommendation || 'No recommendation available'}
-• Technical Signals: ${data.technical.analysis.signals?.overallSignal || 'No signals available'}
-• Market Sentiment: ${data.news.analysis.overallSentiment || 'No sentiment data available'}
-• Analyst Consensus: ${data.analyst.analysis.consensus || 'No consensus available'}
+${this.formatSection(data.risk, 'Risk metrics and warnings')}
+
+🌐 Macroeconomic Context
+------------------------
+${this.formatSection(data.macro, 'Macroeconomic factors and impact')}
+
+🎯 Summary & Recommendations
+------------------------
+• Technical Outlook: ${data.technical.analysis.signals?.overallSignal || 'N/A'}
+• Fundamental Position: ${data.fundamental.analysis.recommendation || 'N/A'}
+• Risk Level: ${data.risk.analysis.riskLevel || 'N/A'}
+• Market Sentiment: ${data.sentiment.analysis.overallSentiment || 'N/A'}
 `;
+  }
+
+  private static formatSection(data: any, fallbackMessage: string): string {
+    if (!data || !data.analysis) {
+      return `Data not available for ${fallbackMessage}`;
+    }
+
+    let output = '';
+    Object.entries(data.analysis).forEach(([key, value]: [string, any]) => {
+      if (Array.isArray(value)) {
+        output += `${this.formatArrayData(value, key)}\n`;
+      } else if (typeof value === 'object' && value !== null) {
+        output += `${this.formatObjectData(value, key)}\n`;
+      } else if (value !== undefined && value !== null) {
+        output += `• ${key}: ${value}\n`;
+      }
+    });
+
+    return output || `No data available for ${fallbackMessage}`;
+  }
+
+  private static formatArrayData(arr: any[], key: string): string {
+    if (!arr.length) return '';
+    return arr.map(item => {
+      if (typeof item === 'object') {
+        return Object.entries(item)
+          .filter(([_, v]) => v !== undefined && v !== null)
+          .map(([k, v]) => `• ${k}: ${v}`)
+          .join('\n');
+      }
+      return `• ${item}`;
+    }).join('\n');
+  }
+
+  private static formatObjectData(obj: Record<string, any>, key: string): string {
+    return Object.entries(obj)
+      .filter(([_, v]) => v !== undefined && v !== null)
+      .map(([k, v]) => `• ${k}: ${v}`)
+      .join('\n');
   }
 
   private static formatLargeNumber(num: number | null | undefined): string {
