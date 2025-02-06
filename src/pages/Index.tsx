@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
-import { Sun, Moon, LineChart, ArrowTrendingUp, ShieldCheck, Mail } from "lucide-react";
+import { Sun, Moon, LineChart, TrendingUp, ShieldCheck, Mail } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -72,7 +72,7 @@ const Index = () => {
             </p>
           </div>
           <div className="p-6 rounded-lg glass-panel space-y-4 animate-fadeIn delay-400">
-            <ArrowTrendingUp className="w-12 h-12 text-primary" />
+            <TrendingUp className="w-12 h-12 text-primary" />
             <h3 className="text-xl font-semibold">AI-Powered Predictions</h3>
             <p className="text-muted-foreground">
               Advanced algorithms predict market movements with high accuracy
