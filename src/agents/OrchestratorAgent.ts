@@ -42,64 +42,66 @@ export class OrchestratorAgent {
 🔎 Fundamental Analysis
 ------------------------
 Valuation Metrics:
-• P/E Ratio: ${data.fundamental.analysis.valuationMetrics.peRatio}
-• Market Cap: ${this.formatLargeNumber(data.fundamental.analysis.valuationMetrics.marketCap)}
+• P/E Ratio: ${data.fundamental.analysis.valuationMetrics?.peRatio || 'N/A'}
+• Market Cap: ${data.fundamental.analysis.valuationMetrics?.marketCap ? this.formatLargeNumber(data.fundamental.analysis.valuationMetrics.marketCap) : 'N/A'}
 
 Financial Health:
-• Debt to Equity: ${data.fundamental.analysis.financialHealth.debtToEquity}
-• Current Ratio: ${data.fundamental.analysis.financialHealth.currentRatio}
+• Debt to Equity: ${data.fundamental.analysis.financialHealth?.debtToEquity || 'N/A'}
+• Current Ratio: ${data.fundamental.analysis.financialHealth?.currentRatio || 'N/A'}
 
-Recommendation: ${data.fundamental.analysis.recommendation}
+Recommendation: ${data.fundamental.analysis.recommendation || 'N/A'}
 
 📈 Technical Analysis
 ------------------------
 Price Action:
-• Current Price: $${data.technical.analysis.priceAction.currentPrice}
-• 50-day MA: $${data.technical.analysis.priceAction.ma50}
-• 200-day MA: $${data.technical.analysis.priceAction.ma200}
+• Current Price: $${data.technical.analysis.priceAction?.currentPrice || 'N/A'}
+• 50-day MA: $${data.technical.analysis.priceAction?.ma50 || 'N/A'}
+• 200-day MA: $${data.technical.analysis.priceAction?.ma200 || 'N/A'}
 
 Signals:
-• Trend: ${data.technical.analysis.signals.trendSignal}
-• Volume: ${data.technical.analysis.signals.volumeSignal}
-• Overall: ${data.technical.analysis.signals.overallSignal}
+• Trend: ${data.technical.analysis.signals?.trendSignal || 'N/A'}
+• Volume: ${data.technical.analysis.signals?.volumeSignal || 'N/A'}
+• Overall: ${data.technical.analysis.signals?.overallSignal || 'N/A'}
 
 📰 Recent News Analysis
 ------------------------
-${data.news.analysis.recentNews.map((news: any) => `
-${news.date}: ${news.title}
-Sentiment: ${news.sentiment}
+${(data.news.analysis.recentNews || []).map((news: any) => `
+${news.date || 'N/A'}: ${news.title || 'N/A'}
+Sentiment: ${news.sentiment || 'N/A'}
 `).join('\n')}
 
-Overall News Sentiment: ${data.news.analysis.overallSentiment}
+Overall News Sentiment: ${data.news.analysis.overallSentiment || 'N/A'}
 
 👥 Analyst Coverage
 ------------------------
 Recent Recommendations:
-${data.analyst.analysis.recommendations.map((rec: any) => `
-${rec.date}: ${rec.company}
-• Recommendation: ${rec.recommendation}
-• Target Price: $${rec.targetPrice}
+${(data.analyst.analysis.recommendations || []).map((rec: any) => `
+${rec.date || 'N/A'}: ${rec.company || 'N/A'}
+• Recommendation: ${rec.recommendation || 'N/A'}
+• Target Price: ${rec.targetPrice ? `$${rec.targetPrice}` : 'N/A'}
 `).join('\n')}
 
 Recent Estimates:
-${data.analyst.analysis.estimates.map((est: any) => `
-${est.date}:
-• EPS: Est. $${est.estimatedEPS} | Act. $${est.actualEPS || 'N/A'}
-• Revenue: Est. ${this.formatLargeNumber(est.estimatedRevenue)} | Act. ${est.actualRevenue ? this.formatLargeNumber(est.actualRevenue) : 'N/A'}
+${(data.analyst.analysis.estimates || []).map((est: any) => `
+${est.date || 'N/A'}:
+• EPS: Est. ${est.estimatedEPS ? `$${est.estimatedEPS}` : 'N/A'} | Act. ${est.actualEPS ? `$${est.actualEPS}` : 'N/A'}
+• Revenue: Est. ${est.estimatedRevenue ? this.formatLargeNumber(est.estimatedRevenue) : 'N/A'} | Act. ${est.actualRevenue ? this.formatLargeNumber(est.actualRevenue) : 'N/A'}
 `).join('\n')}
 
-Consensus: ${data.analyst.analysis.consensus}
+Consensus: ${data.analyst.analysis.consensus || 'N/A'}
 
 🎯 Overall Assessment
 ------------------------
-• Fundamental Outlook: ${data.fundamental.analysis.recommendation}
-• Technical Signals: ${data.technical.analysis.signals.overallSignal}
-• Market Sentiment: ${data.news.analysis.overallSentiment}
-• Analyst Consensus: ${data.analyst.analysis.consensus}
+• Fundamental Outlook: ${data.fundamental.analysis.recommendation || 'N/A'}
+• Technical Signals: ${data.technical.analysis.signals?.overallSignal || 'N/A'}
+• Market Sentiment: ${data.news.analysis.overallSentiment || 'N/A'}
+• Analyst Consensus: ${data.analyst.analysis.consensus || 'N/A'}
 `;
   }
 
-  private static formatLargeNumber(num: number): string {
+  private static formatLargeNumber(num: number | null | undefined): string {
+    if (num === null || num === undefined) return 'N/A';
+    
     if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
     if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
     if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
