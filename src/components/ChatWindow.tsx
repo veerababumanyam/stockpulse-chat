@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Send, Download } from "lucide-react";
 import { Input } from "./ui/input";
@@ -77,6 +78,7 @@ const ChatWindow = () => {
 
   const handleDownloadPDF = async (analysisData: any) => {
     try {
+      console.log('Analysis data for PDF:', analysisData);
       await generateAnalysisPDF(analysisData);
       toast({
         title: "Success",
@@ -109,12 +111,14 @@ const ChatWindow = () => {
       }
 
       const analysis = await OrchestratorAgent.orchestrateAnalysis(stockData);
-      const { textOutput, formattedData } = analysis;
+      if (typeof analysis === 'string') {
+        throw new Error('Invalid analysis response');
+      }
 
       const aiMessage: Message = {
-        content: textOutput,
+        content: analysis.textOutput,
         isUser: false,
-        data: formattedData
+        data: analysis.formattedData
       };
 
       setMessages(prev => [...prev, aiMessage]);
@@ -130,8 +134,22 @@ const ChatWindow = () => {
     }
   };
 
+  const lastAnalysis = messages.length > 0 ? messages[messages.length - 1] : null;
+
   return (
     <div className="h-[90vh] glass-panel flex flex-col bg-[#F1F0FB]/80 border-[#E5DEFF]">
+      {lastAnalysis && !lastAnalysis.isUser && lastAnalysis.data && (
+        <div className="p-4 border-b border-[#E5DEFF]/50">
+          <Button
+            onClick={() => handleDownloadPDF(lastAnalysis.data)}
+            className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] flex items-center justify-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Download Latest Analysis Report
+          </Button>
+        </div>
+      )}
+      
       <div className="flex-1 overflow-y-auto p-4 scrollbar-none">
         {messages.map((message, index) => (
           <div key={index} className="mb-4">
@@ -144,15 +162,6 @@ const ChatWindow = () => {
             >
               {message.content}
             </div>
-            {!message.isUser && message.data && (
-              <Button
-                onClick={() => handleDownloadPDF(message.data)}
-                className="mt-2 bg-[#8B5CF6] hover:bg-[#7C3AED] flex items-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Download PDF Report
-              </Button>
-            )}
           </div>
         ))}
         {isLoading && (
