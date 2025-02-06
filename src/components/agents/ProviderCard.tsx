@@ -75,7 +75,7 @@ export const ProviderCard = ({
               </Dialog>
             </div>
             <div className="flex flex-wrap gap-2">
-              {provider.selectedModels && provider.selectedModels.map((model) => (
+              {(provider.selectedModels || []).map((model) => (
                 <Badge key={model} variant="secondary">
                   {model}
                 </Badge>
