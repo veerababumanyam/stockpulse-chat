@@ -1,3 +1,4 @@
+
 import { FundamentalAnalysisAgent } from './FundamentalAnalysisAgent';
 import { TechnicalAnalysisAgent } from './TechnicalAnalysisAgent';
 import { NewsAnalysisAgent } from './NewsAnalysisAgent';
@@ -22,8 +23,6 @@ import { ETFFlowAgent } from './ETFFlowAgent';
 import { LegalDocumentAgent } from './LegalDocumentAgent';
 import { PatentAnalysisAgent } from './PatentAnalysisAgent';
 import { BigPlayerTrackingAgent } from './BigPlayerTrackingAgent';
-// Temporarily commented out SocialMediaScraperAgent
-// import { SocialMediaScraperAgent } from './SocialMediaScraperAgent';
 
 interface AgentResult {
   data: any;
@@ -34,6 +33,19 @@ type AgentResults = Map<string, AgentResult>;
 
 export class OrchestratorAgent {
   private static results: AgentResults = new Map();
+
+  private static async executeAgent(name: string, agentFn: () => Promise<any>): Promise<void> {
+    try {
+      const result = await agentFn();
+      this.results.set(name, { data: result });
+    } catch (error: any) {
+      console.error(`Error in ${name} agent:`, error);
+      this.results.set(name, { 
+        data: null, 
+        error: `${name} analysis failed: ${error.message}` 
+      });
+    }
+  }
 
   static async orchestrateAnalysis(stockData: any) {
     this.results.clear();
@@ -63,9 +75,7 @@ export class OrchestratorAgent {
         this.executeAgent('etfFlow', () => ETFFlowAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('legalDocument', () => LegalDocumentAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('patentAnalysis', () => PatentAnalysisAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('bigPlayerTracking', () => BigPlayerTrackingAgent.analyze(stockData.quote.symbol)),
-        // Temporarily disabled SocialMediaScraperAgent
-        // this.executeAgent('socialMedia', () => SocialMediaScraperAgent.analyze(stockData.quote.symbol))
+        this.executeAgent('bigPlayerTracking', () => BigPlayerTrackingAgent.analyze(stockData.quote.symbol))
       ];
 
       await Promise.all(agentPromises);
@@ -136,6 +146,10 @@ export class OrchestratorAgent {
     return '⚪ HOLD';
   }
 
+  private static formatHighlight(text: string): string {
+    return `*** ${text} ***`;
+  }
+
   private static formatOutput(data: any): string {
     const consolidatedSignal = this.getConsolidatedSignal(data);
     
@@ -204,10 +218,6 @@ ${this.formatHighlight(this.formatSection(data.results.sentiment?.data, 'Market 
 • ETF Flows: ${this.formatSection(data.results.etfFlow?.data, 'Fund movements')}
 • Legal Analysis: ${this.formatSection(data.results.legalDocument?.data, 'Legal considerations')}
 `;
-  }
-
-  private static formatHighlight(text: string): string {
-    return `*** ${text} ***`;
   }
 
   private static formatSection(data: any, fallbackMessage: string): string {
