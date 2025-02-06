@@ -1,4 +1,3 @@
-
 import { FundamentalAnalysisAgent } from './FundamentalAnalysisAgent';
 import { TechnicalAnalysisAgent } from './TechnicalAnalysisAgent';
 import { NewsAnalysisAgent } from './NewsAnalysisAgent';
@@ -17,6 +16,10 @@ import { CashFlowAnalysisAgent } from './CashFlowAnalysisAgent';
 import { VolatilityAnalysisAgent } from './VolatilityAnalysisAgent';
 import { GrowthTrendAnalysisAgent } from './GrowthTrendAnalysisAgent';
 import { DividendAnalysisAgent } from './DividendAnalysisAgent';
+// New imports
+import { NewsScraperAgent } from './NewsScraperAgent';
+import { FinancialStatementAgent } from './FinancialStatementAgent';
+import { ETFFlowAgent } from './ETFFlowAgent';
 
 export class OrchestratorAgent {
   static async orchestrateAnalysis(stockData: any) {
@@ -40,7 +43,11 @@ export class OrchestratorAgent {
         cashFlow,
         volatility,
         growthTrends,
-        dividend
+        dividend,
+        // New analyses
+        newsScraper,
+        financialStatement,
+        etfFlow
       ] = await Promise.all([
         FundamentalAnalysisAgent.analyze(stockData),
         TechnicalAnalysisAgent.analyze(stockData),
@@ -59,7 +66,11 @@ export class OrchestratorAgent {
         CashFlowAnalysisAgent.analyze(stockData.quote.symbol),
         VolatilityAnalysisAgent.analyze(stockData.quote.symbol),
         GrowthTrendAnalysisAgent.analyze(stockData.quote.symbol),
-        DividendAnalysisAgent.analyze(stockData.quote.symbol)
+        DividendAnalysisAgent.analyze(stockData.quote.symbol),
+        // New agent calls
+        NewsScraperAgent.analyze(stockData.quote.symbol),
+        FinancialStatementAgent.analyze(stockData.quote.symbol),
+        ETFFlowAgent.analyze(stockData.quote.symbol)
       ]);
 
       return this.formatOutput({
@@ -82,7 +93,11 @@ export class OrchestratorAgent {
         cashFlow,
         volatility,
         growthTrends,
-        dividend
+        dividend,
+        // New analysis results
+        newsScraper,
+        financialStatement,
+        etfFlow
       });
     } catch (error) {
       console.error('Error in orchestration:', error);
@@ -124,6 +139,15 @@ ${this.formatSection(data.valuation, 'Valuation metrics and intrinsic value')}
 ------------------------
 ${this.formatSection(data.news, 'Recent news and market sentiment')}
 ${this.formatSection(data.sentiment, 'Overall market sentiment')}
+${this.formatSection(data.newsScraper, 'Scraped news and sentiment')}
+
+🏦 Financial Health
+------------------------
+${this.formatSection(data.financialStatement, 'Financial statement analysis')}
+
+💸 ETF Flow Analysis
+------------------------
+${this.formatSection(data.etfFlow, 'ETF flow and holdings analysis')}
 
 👥 Expert Analysis
 ------------------------
