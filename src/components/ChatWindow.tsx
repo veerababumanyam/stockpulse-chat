@@ -217,7 +217,7 @@ Format numbers appropriately (e.g., millions as 'M', billions as 'B'). Always in
         <h2 className="text-lg font-semibold">StockPulse Chat</h2>
       </div>
 
-      <div className="h-[calc(100vh-12rem)] overflow-y-auto p-4 scrollbar-none">
+      <div className="h-[calc(100vh-16rem)] overflow-y-auto p-4 scrollbar-none">
         {messages.map((message, index) => (
           <div
             key={index}
@@ -239,7 +239,7 @@ Format numbers appropriately (e.g., millions as 'M', billions as 'B'). Always in
 
       <form
         onSubmit={handleSubmit}
-        className="absolute bottom-0 left-0 right-0 p-4 border-t border-border/50 bg-background/50 backdrop-blur-sm"
+        className="p-4 border-t border-border/50 bg-background/50 backdrop-blur-sm"
       >
         <div className="flex gap-2">
           <Input
@@ -256,3 +256,4 @@ Format numbers appropriately (e.g., millions as 'M', billions as 'B'). Always in
     </div>
   );
 };
+
