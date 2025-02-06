@@ -2,6 +2,10 @@
 import html2pdf from 'html2pdf.js';
 
 export const generateAnalysisPDF = async (analysisData: any) => {
+  if (!analysisData) {
+    throw new Error('No analysis data provided');
+  }
+
   console.log('Generating PDF with data:', analysisData);
   
   // Create the content for the PDF
@@ -43,7 +47,7 @@ export const generateAnalysisPDF = async (analysisData: any) => {
         </table>
       </div>
 
-      ${Object.entries(analysisData.results).map(([key, value]: [string, any]) => {
+      ${Object.entries(analysisData.results || {}).map(([key, value]: [string, any]) => {
         if (!value || !value.data) return '';
         return `
           <div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 8px;">
