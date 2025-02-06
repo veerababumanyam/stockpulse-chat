@@ -53,6 +53,9 @@ import { OutputFormatter } from './utils/OutputFormatter';
 import { AlternativeDataAnalysisAgent } from './AlternativeDataAnalysisAgent';
 import { SeasonalityAnalysisAgent } from './SeasonalityAnalysisAgent';
 import { LiquidityAnalysisAgent } from './LiquidityAnalysisAgent';
+import { OptionsMarketAnalysisAgent } from './OptionsMarketAnalysisAgent';
+import { RegulatoryComplianceAgent } from './RegulatoryComplianceAgent';
+import { InsiderTradingAgent } from './InsiderTradingAgent';
 
 export class OrchestratorAgent {
   private static results: AgentResults = new Map();
@@ -132,6 +135,9 @@ export class OrchestratorAgent {
         this.executeAgent('alternativeData', () => AlternativeDataAnalysisAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('seasonality', () => SeasonalityAnalysisAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('liquidity', () => LiquidityAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('optionsMarket', () => OptionsMarketAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('regulatoryCompliance', () => RegulatoryComplianceAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('insiderTrading', () => InsiderTradingAgent.analyze(stockData.quote.symbol)),
       ];
 
       await Promise.all(agentPromises);
