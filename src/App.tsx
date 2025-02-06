@@ -9,6 +9,10 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import ApiKeys from "./pages/ApiKeys";
+import Portfolio from "./pages/Portfolio";
+import Watchlist from "./pages/Watchlist";
+import Screener from "./pages/Screener";
+import Agents from "./pages/Agents";
 
 const queryClient = new QueryClient();
 
@@ -23,7 +27,10 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/api-keys" element={<ApiKeys />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/portfolio" element={<Portfolio />} />
+          <Route path="/watchlist" element={<Watchlist />} />
+          <Route path="/screener" element={<Screener />} />
+          <Route path="/agents" element={<Agents />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

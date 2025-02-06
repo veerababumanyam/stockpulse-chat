@@ -1,10 +1,11 @@
 
-import { Home, Sun, Moon, UserCog, LayoutDashboard, Key } from "lucide-react";
+import { Home, Sun, Moon, UserCog, LayoutDashboard, Key, Briefcase, Star, Filter, Cpu, Search } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { SearchBar } from "@/components/SearchBar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,12 +97,46 @@ export const Navigation = () => {
           <Button 
             variant="ghost" 
             className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-            aria-label="Manage API Keys"
-            onClick={() => navigate("/api-keys")}
+            aria-label="Go to portfolio"
+            onClick={() => navigate("/portfolio")}
           >
-            <Key className="w-5 h-5" aria-hidden="true" />
-            <span className="font-medium">API Keys</span>
+            <Briefcase className="w-5 h-5" aria-hidden="true" />
+            <span className="font-medium">Portfolio</span>
           </Button>
+
+          <Button 
+            variant="ghost" 
+            className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+            aria-label="Go to watchlist"
+            onClick={() => navigate("/watchlist")}
+          >
+            <Star className="w-5 h-5" aria-hidden="true" />
+            <span className="font-medium">Watchlist</span>
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+            aria-label="Go to screener"
+            onClick={() => navigate("/screener")}
+          >
+            <Filter className="w-5 h-5" aria-hidden="true" />
+            <span className="font-medium">Screener</span>
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+            aria-label="Go to agents"
+            onClick={() => navigate("/agents")}
+          >
+            <Cpu className="w-5 h-5" aria-hidden="true" />
+            <span className="font-medium">Agents</span>
+          </Button>
+        </div>
+
+        <div className="flex-1 flex justify-center mx-4">
+          <SearchBar />
         </div>
         
         <div className="flex items-center gap-2">
@@ -133,26 +168,26 @@ export const Navigation = () => {
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="flex items-center gap-2 cursor-pointer"
-                onClick={handleProfileSettings}
+                onClick={() => navigate("/profile")}
               >
                 Profile Settings
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="flex items-center gap-2 cursor-pointer"
-                onClick={handlePreferences}
+                onClick={() => navigate("/api-keys")}
               >
-                Preferences
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="flex items-center gap-2 cursor-pointer"
-                onClick={handleSecurity}
-              >
-                Security
+                API Keys
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="flex items-center gap-2 text-destructive cursor-pointer"
-                onClick={handleSignOut}
+                onClick={() => {
+                  toast({
+                    title: "Signing out",
+                    description: "You have been signed out successfully",
+                  });
+                  navigate("/");
+                }}
               >
                 Sign out
               </DropdownMenuItem>
