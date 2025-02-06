@@ -45,7 +45,7 @@ export class TimeSeriesForecasterAgent extends BaseAgent {
     }
   }
 
-  private static generateForecast(prices: number[], dates: string[]): any[] {
+  protected static generateForecast(prices: number[], dates: string[]): any[] {
     const lastPrice = prices[0];
     const volatility = this.calculateVolatility(prices);
     
@@ -59,7 +59,7 @@ export class TimeSeriesForecasterAgent extends BaseAgent {
     });
   }
 
-  private static analyzeTrends(prices: number[]): any {
+  protected static analyzeTrends(prices: number[]): any {
     const shortTerm = this.calculateTrend(prices.slice(0, 5));
     const mediumTerm = this.calculateTrend(prices.slice(0, 14));
     const longTerm = this.calculateTrend(prices);
@@ -71,7 +71,7 @@ export class TimeSeriesForecasterAgent extends BaseAgent {
     };
   }
 
-  private static analyzeSeasonality(prices: number[]): any {
+  protected static analyzeSeasonality(prices: number[]): any {
     const weeklyPattern = this.detectWeeklyPattern(prices);
     return {
       pattern: weeklyPattern ? 'weekly' : 'no clear pattern',
@@ -80,7 +80,7 @@ export class TimeSeriesForecasterAgent extends BaseAgent {
     };
   }
 
-  private static calculateConfidenceIntervals(prices: number[]): any {
+  protected static calculateConfidenceIntervals(prices: number[]): any {
     const lastPrice = prices[0];
     const volatility = this.calculateVolatility(prices);
     const standardDeviation = volatility * lastPrice;
@@ -93,7 +93,7 @@ export class TimeSeriesForecasterAgent extends BaseAgent {
     };
   }
 
-  private static calculateVolatility(prices: number[]): number {
+  protected static calculateVolatility(prices: number[]): number {
     const returns = [];
     for (let i = 1; i < prices.length; i++) {
       returns.push(Math.log(prices[i - 1] / prices[i]));
@@ -103,13 +103,13 @@ export class TimeSeriesForecasterAgent extends BaseAgent {
     return Math.sqrt(variance);
   }
 
-  private static calculateTrend(prices: number[]): number {
+  protected static calculateTrend(prices: number[]): number {
     const first = prices[prices.length - 1];
     const last = prices[0];
     return ((last - first) / first) * 100;
   }
 
-  private static getTrendDescription(trend: number): string {
+  protected static getTrendDescription(trend: number): string {
     if (trend > 5) return 'strong upward';
     if (trend > 2) return 'upward';
     if (trend < -5) return 'strong downward';
@@ -117,14 +117,15 @@ export class TimeSeriesForecasterAgent extends BaseAgent {
     return 'stable';
   }
 
-  private static detectWeeklyPattern(prices: number[]): boolean {
+  protected static detectWeeklyPattern(prices: number[]): boolean {
     // Simplified weekly pattern detection
     return prices.length >= 10;
   }
 
-  private static addDays(date: Date, days: number): Date {
+  protected static addDays(date: Date, days: number): Date {
     const result = new Date(date);
     result.setDate(result.getDate() + days);
     return result;
   }
 }
+
