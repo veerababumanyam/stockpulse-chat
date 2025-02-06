@@ -1,8 +1,9 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { AgentCard } from "@/components/agents/AgentCard";
 import { AgentConfigDialog } from "@/components/agents/AgentConfigDialog";
+import { LLMProviderSection } from "@/components/agents/LLMProviderSection";
+import { RAGSection } from "@/components/agents/RAGSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Filter, Plus, Search, ArrowUp, ArrowDown } from "lucide-react";
@@ -20,6 +21,12 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 interface AgentConfig {
   id: string;
@@ -225,87 +232,109 @@ const Agents = () => {
       <main className="container mx-auto pt-20 p-4">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-4xl font-bold">AI Agents</h1>
+            <h1 className="text-4xl font-bold">AI Management</h1>
             <p className="text-muted-foreground mt-2">
-              Manage your AI-powered market analysis agents
+              Configure your AI agents, LLM providers, and knowledge base
             </p>
           </div>
-          <Button onClick={handleAddAgent} className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Add Agent
-          </Button>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search agents..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-          
-          <div className="flex gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Filter className="w-4 h-4" />
-                  Filter
+        <Tabs defaultValue="agents" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="agents">AI Agents</TabsTrigger>
+            <TabsTrigger value="providers">LLM Providers</TabsTrigger>
+            <TabsTrigger value="rag">Knowledge Base</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="agents" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div className="text-2xl font-bold">AI Agents</div>
+              <Button onClick={handleAddAgent} className="flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Add Agent
+              </Button>
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search agents..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Filter className="w-4 h-4" />
+                      Filter
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuCheckboxItem
+                      checked={activeFilter === true}
+                      onCheckedChange={() => setActiveFilter(activeFilter === true ? null : true)}
+                    >
+                      Active
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={activeFilter === false}
+                      onCheckedChange={() => setActiveFilter(activeFilter === false ? null : false)}
+                    >
+                      Inactive
+                    </DropdownMenuCheckboxItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Select value={sortField} onValueChange={(value: "name" | "model") => setSortField(value)}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name">Name</SelectItem>
+                    <SelectItem value="model">Model</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  variant="outline"
+                  onClick={toggleSortDirection}
+                  className="flex items-center gap-2"
+                >
+                  {sortDirection === "asc" ? (
+                    <ArrowUp className="w-4 h-4" />
+                  ) : (
+                    <ArrowDown className="w-4 h-4" />
+                  )}
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuCheckboxItem
-                  checked={activeFilter === true}
-                  onCheckedChange={() => setActiveFilter(activeFilter === true ? null : true)}
-                >
-                  Active
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={activeFilter === false}
-                  onCheckedChange={() => setActiveFilter(activeFilter === false ? null : false)}
-                >
-                  Inactive
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </div>
+            </div>
 
-            <Select value={sortField} onValueChange={(value: "name" | "model") => setSortField(value)}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="model">Model</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredAndSortedAgents.map(agent => (
+                <AgentCard
+                  key={agent.id}
+                  agent={agent}
+                  onEdit={() => handleEditAgent(agent)}
+                  onToggle={() => handleToggleAgent(agent.id)}
+                  onDelete={() => handleDeleteAgent(agent.id)}
+                />
+              ))}
+            </div>
+          </TabsContent>
 
-            <Button
-              variant="outline"
-              onClick={toggleSortDirection}
-              className="flex items-center gap-2"
-            >
-              {sortDirection === "asc" ? (
-                <ArrowUp className="w-4 h-4" />
-              ) : (
-                <ArrowDown className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
-        </div>
+          <TabsContent value="providers">
+            <LLMProviderSection />
+          </TabsContent>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAndSortedAgents.map(agent => (
-            <AgentCard
-              key={agent.id}
-              agent={agent}
-              onEdit={() => handleEditAgent(agent)}
-              onToggle={() => handleToggleAgent(agent.id)}
-              onDelete={() => handleDeleteAgent(agent.id)}
-            />
-          ))}
-        </div>
+          <TabsContent value="rag">
+            <RAGSection />
+          </TabsContent>
+        </Tabs>
 
         <AgentConfigDialog
           open={isDialogOpen}
