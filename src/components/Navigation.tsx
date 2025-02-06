@@ -7,8 +7,8 @@ export const Navigation = () => {
 
   return (
     <nav className="fixed top-0 left-0 w-3/4 p-4 glass-panel z-50">
-      <div className="flex items-center justify-between">
-        <button className="nav-button flex items-center gap-2">
+      <div className="flex items-center justify-between max-w-4xl mx-auto">
+        <button className="nav-button">
           <Home className="w-5 h-5" />
           <span>Home</span>
         </button>

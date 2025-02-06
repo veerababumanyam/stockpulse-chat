@@ -57,11 +57,12 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    background: linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%);
   }
 }
 
 .glass-panel {
-  @apply backdrop-blur-lg bg-white/10 dark:bg-black/10 border border-white/20 dark:border-white/10;
+  @apply backdrop-blur-xl bg-white/10 dark:bg-black/10 border border-white/20 dark:border-white/10 shadow-lg;
 }
 
 .chat-window {
@@ -69,17 +70,18 @@
 }
 
 .nav-button {
-  @apply px-4 py-2 rounded-lg transition-all duration-200 hover:bg-primary/10;
+  @apply px-4 py-2 rounded-lg transition-all duration-200 hover:bg-primary/10 flex items-center gap-2 font-medium;
 }
 
 .message {
-  @apply p-4 rounded-lg mb-4 animate-fadeIn;
+  @apply p-4 rounded-lg mb-4 animate-fadeIn shadow-sm;
 }
 
 .user-message {
-  @apply bg-primary/10 ml-8;
+  @apply bg-primary/10 ml-8 backdrop-blur-sm;
 }
 
 .ai-message {
-  @apply bg-secondary/10 mr-8;
+  @apply bg-secondary/10 mr-8 backdrop-blur-sm;
 }
+

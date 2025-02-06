@@ -32,11 +32,11 @@ export const ChatWindow = () => {
   return (
     <div className="chat-window">
       <div className="flex items-center gap-2 p-4 border-b border-white/20">
-        <MessageSquare className="w-5 h-5" />
+        <MessageSquare className="w-5 h-5 text-primary" />
         <h2 className="text-lg font-semibold">StockPulse Chat</h2>
       </div>
 
-      <div className="h-[calc(100vh-8rem)] overflow-y-auto p-4">
+      <div className="h-[calc(100vh-8rem)] overflow-y-auto p-4 scrollbar-none">
         {messages.map((message, index) => (
           <div
             key={index}
@@ -59,7 +59,7 @@ export const ChatWindow = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about stocks..."
-            className="flex-1 p-2 rounded-lg bg-white/5 border border-white/20 focus:outline-none focus:ring-2 focus:ring-primary"
+            className="flex-1 p-2 rounded-lg bg-white/5 border border-white/20 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
           />
           <button
             type="submit"
