@@ -7,52 +7,13 @@ import { fetchStockData } from "@/utils/stockApi";
 import { CompanyHeader } from "@/components/search/CompanyHeader";
 import { OverviewTab } from "@/components/search/OverviewTab";
 import { AIAnalysisTab } from "@/components/search/AIAnalysisTab";
-import { formatLargeNumber, formatPercentage, getPriceChangeColor, getRecommendationColor } from "@/utils/formatting";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { ChartsTab } from "@/components/search/tabs/ChartsTab";
+import { FinancialsTab } from "@/components/search/tabs/FinancialsTab";
+import { ValuationTab } from "@/components/search/tabs/ValuationTab";
+import { AnalysisTab } from "@/components/search/tabs/AnalysisTab";
+import { NewsTab } from "@/components/search/tabs/NewsTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-  Legend,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  ScatterChart,
-  Scatter,
-  ComposedChart
-} from 'recharts';
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
 
 const SearchResults = () => {
@@ -187,309 +148,23 @@ const SearchResults = () => {
               </TabsContent>
 
               <TabsContent value="charts">
-                <div className="grid grid-cols-1 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Price History</CardTitle>
-                      <CardDescription>30-day price and volume</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-[400px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <ComposedChart data={historicalData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis 
-                              dataKey="date" 
-                              tickFormatter={(value) => new Date(value).toLocaleDateString()}
-                            />
-                            <YAxis 
-                              yAxisId="left"
-                              domain={['auto', 'auto']}
-                            />
-                            <YAxis 
-                              yAxisId="right"
-                              orientation="right"
-                              domain={['auto', 'auto']}
-                            />
-                            <Tooltip
-                              labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                              formatter={(value: any, name: string) => [
-                                name === 'Price' ? `$${value.toFixed(2)}` : formatLargeNumber(value),
-                                name
-                              ]}
-                            />
-                            <Legend />
-                            <Area
-                              yAxisId="right"
-                              type="monotone"
-                              dataKey="volume"
-                              fill="#8884d8"
-                              opacity={0.3}
-                              name="Volume"
-                            />
-                            <Line 
-                              yAxisId="left"
-                              type="monotone" 
-                              dataKey="close" 
-                              stroke="#8B5CF6"
-                              name="Price"
-                            />
-                          </ComposedChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {stockData.technical && stockData.technical.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Technical Indicators</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-[300px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={stockData.technical}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="date" />
-                              <YAxis domain={[0, 100]} />
-                              <Tooltip />
-                              <Legend />
-                              <Line 
-                                type="monotone" 
-                                dataKey="rsi" 
-                                stroke="#8B5CF6" 
-                                name="RSI"
-                              />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
+                <ChartsTab stockData={stockData} historicalData={historicalData} />
               </TabsContent>
 
               <TabsContent value="financials">
-                <div className="grid grid-cols-1 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Financial Metrics</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Metric</TableHead>
-                            <TableHead>Value</TableHead>
-                            <TableHead>Industry Average</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          <TableRow>
-                            <TableCell>Return on Equity (ROE)</TableCell>
-                            <TableCell>{formatPercentage(stockData.metrics.roeTTM || 0)}</TableCell>
-                            <TableCell>15%</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell>Return on Assets (ROA)</TableCell>
-                            <TableCell>{formatPercentage(stockData.metrics.roaTTM || 0)}</TableCell>
-                            <TableCell>5%</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell>Profit Margin</TableCell>
-                            <TableCell>{formatPercentage(stockData.metrics.netProfitMarginTTM || 0)}</TableCell>
-                            <TableCell>10%</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell>Operating Margin</TableCell>
-                            <TableCell>{formatPercentage(stockData.metrics.operatingProfitMarginTTM || 0)}</TableCell>
-                            <TableCell>15%</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell>Debt to Equity</TableCell>
-                            <TableCell>{(stockData.metrics.debtToEquityTTM || 0).toFixed(2)}</TableCell>
-                            <TableCell>1.5</TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-
-                  {stockData.earnings && stockData.earnings.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Earnings History</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-[300px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={stockData.earnings.slice(0, 8).reverse()}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="date" />
-                              <YAxis />
-                              <Tooltip />
-                              <Legend />
-                              <Bar 
-                                dataKey="actualEarningResult" 
-                                fill="#8B5CF6" 
-                                name="Actual EPS"
-                              />
-                              <Bar 
-                                dataKey="estimatedEarning" 
-                                fill="#D946EF" 
-                                name="Estimated EPS"
-                              />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
+                <FinancialsTab stockData={stockData} />
               </TabsContent>
 
               <TabsContent value="valuation">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Valuation Metrics</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <Table>
-                        <TableBody>
-                          <TableRow>
-                            <TableCell>P/E Ratio</TableCell>
-                            <TableCell>{stockData.quote.pe?.toFixed(2) || 'N/A'}</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell>Price to Book</TableCell>
-                            <TableCell>{stockData.quote.priceToBook?.toFixed(2) || 'N/A'}</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell>Price to Sales</TableCell>
-                            <TableCell>{stockData.ratios?.priceToSalesRatioTTM?.toFixed(2) || 'N/A'}</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell>EV/EBITDA</TableCell>
-                            <TableCell>{stockData.ratios?.enterpriseValueMultipleTTM?.toFixed(2) || 'N/A'}</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell>PEG Ratio</TableCell>
-                            <TableCell>{stockData.ratios?.pegRatioTTM?.toFixed(2) || 'N/A'}</TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Growth Metrics</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RadarChart data={[{
-                            'Revenue Growth': stockData.metrics.revenueGrowthTTM || 0,
-                            'Earnings Growth': stockData.metrics.netIncomeGrowthTTM || 0,
-                            'Asset Growth': stockData.metrics.totalAssetsGrowthTTM || 0,
-                            'Dividend Growth': stockData.metrics.dividendGrowthTTM || 0,
-                            'FCF Growth': stockData.metrics.freeCashFlowGrowthTTM || 0
-                          }]}>
-                            <PolarGrid />
-                            <PolarAngleAxis dataKey="name" />
-                            <PolarRadiusAxis />
-                            <Radar
-                              name="Growth Metrics"
-                              dataKey="value"
-                              stroke="#8B5CF6"
-                              fill="#8B5CF6"
-                              fillOpacity={0.6}
-                            />
-                          </RadarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                <ValuationTab stockData={stockData} />
               </TabsContent>
 
               <TabsContent value="analysis">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {stockData.upgrades && stockData.upgrades.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Recent Analyst Actions</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ScrollArea className="h-[400px]">
-                          {stockData.upgrades.map((upgrade: any, index: number) => (
-                            <div key={index} className="mb-4 p-4 border rounded">
-                              <div className="flex justify-between items-start mb-2">
-                                <div>
-                                  <p className="font-medium">{upgrade.gradingCompany}</p>
-                                  <p className="text-sm text-muted-foreground">{upgrade.publishedDate}</p>
-                                </div>
-                                <Badge className={getRecommendationColor(upgrade.newGrade)}>
-                                  {upgrade.newGrade}
-                                </Badge>
-                              </div>
-                              <p className="text-sm">
-                                Previous: {upgrade.previousGrade} → New: {upgrade.newGrade}
-                              </p>
-                            </div>
-                          ))}
-                        </ScrollArea>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {stockData.insider && stockData.insider.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Insider Trading</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ScrollArea className="h-[400px]">
-                          {stockData.insider.slice(0, 10).map((trade: any, index: number) => (
-                            <div key={index} className="mb-4 p-4 border rounded">
-                              <div className="flex justify-between items-start mb-2">
-                                <div>
-                                  <p className="font-medium">{trade.reportingName}</p>
-                                  <p className="text-sm text-muted-foreground">{trade.transactionDate}</p>
-                                </div>
-                                <Badge variant={trade.transactionType === 'Buy' ? 'default' : 'destructive'}>
-                                  {trade.transactionType}
-                                </Badge>
-                              </div>
-                              <p className="text-sm">
-                                Shares: {formatLargeNumber(trade.transactionShares)} @ ${trade.transactionPrice}
-                              </p>
-                            </div>
-                          ))}
-                        </ScrollArea>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
+                <AnalysisTab stockData={stockData} />
               </TabsContent>
 
               <TabsContent value="news">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Latest News</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* News content would go here - requires additional API endpoint */}
-                      <p className="text-muted-foreground">News feed integration coming soon...</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="ai-analysis">
-                <AIAnalysisTab aiAnalysis={aiAnalysis} isLoading={isLoading} />
+                <NewsTab />
               </TabsContent>
             </Tabs>
           </>
@@ -500,4 +175,3 @@ const SearchResults = () => {
 };
 
 export default SearchResults;
-
