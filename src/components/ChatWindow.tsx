@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { MessageSquare, Send, Key } from "lucide-react";
+import { MessageSquare, Send } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useToast } from "./ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface Message {
   content: string;
@@ -44,9 +45,9 @@ export const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showApiKeyForm, setShowApiKeyForm] = useState(true);
   const [apiKeys, setApiKeys] = useState<ApiKeys>({ openai: "", fmp: "" });
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Load API keys on component mount
   useEffect(() => {
@@ -54,32 +55,15 @@ export const ChatWindow = () => {
     if (savedKeys) {
       const parsedKeys = JSON.parse(savedKeys);
       setApiKeys(parsedKeys);
-      setShowApiKeyForm(false);
+    } else {
       toast({
-        title: "API Keys Loaded",
-        description: "Your saved API keys have been loaded successfully",
-      });
-    }
-  }, []);
-
-  const handleApiKeySubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!apiKeys.openai || !apiKeys.fmp) {
-      toast({
-        title: "Error",
-        description: "Please enter both API keys",
+        title: "API Keys Required",
+        description: "Please set up your API keys in the Profile section",
         variant: "destructive",
       });
-      return;
+      navigate("/profile");
     }
-    // Save API keys to localStorage
-    localStorage.setItem('apiKeys', JSON.stringify(apiKeys));
-    setShowApiKeyForm(false);
-    toast({
-      title: "Success",
-      description: "API keys saved successfully",
-    });
-  };
+  }, []);
 
   const fetchStockData = async (query: string): Promise<StockData | null> => {
     try {
@@ -130,6 +114,16 @@ export const ChatWindow = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
+
+    if (!apiKeys.openai || !apiKeys.fmp) {
+      toast({
+        title: "API Keys Required",
+        description: "Please set up your API keys in the Profile section",
+        variant: "destructive",
+      });
+      navigate("/profile");
+      return;
+    }
 
     const userMessage: Message = { content: input, isUser: true };
     setMessages(prev => [...prev, userMessage]);
@@ -202,40 +196,6 @@ Format numbers appropriately (e.g., millions as 'M', billions as 'B'). Always in
       setIsLoading(false);
     }
   };
-
-  if (showApiKeyForm) {
-    return (
-      <div className="h-full glass-panel">
-        <div className="flex items-center gap-2 p-4 border-b border-border/50">
-          <Key className="w-5 h-5 text-primary" />
-          <h2 className="text-lg font-semibold">API Key Setup</h2>
-        </div>
-        <form onSubmit={handleApiKeySubmit} className="p-4 space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">OpenAI API Key</label>
-            <Input
-              type="password"
-              value={apiKeys.openai}
-              onChange={(e) => setApiKeys(prev => ({ ...prev, openai: e.target.value }))}
-              placeholder="Enter OpenAI API Key"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">FMP API Key</label>
-            <Input
-              type="password"
-              value={apiKeys.fmp}
-              onChange={(e) => setApiKeys(prev => ({ ...prev, fmp: e.target.value }))}
-              placeholder="Enter FMP API Key"
-            />
-          </div>
-          <Button type="submit" className="w-full">
-            Set API Keys
-          </Button>
-        </form>
-      </div>
-    );
-  }
 
   return (
     <div className="h-full glass-panel">
