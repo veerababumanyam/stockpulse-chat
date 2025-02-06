@@ -30,18 +30,20 @@ export const ChatWindow = () => {
   };
 
   return (
-    <div className="chat-window">
-      <div className="flex items-center gap-2 p-4 border-b border-white/20">
+    <div className="h-full glass-panel">
+      <div className="flex items-center gap-2 p-4 border-b border-border/50">
         <MessageSquare className="w-5 h-5 text-primary" />
         <h2 className="text-lg font-semibold">StockPulse Chat</h2>
       </div>
 
-      <div className="h-[calc(100vh-8rem)] overflow-y-auto p-4 scrollbar-none">
+      <div className="h-[calc(100vh-12rem)] overflow-y-auto p-4 scrollbar-none">
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`message ${
-              message.isUser ? "user-message" : "ai-message"
+            className={`mb-4 p-3 rounded-lg ${
+              message.isUser 
+                ? "bg-primary/10 ml-auto max-w-[80%]" 
+                : "bg-muted/50 mr-auto max-w-[80%]"
             }`}
           >
             {message.content}
@@ -51,7 +53,7 @@ export const ChatWindow = () => {
 
       <form
         onSubmit={handleSubmit}
-        className="absolute bottom-0 left-0 right-0 p-4 glass-panel"
+        className="absolute bottom-0 left-0 right-0 p-4 border-t border-border/50 bg-background/50 backdrop-blur-sm"
       >
         <div className="flex gap-2">
           <input
@@ -59,7 +61,7 @@ export const ChatWindow = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about stocks..."
-            className="flex-1 p-2 rounded-lg bg-white/5 border border-white/20 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+            className="flex-1 p-2 rounded-lg bg-background/50 border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
           />
           <button
             type="submit"

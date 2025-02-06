@@ -7,7 +7,8 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <main className="w-3/4 p-8 pt-24">
+      {/* Main content area taking 75% width */}
+      <main className="w-[75%] p-8 pt-24">
         <div className="max-w-4xl mx-auto space-y-12">
           <div className="space-y-4 animate-fadeIn">
             <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
@@ -46,7 +47,10 @@ const Index = () => {
           </div>
         </div>
       </main>
-      <ChatWindow />
+      {/* Chat window fixed to right 25% */}
+      <aside className="fixed top-0 right-0 w-[25%] h-screen pt-20">
+        <ChatWindow />
+      </aside>
     </div>
   );
 };

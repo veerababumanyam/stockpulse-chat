@@ -60,11 +60,11 @@
   }
 
   .dark body {
-    background: linear-gradient(135deg, rgba(13, 17, 23, 0.95) 0%, rgba(17, 23, 35, 0.95) 100%);
+    background: linear-gradient(135deg, rgba(13, 17, 23, 0.98) 0%, rgba(17, 23, 35, 0.98) 100%);
   }
 
   body {
-    background: linear-gradient(135deg, rgba(248, 250, 252, 0.95) 0%, rgba(241, 245, 249, 0.95) 100%);
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.98) 0%, rgba(241, 245, 249, 0.98) 100%);
   }
 }
 
