@@ -15,6 +15,13 @@ interface ApiKeys {
   fmp: string;
 }
 
+interface StockData {
+  symbol: string;
+  price: number;
+  change: number;
+  companyName: string;
+}
+
 export const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -40,6 +47,41 @@ export const ChatWindow = () => {
     });
   };
 
+  const fetchStockData = async (query: string) => {
+    try {
+      // First try to fetch specific stock data
+      const searchResponse = await fetch(
+        `https://financialmodelingprep.com/api/v3/search?query=${query}&limit=1&apikey=${apiKeys.fmp}`
+      );
+      const searchResults = await searchResponse.json();
+      
+      if (searchResults && searchResults.length > 0) {
+        const symbol = searchResults[0].symbol;
+        
+        // Fetch detailed quote data
+        const quoteResponse = await fetch(
+          `https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${apiKeys.fmp}`
+        );
+        const quoteData = await quoteResponse.json();
+
+        // Fetch additional company profile data
+        const profileResponse = await fetch(
+          `https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKeys.fmp}`
+        );
+        const profileData = await profileResponse.json();
+
+        return {
+          quote: quoteData[0],
+          profile: profileData[0],
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching stock data:', error);
+      throw new Error('Failed to fetch stock data');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -50,6 +92,14 @@ export const ChatWindow = () => {
     setIsLoading(true);
 
     try {
+      // First fetch relevant stock data
+      const stockData = await fetchStockData(input);
+      
+      // Prepare context with stock data
+      const context = stockData 
+        ? `Current stock data: ${JSON.stringify(stockData, null, 2)}`
+        : "No specific stock data found for the query.";
+
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -61,11 +111,11 @@ export const ChatWindow = () => {
           messages: [
             {
               role: 'system',
-              content: 'You are a stock market expert assistant. Use the provided stock data to answer user questions accurately and concisely.'
+              content: 'You are a stock market expert assistant. Analyze the provided stock data and answer user questions accurately and concisely. Include specific numbers and data points when relevant.'
             },
             {
               role: 'user',
-              content: input
+              content: `Context: ${context}\n\nUser Question: ${input}`
             }
           ],
         }),
@@ -161,23 +211,15 @@ export const ChatWindow = () => {
         className="absolute bottom-0 left-0 right-0 p-4 border-t border-border/50 bg-background/50 backdrop-blur-sm"
       >
         <div className="flex gap-2">
-          <input
-            type="text"
+          <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about stocks..."
-            className="flex-1 p-2 rounded-lg bg-background/50 border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
             disabled={isLoading}
           />
-          <button
-            type="submit"
-            className={`p-2 rounded-lg bg-primary text-primary-foreground transition-colors ${
-              isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary/90'
-            }`}
-            disabled={isLoading}
-          >
+          <Button type="submit" disabled={isLoading}>
             <Send className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
       </form>
     </div>
