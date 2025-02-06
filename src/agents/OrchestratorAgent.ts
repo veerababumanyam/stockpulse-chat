@@ -1,4 +1,3 @@
-
 import { FundamentalAnalysisAgent } from './FundamentalAnalysisAgent';
 import { TechnicalAnalysisAgent } from './TechnicalAnalysisAgent';
 import { NewsAnalysisAgent } from './NewsAnalysisAgent';
@@ -97,134 +96,104 @@ export class OrchestratorAgent {
 
   private static formatOutput(data: any): string {
     return `
-📊 Comprehensive Analysis Report for ${data.companyName} (${data.symbol})
-
-🔎 Fundamental Analysis
-------------------------
-${this.formatSection(data.results.fundamental?.data, 'Fundamental metrics and company health')}
-
-📈 Technical Analysis
-------------------------
-${this.formatSection(data.results.technical?.data, 'Technical indicators and price action')}
-${this.formatSection(data.results.technicalData?.data, 'Detailed technical data')}
-
-💰 Cash Flow Analysis
-------------------------
-${this.formatSection(data.results.cashFlow?.data, 'Cash flow metrics and sustainability')}
-
-📊 Volatility Analysis
-------------------------
-${this.formatSection(data.results.volatility?.data, 'Volatility metrics and risk assessment')}
-
-🏢 Market Research & Competition
-------------------------
-${this.formatSection(data.results.marketResearch?.data, 'Market research and sector analysis')}
-${this.formatSection(data.results.competitive?.data, 'Competitive position and peer comparison')}
-
-💰 Valuation Analysis
-------------------------
-${this.formatSection(data.results.valuation?.data, 'Valuation metrics and intrinsic value')}
-
-📰 News & Sentiment Analysis
-------------------------
-${this.formatSection(data.results.news?.data, 'Recent news and market sentiment')}
-${this.formatSection(data.results.sentiment?.data, 'Overall market sentiment')}
-${this.formatSection(data.results.newsScraper?.data, 'Scraped news and sentiment')}
-
-🏦 Financial Health
-------------------------
-${this.formatSection(data.results.financialStatement?.data, 'Financial statement analysis')}
-
-💸 ETF Flow Analysis
-------------------------
-${this.formatSection(data.results.etfFlow?.data, 'ETF flow and holdings analysis')}
-
-👥 Expert Analysis
-------------------------
-${this.formatSection(data.results.analyst?.data, 'Analyst recommendations and forecasts')}
-
-⚠️ Risk Assessment
-------------------------
-${this.formatSection(data.results.risk?.data, 'Risk metrics and warnings')}
-
-🌐 Macroeconomic Context
-------------------------
-${this.formatSection(data.results.macro?.data, 'Macroeconomic factors and impact')}
-
-🌱 ESG Analysis
-------------------------
-${this.formatSection(data.results.esg?.data, 'Environmental, Social, and Governance metrics')}
-
-📊 Data Quality & Integration
-------------------------
-${this.formatSection(data.results.dataQuality?.data, 'Data quality assessment')}
-${this.formatSection(data.results.dataIntegration?.data, 'Integrated data analysis')}
-
-🏛️ Legal Document Analysis
-------------------------
-${this.formatSection(data.results.legalDocument?.data, 'Analysis of legal filings and documents')}
-
-🧪 Patent Analysis
-------------------------
-${this.formatSection(data.results.patentAnalysis?.data, 'Analysis of company patents and innovation')}
-
-🐳 Big Player Tracking
-------------------------
-${this.formatSection(data.results.bigPlayerTracking?.data, 'Tracking of institutional and big player holdings')}
-
-📱 Social Media Scraping
-------------------------
-${this.formatSection(data.results.socialMedia?.data, 'Scraped social media data and sentiment')}
+📊 Analysis Report for ${data.companyName} (${data.symbol})
 
 🎯 Summary & Recommendations
 ------------------------
-• Technical Outlook: ${data.results.technical?.data?.analysis.signals?.overallSignal || 'N/A'}
-• Fundamental Position: ${data.results.fundamental?.data?.analysis.recommendation || 'N/A'}
-• Risk Level: ${data.results.risk?.data?.analysis.riskLevel || 'N/A'}
-• Market Sentiment: ${data.results.sentiment?.data?.analysis.overallSentiment || 'N/A'}
+• Technical Position: ${data.results.technical?.data?.analysis.signals?.overallSignal || 'N/A'}
+• Fundamental Outlook: ${data.results.fundamental?.data?.analysis.recommendation || 'N/A'}
+• Risk Rating: ${data.results.risk?.data?.analysis.riskLevel || 'N/A'}
 • ESG Rating: ${data.results.esg?.data?.analysis.overallESGRating || 'N/A'}
 • Valuation Status: ${data.results.valuation?.data?.analysis.intrinsicValue || 'N/A'}
-• Cash Flow Health: ${data.results.cashFlow?.data?.analysis.cashFlowStrength || 'N/A'}
-• Volatility Status: ${data.results.volatility?.data?.analysis.volatilityTrend || 'N/A'}
+
+💰 Fundamental Analysis
+------------------------
+${this.formatSection(data.results.fundamental?.data, 'Key metrics and financial health')}
+
+📈 Technical Analysis
+------------------------
+${this.formatSection(data.results.technical?.data, 'Price action and technical indicators')}
+
+📊 Volatility Analysis
+------------------------
+${this.formatSection(data.results.volatility?.data, 'Market volatility and trends')}
+
+💎 Valuation Analysis
+------------------------
+${this.formatSection(data.results.valuation?.data, 'Fair value and market pricing')}
+
+⚠️ Risk Assessment
+------------------------
+${this.formatSection(data.results.risk?.data, 'Risk factors and warnings')}
+
+👥 Expert Analysis
+------------------------
+${this.formatSection(data.results.analyst?.data, 'Professional recommendations')}
+
+🌱 ESG Analysis
+------------------------
+${this.formatSection(data.results.esg?.data, 'Environmental, Social, and Governance')}
+
+🔬 Patent Analysis
+------------------------
+${this.formatSection(data.results.patentAnalysis?.data, 'Innovation and R&D')}
+
+🐳 Big Player Tracking
+------------------------
+${this.formatSection(data.results.bigPlayerTracking?.data, 'Institutional movements')}
+
+📰 News & Market Sentiment
+------------------------
+${this.formatSection(data.results.news?.data, 'Recent developments')}
+${this.formatSection(data.results.sentiment?.data, 'Market sentiment')}
+
+💼 Additional Insights
+------------------------
+• Market Research: ${this.formatSection(data.results.marketResearch?.data, 'Market analysis')}
+• Competition: ${this.formatSection(data.results.competitive?.data, 'Competitive landscape')}
+• Cash Flow: ${this.formatSection(data.results.cashFlow?.data, 'Cash flow analysis')}
+• Growth Trends: ${this.formatSection(data.results.growthTrends?.data, 'Growth patterns')}
+• ETF Flows: ${this.formatSection(data.results.etfFlow?.data, 'Fund movements')}
+• Legal Analysis: ${this.formatSection(data.results.legalDocument?.data, 'Legal considerations')}
 `;
   }
 
   private static formatSection(data: any, fallbackMessage: string): string {
     if (!data || !data.analysis) {
-      return `Data not available for ${fallbackMessage}`;
+      return `No data available for ${fallbackMessage}`;
     }
 
     let output = '';
     Object.entries(data.analysis).forEach(([key, value]: [string, any]) => {
       if (Array.isArray(value)) {
-        output += `${this.formatArrayData(value, key)}\n`;
+        output += `• ${key}:\n${this.formatArrayData(value)}\n`;
       } else if (typeof value === 'object' && value !== null) {
-        output += `${this.formatObjectData(value, key)}\n`;
+        output += `• ${key}:\n${this.formatObjectData(value)}\n`;
       } else if (value !== undefined && value !== null) {
         output += `• ${key}: ${value}\n`;
       }
     });
 
-    return output || `No data available for ${fallbackMessage}`;
+    return output || `No detailed data available for ${fallbackMessage}`;
   }
 
-  private static formatArrayData(arr: any[], key: string): string {
-    if (!arr.length) return '';
+  private static formatArrayData(arr: any[]): string {
+    if (!arr.length) return '  No data available';
     return arr.map(item => {
       if (typeof item === 'object') {
         return Object.entries(item)
           .filter(([_, v]) => v !== undefined && v !== null)
-          .map(([k, v]) => `• ${k}: ${v}`)
+          .map(([k, v]) => `  - ${k}: ${v}`)
           .join('\n');
       }
-      return `• ${item}`;
+      return `  - ${item}`;
     }).join('\n');
   }
 
-  private static formatObjectData(obj: Record<string, any>, key: string): string {
+  private static formatObjectData(obj: Record<string, any>): string {
     return Object.entries(obj)
       .filter(([_, v]) => v !== undefined && v !== null)
-      .map(([k, v]) => `• ${k}: ${v}`)
+      .map(([k, v]) => `  - ${k}: ${v}`)
       .join('\n');
   }
 }
