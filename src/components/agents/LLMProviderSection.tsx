@@ -8,6 +8,7 @@ import { AlertCircle, Info, Settings2, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -245,21 +246,11 @@ export const LLMProviderSection = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Language Model Providers</h2>
-          <p className="text-muted-foreground mt-1">
-            Configure your AI providers to enhance agent capabilities
-          </p>
-        </div>
-        <Button
-          onClick={refreshModels}
-          disabled={isLoading}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh Models
-        </Button>
+      <div>
+        <h2 className="text-2xl font-bold">Language Model Providers</h2>
+        <p className="text-muted-foreground mt-1">
+          Configure your AI providers to enhance agent capabilities
+        </p>
       </div>
 
       <Alert>
@@ -323,38 +314,52 @@ export const LLMProviderSection = () => {
                           Configure Models
                         </Button>
                       </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="max-w-md">
                         <DialogHeader>
                           <DialogTitle>Configure Models for {provider.name}</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4 mt-4">
-                          <p className="text-sm text-muted-foreground">
-                            Select the models you want to use with your AI agents
-                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-muted-foreground">
+                              Select the models you want to use with your AI agents
+                            </p>
+                            <Button
+                              onClick={refreshModels}
+                              disabled={isLoading}
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-2"
+                            >
+                              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                              Refresh
+                            </Button>
+                          </div>
                           {provider.models.length === 0 ? (
                             <p className="text-sm text-muted-foreground">
-                              No models available. Click the "Refresh Models" button to fetch available models.
+                              No models available. Click the "Refresh" button to fetch available models.
                             </p>
                           ) : (
-                            <div className="space-y-2">
-                              {provider.models.map((model) => (
-                                <div key={model} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`${provider.id}-${model}`}
-                                    checked={(provider.selectedModels || []).includes(model)}
-                                    onCheckedChange={(checked) => 
-                                      handleModelSelection(provider.id, model, checked as boolean)
-                                    }
-                                  />
-                                  <label
-                                    htmlFor={`${provider.id}-${model}`}
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                  >
-                                    {model}
-                                  </label>
-                                </div>
-                              ))}
-                            </div>
+                            <ScrollArea className="h-[300px] pr-4">
+                              <div className="space-y-2">
+                                {provider.models.map((model) => (
+                                  <div key={model} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`${provider.id}-${model}`}
+                                      checked={(provider.selectedModels || []).includes(model)}
+                                      onCheckedChange={(checked) => 
+                                        handleModelSelection(provider.id, model, checked as boolean)
+                                      }
+                                    />
+                                    <label
+                                      htmlFor={`${provider.id}-${model}`}
+                                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    >
+                                      {model}
+                                    </label>
+                                  </div>
+                                ))}
+                              </div>
+                            </ScrollArea>
                           )}
                         </div>
                       </DialogContent>
@@ -376,3 +381,4 @@ export const LLMProviderSection = () => {
     </div>
   );
 };
+
