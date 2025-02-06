@@ -11,16 +11,16 @@ export const fetchStockData = async (query: string, apiKey: string) => {
 
     console.log('Searching for:', searchTerm);
 
-    // Test the API key with a simple request first
+    // Test the API key and connectivity first
     const testResponse = await fetch(
-      `https://financialmodelingprep.com/api/v3/stock/list?apikey=${apiKey}`
+      `https://financialmodelingprep.com/api/v3/is-the-market-open?apikey=${apiKey}`
     );
     
     if (!testResponse.ok) {
       if (testResponse.status === 403) {
         throw new Error('Invalid or expired FMP API key');
       }
-      throw new Error(`FMP API error: ${testResponse.statusText}`);
+      throw new Error(`FMP API connectivity issue: ${testResponse.statusText}`);
     }
 
     const searchResponse = await fetch(
@@ -33,61 +33,65 @@ export const fetchStockData = async (query: string, apiKey: string) => {
 
     const searchResults = await searchResponse.json();
     
-    if (searchResults && searchResults.length > 0) {
-      const symbol = searchResults[0].symbol;
-      console.log('Found symbol:', symbol);
-      
-      // Create an array of promises for parallel requests
-      const responses = await Promise.all([
-        fetch(`https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${apiKey}`),
-        fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKey}`),
-        fetch(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${symbol}?apikey=${apiKey}`),
-        fetch(`https://financialmodelingprep.com/api/v3/ratios-ttm/${symbol}?apikey=${apiKey}`),
-        fetch(`https://financialmodelingprep.com/api/v3/analyst-estimates/${symbol}?limit=4&apikey=${apiKey}`),
-        fetch(`https://financialmodelingprep.com/api/v3/insider-trading/${symbol}?apikey=${apiKey}`),
-        fetch(`https://financialmodelingprep.com/api/v3/upgrades-downgrades/${symbol}?apikey=${apiKey}`),
-        fetch(`https://financialmodelingprep.com/api/v3/technical_indicator/daily/${symbol}?period=10&type=rsi&apikey=${apiKey}`),
-        fetch(`https://financialmodelingprep.com/api/v3/historical-price-full/stock_dividend/${symbol}?apikey=${apiKey}`),
-        fetch(`https://financialmodelingprep.com/api/v3/earnings-surprises/${symbol}?apikey=${apiKey}`)
-      ]);
-
-      // Check if any response failed
-      for (const response of responses) {
-        if (!response.ok) {
-          console.error('API response error:', response.statusText);
-          throw new Error(`API request failed: ${response.statusText}`);
-        }
-      }
-
-      const [
-        quoteData,
-        profileData,
-        metricsData,
-        ratiosData,
-        analystData,
-        insiderData,
-        upgradesData,
-        technicalData,
-        dividendData,
-        earningsData
-      ] = await Promise.all(responses.map(r => r.json()));
-
-      if (quoteData[0] && profileData[0]) {
-        return {
-          quote: quoteData[0],
-          profile: profileData[0],
-          metrics: metricsData[0] || {},
-          ratios: ratiosData[0] || {},
-          analyst: analystData || [],
-          insider: insiderData || [],
-          upgrades: upgradesData || [],
-          technical: technicalData || [],
-          dividend: dividendData.historical || [],
-          earnings: earningsData || []
-        };
-      }
+    if (!searchResults || searchResults.length === 0) {
+      throw new Error('No results found for the given search term');
     }
-    throw new Error('No results found for the given search term');
+
+    const symbol = searchResults[0].symbol;
+    console.log('Found symbol:', symbol);
+    
+    // Create an array of essential API requests first
+    const essentialRequests = [
+      fetch(`https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${apiKey}`),
+      fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKey}`)
+    ];
+
+    // Wait for essential data first
+    const [quoteResponse, profileResponse] = await Promise.all(essentialRequests);
+    
+    if (!quoteResponse.ok || !profileResponse.ok) {
+      throw new Error('Failed to fetch essential stock data');
+    }
+
+    const [quoteData, profileData] = await Promise.all([
+      quoteResponse.json(),
+      profileResponse.json()
+    ]);
+
+    // If we have essential data, try to fetch additional data
+    const additionalRequests = [
+      fetch(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${symbol}?apikey=${apiKey}`),
+      fetch(`https://financialmodelingprep.com/api/v3/ratios-ttm/${symbol}?apikey=${apiKey}`),
+      fetch(`https://financialmodelingprep.com/api/v3/analyst-estimates/${symbol}?limit=4&apikey=${apiKey}`),
+    ];
+
+    // Use Promise.allSettled to handle partial failures
+    const additionalResponses = await Promise.allSettled(additionalRequests);
+    
+    const [metricsResponse, ratiosResponse, analystResponse] = await Promise.all(
+      additionalResponses.map(async (response) => {
+        if (response.status === 'fulfilled' && response.value.ok) {
+          return response.value.json();
+        }
+        console.warn('Failed to fetch some additional data');
+        return null;
+      })
+    );
+
+    // Return data with fallbacks for missing information
+    return {
+      quote: quoteData[0],
+      profile: profileData[0],
+      metrics: metricsResponse?.[0] || {},
+      ratios: ratiosResponse?.[0] || {},
+      analyst: analystResponse || [],
+      insider: [],
+      upgrades: [],
+      technical: [],
+      dividend: [],
+      earnings: []
+    };
+
   } catch (error) {
     console.error('Error fetching stock data:', error);
     throw error;
