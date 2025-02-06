@@ -75,9 +75,9 @@ export class SocialMediaScraperAgent extends BaseAgent {
       overallSentiment: sentimentScore > 0 ? 'Positive' : sentimentScore < 0 ? 'Negative' : 'Neutral',
       sentimentScore: sentimentScore,
       distribution: {
-        positive: ((sentimentCounts.positive / data.length) * 100).toFixed(2) + '%',
-        negative: ((sentimentCounts.negative / data.length) * 100).toFixed(2) + '%',
-        neutral: ((sentimentCounts.neutral / data.length) * 100).toFixed(2) + '%'
+        positive: ((sentimentCounts.positive / (data.length || 1)) * 100).toFixed(2) + '%',
+        negative: ((sentimentCounts.negative / (data.length || 1)) * 100).toFixed(2) + '%',
+        neutral: ((sentimentCounts.neutral / (data.length || 1)) * 100).toFixed(2) + '%'
       }
     };
   }
@@ -142,15 +142,15 @@ export class SocialMediaScraperAgent extends BaseAgent {
   private static calculateTimeDistribution(data: any[]): any {
     if (!Array.isArray(data) || data.length === 0) return { daysSpan: 0 };
 
-    const dates = data.map(item => new Date(item.publishedDate));
-    const newest = new Date(Math.max(...dates));
-    const oldest = new Date(Math.min(...dates));
-    const daysSpan = Math.ceil((newest.getTime() - oldest.getTime()) / (1000 * 60 * 60 * 24));
+    const dates = data.map(item => new Date(item.publishedDate).getTime());
+    const newest = Math.max(...dates);
+    const oldest = Math.min(...dates);
+    const daysSpan = Math.ceil((newest - oldest) / (1000 * 60 * 60 * 24));
 
     return {
       daysSpan,
-      newest: this.formatDate(newest),
-      oldest: this.formatDate(oldest)
+      newest: this.formatDate(new Date(newest)),
+      oldest: this.formatDate(new Date(oldest))
     };
   }
 }

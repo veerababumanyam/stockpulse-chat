@@ -47,8 +47,8 @@ export class BigPlayerTrackingAgent extends BaseAgent {
   private static analyzeInstitutionalHoldings(holders: any[]): any {
     if (!Array.isArray(holders)) return {};
     
-    const totalShares = holders.reduce((sum, holder) => sum + holder.sharesHeld, 0);
-    const totalValue = holders.reduce((sum, holder) => sum + (holder.sharesHeld * holder.value), 0);
+    const totalShares = holders.reduce((sum, holder) => sum + Number(holder.sharesHeld), 0);
+    const totalValue = holders.reduce((sum, holder) => sum + (Number(holder.sharesHeld) * Number(holder.value)), 0);
 
     return {
       totalInstitutions: holders.length,
@@ -61,8 +61,8 @@ export class BigPlayerTrackingAgent extends BaseAgent {
   private static analyzeMutualFundHoldings(holders: any[]): any {
     if (!Array.isArray(holders)) return {};
     
-    const totalShares = holders.reduce((sum, holder) => sum + holder.sharesHeld, 0);
-    const totalValue = holders.reduce((sum, holder) => sum + (holder.sharesHeld * holder.value), 0);
+    const totalShares = holders.reduce((sum, holder) => sum + Number(holder.sharesHeld), 0);
+    const totalValue = holders.reduce((sum, holder) => sum + (Number(holder.sharesHeld) * Number(holder.value)), 0);
 
     return {
       totalFunds: holders.length,
@@ -79,27 +79,28 @@ export class BigPlayerTrackingAgent extends BaseAgent {
     ];
 
     return allHolders
-      .sort((a, b) => (b.sharesHeld * b.value) - (a.sharesHeld * a.value))
+      .sort((a, b) => (Number(b.sharesHeld) * Number(b.value)) - (Number(a.sharesHeld) * Number(a.value)))
       .slice(0, 10)
       .map(holder => ({
         name: holder.holder,
         type: holder.type,
-        shares: this.formatNumber(holder.sharesHeld),
-        value: this.formatNumber(holder.sharesHeld * holder.value),
+        shares: this.formatNumber(Number(holder.sharesHeld)),
+        value: this.formatNumber(Number(holder.sharesHeld) * Number(holder.value)),
         dateReported: this.formatDate(holder.dateReported)
       }));
   }
 
   private static analyzeHoldingPatterns(institutional: any[], mutualFund: any[]): any {
     const patterns = {
-      institutionalConcentration: 0,
-      mutualFundDiversification: 0,
+      institutionalConcentration: '0%',
+      mutualFundDiversification: 'Unknown',
       holdingStability: 'Unknown'
     };
 
     if (Array.isArray(institutional) && institutional.length > 0) {
-      const totalInstitutionalShares = institutional.reduce((sum, h) => sum + h.sharesHeld, 0);
-      patterns.institutionalConcentration = (institutional[0].sharesHeld / totalInstitutionalShares * 100).toFixed(2) + '%';
+      const totalInstitutionalShares = institutional.reduce((sum, h) => sum + Number(h.sharesHeld), 0);
+      const topHolderShares = Number(institutional[0]?.sharesHeld || 0);
+      patterns.institutionalConcentration = ((topHolderShares / totalInstitutionalShares) * 100).toFixed(2) + '%';
     }
 
     if (Array.isArray(mutualFund) && mutualFund.length > 0) {
