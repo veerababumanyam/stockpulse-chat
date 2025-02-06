@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { LLMProvider } from "@/types/llm";
 
 interface AgentConfig {
   id: string;
@@ -42,11 +43,39 @@ export const AgentConfigDialog = ({
   const [config, setConfig] = useState<Partial<AgentConfig>>({
     name: "",
     description: "",
-    model: "gpt-4o-mini",
+    model: "",
     temperature: 0.7,
     systemPrompt: "",
     active: true,
   });
+
+  const [availableModels, setAvailableModels] = useState<Array<{ provider: string; models: string[] }>>([]);
+
+  useEffect(() => {
+    const loadModels = () => {
+      const savedProviders = localStorage.getItem('llm-providers');
+      if (savedProviders) {
+        try {
+          const providers: LLMProvider[] = JSON.parse(savedProviders);
+          const enabledProviders = providers.filter(p => p.isEnabled);
+          const models = enabledProviders.map(provider => ({
+            provider: provider.name,
+            models: provider.selectedModels || []
+          })).filter(p => p.models.length > 0);
+          setAvailableModels(models);
+          
+          // If no model is selected and we have available models, select the first one
+          if (!config.model && models.length > 0 && models[0].models.length > 0) {
+            setConfig(prev => ({ ...prev, model: models[0].models[0] }));
+          }
+        } catch (error) {
+          console.error('Error parsing providers:', error);
+        }
+      }
+    };
+
+    loadModels();
+  }, [open]); // Reload when dialog opens
 
   useEffect(() => {
     if (agent) {
@@ -55,23 +84,23 @@ export const AgentConfigDialog = ({
       setConfig({
         name: "",
         description: "",
-        model: "gpt-4o-mini",
+        model: availableModels[0]?.models[0] || "",
         temperature: 0.7,
         systemPrompt: "",
         active: true,
       });
     }
-  }, [agent]);
+  }, [agent, availableModels]);
 
   const handleSave = () => {
-    if (!config.name || !config.description || !config.systemPrompt) {
+    if (!config.name || !config.description || !config.systemPrompt || !config.model) {
       return;
     }
     onSave({
       id: agent?.id || "",
       name: config.name,
       description: config.description,
-      model: config.model || "gpt-4o-mini",
+      model: config.model,
       temperature: config.temperature || 0.7,
       systemPrompt: config.systemPrompt,
       active: config.active || true,
@@ -113,26 +142,16 @@ export const AgentConfigDialog = ({
                 <SelectValue placeholder="Select a model" />
               </SelectTrigger>
               <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>OpenAI Models</SelectLabel>
-                  <SelectItem value="gpt-4o-mini">GPT-4-Mini</SelectItem>
-                  <SelectItem value="gpt-4o">GPT-4 Turbo</SelectItem>
-                  <SelectItem value="gpt-4o-vision">GPT-4 Vision</SelectItem>
-                  <SelectItem value="gpt-4o-1106">GPT-4 Turbo (1106)</SelectItem>
-                </SelectGroup>
-                <SelectGroup>
-                  <SelectLabel>Deepseek Models</SelectLabel>
-                  <SelectItem value="deepseek-chat">Deepseek Chat</SelectItem>
-                  <SelectItem value="deepseek-coder">Deepseek Coder</SelectItem>
-                  <SelectItem value="deepseek-reasoner">Deepseek Reasoner</SelectItem>
-                </SelectGroup>
-                <SelectGroup>
-                  <SelectLabel>Specialized Models</SelectLabel>
-                  <SelectItem value="finance-gpt">Finance GPT</SelectItem>
-                  <SelectItem value="market-analyst">Market Analyst</SelectItem>
-                  <SelectItem value="risk-assessor">Risk Assessor</SelectItem>
-                  <SelectItem value="technical-analyst">Technical Analyst</SelectItem>
-                </SelectGroup>
+                {availableModels.map(({ provider, models }) => (
+                  <SelectGroup key={provider}>
+                    <SelectLabel>{provider}</SelectLabel>
+                    {models.map((model) => (
+                      <SelectItem key={model} value={model}>
+                        {model}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
               </SelectContent>
             </Select>
           </div>
