@@ -1,4 +1,3 @@
-
 import { BaseAgent, AnalysisResult } from './BaseAgent';
 
 export class SocialMediaScraperAgent extends BaseAgent {
@@ -84,26 +83,6 @@ export class SocialMediaScraperAgent extends BaseAgent {
     }
   }
 
-  private static extractTrendingTopics(data: any[]): string[] {
-    if (!Array.isArray(data)) return [];
-
-    const words = data
-      .map(item => (item.title + ' ' + item.text).toLowerCase())
-      .join(' ')
-      .split(/\W+/)
-      .filter(word => word.length > 4);
-
-    const wordFrequency: Record<string, number> = {};
-    words.forEach(word => {
-      wordFrequency[word] = (wordFrequency[word] || 0) + 1;
-    });
-
-    return Object.entries(wordFrequency)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 10)
-      .map(([word]) => word);
-  }
-
   private static calculateSocialMetrics(data: any[]): any {
     if (!Array.isArray(data)) return {};
 
@@ -158,12 +137,35 @@ export class SocialMediaScraperAgent extends BaseAgent {
     return Object.entries(sources)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5)
-      .map(([source, mentions]) => ({
-        source,
-        mentions,
-        recentMention: this.formatDate(
-          data.find(item => item.site === source)?.publishedDate || new Date()
-        )
-      }));
+      .map(([source, mentions]) => {
+        const sourceItem = data.find(item => item.site === source);
+        const recentDate = sourceItem ? new Date(sourceItem.publishedDate) : new Date();
+        
+        return {
+          source,
+          mentions,
+          recentMention: this.formatDate(recentDate)
+        };
+      });
+  }
+
+  private static extractTrendingTopics(data: any[]): string[] {
+    if (!Array.isArray(data)) return [];
+
+    const words = data
+      .map(item => (item.title + ' ' + item.text).toLowerCase())
+      .join(' ')
+      .split(/\W+/)
+      .filter(word => word.length > 4);
+
+    const wordFrequency: Record<string, number> = {};
+    words.forEach(word => {
+      wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+    });
+
+    return Object.entries(wordFrequency)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([word]) => word);
   }
 }
