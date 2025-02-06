@@ -9,7 +9,9 @@ import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -111,8 +113,26 @@ export const AgentConfigDialog = ({
                 <SelectValue placeholder="Select a model" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="gpt-4o-mini">GPT-4-Mini</SelectItem>
-                <SelectItem value="gpt-4o">GPT-4 Turbo</SelectItem>
+                <SelectGroup>
+                  <SelectLabel>OpenAI Models</SelectLabel>
+                  <SelectItem value="gpt-4o-mini">GPT-4-Mini</SelectItem>
+                  <SelectItem value="gpt-4o">GPT-4 Turbo</SelectItem>
+                  <SelectItem value="gpt-4o-vision">GPT-4 Vision</SelectItem>
+                  <SelectItem value="gpt-4o-1106">GPT-4 Turbo (1106)</SelectItem>
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Deepseek Models</SelectLabel>
+                  <SelectItem value="deepseek-chat">Deepseek Chat</SelectItem>
+                  <SelectItem value="deepseek-coder">Deepseek Coder</SelectItem>
+                  <SelectItem value="deepseek-reasoner">Deepseek Reasoner</SelectItem>
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Specialized Models</SelectLabel>
+                  <SelectItem value="finance-gpt">Finance GPT</SelectItem>
+                  <SelectItem value="market-analyst">Market Analyst</SelectItem>
+                  <SelectItem value="risk-assessor">Risk Assessor</SelectItem>
+                  <SelectItem value="technical-analyst">Technical Analyst</SelectItem>
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>
@@ -147,3 +167,4 @@ export const AgentConfigDialog = ({
     </Dialog>
   );
 };
+
