@@ -8,9 +8,7 @@ export const generateAnalysisPDF = async (analysisData: any) => {
 
   console.log('Generating PDF with data:', analysisData);
   
-  // Create the content for the PDF
-  const element = document.createElement('div');
-  element.innerHTML = `
+  const content = `
     <div style="padding: 20px; font-family: Arial, sans-serif;">
       <h1 style="color: #2c3e50; margin-bottom: 20px;">Stock Analysis Report</h1>
       <h2 style="color: #34495e; margin-bottom: 30px;">${analysisData.symbol} - ${analysisData.companyName}</h2>
@@ -53,7 +51,7 @@ export const generateAnalysisPDF = async (analysisData: any) => {
           <div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 8px;">
             <h3 style="color: #2c3e50; margin-bottom: 15px;">${key.charAt(0).toUpperCase() + key.slice(1)} Analysis</h3>
             <div style="white-space: pre-wrap; font-family: monospace; font-size: 14px;">
-              ${JSON.stringify(value.data, null, 2)}
+              ${value.data.analysis ? JSON.stringify(value.data.analysis, null, 2) : 'No analysis data available'}
             </div>
           </div>
         `;
@@ -65,6 +63,11 @@ export const generateAnalysisPDF = async (analysisData: any) => {
     </div>
   `;
 
+  // Create a temporary container
+  const container = document.createElement('div');
+  container.innerHTML = content;
+  document.body.appendChild(container);
+
   const options = {
     margin: 10,
     filename: `${analysisData.symbol}_analysis_report.pdf`,
@@ -74,10 +77,14 @@ export const generateAnalysisPDF = async (analysisData: any) => {
   };
 
   try {
-    await html2pdf().from(element).set(options).save();
+    await html2pdf().from(container).set(options).save();
     console.log('PDF generated successfully');
+    // Clean up
+    document.body.removeChild(container);
   } catch (error) {
     console.error('Error generating PDF:', error);
+    // Clean up
+    document.body.removeChild(container);
     throw error;
   }
 };

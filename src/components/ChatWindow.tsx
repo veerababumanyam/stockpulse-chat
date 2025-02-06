@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Send, Download } from "lucide-react";
 import { Input } from "./ui/input";
@@ -77,7 +78,10 @@ const ChatWindow = () => {
 
   const handleDownloadPDF = async (analysisData: any) => {
     try {
-      console.log('Analysis data for PDF:', analysisData);
+      console.log('Starting PDF generation with data:', analysisData);
+      if (!analysisData) {
+        throw new Error('No analysis data available');
+      }
       await generateAnalysisPDF(analysisData);
       toast({
         title: "Success",
@@ -87,7 +91,7 @@ const ChatWindow = () => {
       console.error('Error generating PDF:', error);
       toast({
         title: "Error",
-        description: "Failed to generate PDF report",
+        description: error.message || "Failed to generate PDF report",
         variant: "destructive",
       });
     }
@@ -110,14 +114,15 @@ const ChatWindow = () => {
       }
 
       const analysis = await OrchestratorAgent.orchestrateAnalysis(stockData);
+      
       if (!analysis || typeof analysis === 'string') {
         throw new Error('Invalid analysis response');
       }
 
       const aiMessage: Message = {
-        content: analysis.textOutput,
+        content: analysis.textOutput || '',
         isUser: false,
-        data: analysis.formattedData
+        data: analysis.formattedData || null
       };
 
       setMessages(prev => [...prev, aiMessage]);
