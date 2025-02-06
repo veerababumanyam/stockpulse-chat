@@ -11,7 +11,23 @@ export class AnalystRecommendationsAgent {
       const response = await fetch(
         `https://financialmodelingprep.com/api/v3/analyst-recommendations/${symbol}?apikey=${fmp}`
       );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.Error || 'Failed to fetch analyst recommendations');
+      }
+
       const recommendationsData = await response.json();
+      
+      if (!Array.isArray(recommendationsData) || recommendationsData.length === 0) {
+        return {
+          type: 'analyst',
+          analysis: {
+            recommendations: [],
+            consensus: 'No analyst recommendations available'
+          }
+        };
+      }
       
       return {
         type: 'analyst',

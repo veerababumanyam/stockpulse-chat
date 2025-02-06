@@ -11,7 +11,23 @@ export class NewsAnalysisAgent {
       const response = await fetch(
         `https://financialmodelingprep.com/api/v3/stock_news?tickers=${symbol}&limit=5&apikey=${fmp}`
       );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.Error || 'Failed to fetch news data');
+      }
+
       const newsData = await response.json();
+      
+      if (!Array.isArray(newsData) || newsData.length === 0) {
+        return {
+          type: 'news',
+          analysis: {
+            recentNews: [],
+            overallSentiment: 'No recent news available'
+          }
+        };
+      }
       
       return {
         type: 'news',
