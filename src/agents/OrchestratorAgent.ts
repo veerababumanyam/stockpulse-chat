@@ -9,22 +9,30 @@ import { MacroeconomicAnalysisAgent } from './MacroeconomicAnalysisAgent';
 import { DataCleansingAgent } from './DataCleansingAgent';
 import { CompetitiveAnalysisAgent } from './CompetitiveAnalysisAgent';
 import { ESGAnalysisAgent } from './ESGAnalysisAgent';
+import { TechnicalDataAgent } from './TechnicalDataAgent';
+import { MarketResearchAgent } from './MarketResearchAgent';
+import { DataIntegrationAgent } from './DataIntegrationAgent';
+import { ValuationAnalysisAgent } from './ValuationAnalysisAgent';
 
 export class OrchestratorAgent {
   static async orchestrateAnalysis(stockData: any) {
     try {
       // Run all analyses in parallel
       const [
-        fundamentalAnalysis,
-        technicalAnalysis,
-        newsAnalysis,
-        analystAnalysis,
+        fundamental,
+        technical,
+        news,
+        analyst,
         marketSentiment,
-        riskAssessment,
-        macroAnalysis,
+        risk,
+        macro,
         dataQuality,
-        competitiveAnalysis,
-        esgAnalysis
+        competitive,
+        esg,
+        technicalData,
+        marketResearch,
+        dataIntegration,
+        valuation
       ] = await Promise.all([
         FundamentalAnalysisAgent.analyze(stockData),
         TechnicalAnalysisAgent.analyze(stockData),
@@ -35,22 +43,30 @@ export class OrchestratorAgent {
         MacroeconomicAnalysisAgent.analyze(stockData.quote.symbol),
         DataCleansingAgent.analyze(stockData),
         CompetitiveAnalysisAgent.analyze(stockData.quote.symbol),
-        ESGAnalysisAgent.analyze(stockData.quote.symbol)
+        ESGAnalysisAgent.analyze(stockData.quote.symbol),
+        TechnicalDataAgent.analyze(stockData.quote.symbol),
+        MarketResearchAgent.analyze(stockData.quote.symbol),
+        DataIntegrationAgent.analyze(stockData),
+        ValuationAnalysisAgent.analyze(stockData.quote.symbol)
       ]);
 
       return this.formatOutput({
         symbol: stockData.quote.symbol,
         companyName: stockData.profile.companyName,
-        fundamental: fundamentalAnalysis,
-        technical: technicalAnalysis,
-        news: newsAnalysis,
-        analyst: analystAnalysis,
+        fundamental,
+        technical,
+        news,
+        analyst,
         sentiment: marketSentiment,
-        risk: riskAssessment,
-        macro: macroAnalysis,
-        dataQuality: dataQuality,
-        competitive: competitiveAnalysis,
-        esg: esgAnalysis
+        risk,
+        macro,
+        dataQuality,
+        competitive,
+        esg,
+        technicalData,
+        marketResearch,
+        dataIntegration,
+        valuation
       });
     } catch (error) {
       console.error('Error in orchestration:', error);
@@ -69,10 +85,16 @@ ${this.formatSection(data.fundamental, 'Fundamental metrics and company health')
 📈 Technical Analysis
 ------------------------
 ${this.formatSection(data.technical, 'Technical indicators and price action')}
+${this.formatSection(data.technicalData, 'Detailed technical data')}
 
-🏢 Competitive Analysis
+🏢 Market Research & Competition
 ------------------------
+${this.formatSection(data.marketResearch, 'Market research and sector analysis')}
 ${this.formatSection(data.competitive, 'Competitive position and peer comparison')}
+
+💰 Valuation Analysis
+------------------------
+${this.formatSection(data.valuation, 'Valuation metrics and intrinsic value')}
 
 📰 News & Sentiment Analysis
 ------------------------
@@ -95,9 +117,10 @@ ${this.formatSection(data.macro, 'Macroeconomic factors and impact')}
 ------------------------
 ${this.formatSection(data.esg, 'Environmental, Social, and Governance metrics')}
 
-📊 Data Quality
+📊 Data Quality & Integration
 ------------------------
 ${this.formatSection(data.dataQuality, 'Data quality assessment')}
+${this.formatSection(data.dataIntegration, 'Integrated data analysis')}
 
 🎯 Summary & Recommendations
 ------------------------
@@ -106,6 +129,7 @@ ${this.formatSection(data.dataQuality, 'Data quality assessment')}
 • Risk Level: ${data.risk.analysis.riskLevel || 'N/A'}
 • Market Sentiment: ${data.sentiment.analysis.overallSentiment || 'N/A'}
 • ESG Rating: ${data.esg.analysis.overallESGRating || 'N/A'}
+• Valuation Status: ${data.valuation.analysis.intrinsicValue || 'N/A'}
 `;
   }
 
