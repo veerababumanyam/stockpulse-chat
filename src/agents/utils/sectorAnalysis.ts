@@ -41,6 +41,12 @@ export const determineTrend = (marketStrength: number): string => {
   return 'Strong Bearish';
 };
 
+export const calculateAveragePerformance = (sectors: any[]): number => {
+  if (!sectors.length) return 0;
+  return sectors.reduce((sum: number, sector: any) => 
+    sum + parseFloat(sector.changesPercentage), 0) / sectors.length;
+};
+
 export const identifySectorTrends = (sectorData: any): string[] => {
   if (!sectorData?.sectorPerformance) return [];
 
