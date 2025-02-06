@@ -16,20 +16,23 @@ export const fetchStockData = async (query: string, apiKey: string) => {
       const symbol = searchResults[0].symbol;
       console.log('Found symbol:', symbol);
       
-      const [quoteResponse, profileResponse] = await Promise.all([
+      const [quoteResponse, profileResponse, metricsResponse] = await Promise.all([
         fetch(`https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${apiKey}`),
-        fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKey}`)
+        fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKey}`),
+        fetch(`https://financialmodelingprep.com/api/v3/key-metrics/${symbol}?limit=1&apikey=${apiKey}`)
       ]);
 
-      const [quoteData, profileData] = await Promise.all([
+      const [quoteData, profileData, metricsData] = await Promise.all([
         quoteResponse.json(),
-        profileResponse.json()
+        profileResponse.json(),
+        metricsResponse.json()
       ]);
 
       if (quoteData[0] && profileData[0]) {
         return {
           quote: quoteData[0],
-          profile: profileData[0]
+          profile: profileData[0],
+          metrics: metricsData[0] || {}
         };
       }
     }
