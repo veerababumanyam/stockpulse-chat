@@ -645,3 +645,7 @@ const SearchResults = () => {
         )}
       </main>
     </div>
+  );
+};
+
+export default SearchResults;
