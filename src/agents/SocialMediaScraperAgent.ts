@@ -82,8 +82,9 @@ export class SocialMediaScraperAgent extends BaseAgent {
     }
 
     const dates = data.map(item => new Date(item.date));
-    const newest = new Date(Math.max(...dates));
-    const oldest = new Date(Math.min(...dates));
+    const timestamps = dates.map(date => date.getTime());
+    const newest = new Date(Math.max(...timestamps));
+    const oldest = new Date(Math.min(...timestamps));
     const daysSpan = Math.ceil((newest.getTime() - oldest.getTime()) / (1000 * 60 * 60 * 24));
 
     return {
@@ -178,4 +179,3 @@ export class SocialMediaScraperAgent extends BaseAgent {
     };
   }
 }
-
