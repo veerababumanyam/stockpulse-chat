@@ -211,7 +211,7 @@ Format numbers appropriately (e.g., millions as 'M', billions as 'B'). Always in
   };
 
   return (
-    <div className="h-full glass-panel flex flex-col">
+    <div className="h-[90vh] glass-panel flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-2 p-4 border-b border-border/50">
         <MessageSquare className="w-5 h-5 text-primary" />
@@ -259,3 +259,4 @@ Format numbers appropriately (e.g., millions as 'M', billions as 'B'). Always in
     </div>
   );
 };
+
