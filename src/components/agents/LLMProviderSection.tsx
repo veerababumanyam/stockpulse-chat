@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface LLMProvider {
@@ -13,6 +13,12 @@ interface LLMProvider {
   apiKey: string;
   isEnabled: boolean;
   models: string[];
+}
+
+interface ApiKeys {
+  openai: string;
+  deepseek: string;
+  fmp: string;
 }
 
 export const LLMProviderSection = () => {
@@ -24,19 +30,31 @@ export const LLMProviderSection = () => {
         name: 'OpenAI',
         apiKey: '',
         isEnabled: true,
-        models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4o-vision', 'gpt-4o-1106']
+        models: ['gpt-4', 'gpt-4-turbo-preview', 'gpt-4-vision-preview', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k']
       },
       {
         id: 'deepseek',
         name: 'Deepseek',
         apiKey: '',
         isEnabled: false,
-        models: ['deepseek-chat', 'deepseek-coder', 'deepseek-reasoner']
+        models: ['deepseek-chat', 'deepseek-coder', 'deepseek-reasoner', 'deepseek-english', 'deepseek-math']
       }
     ];
   });
 
   const { toast } = useToast();
+
+  // Load API keys from API Keys page storage
+  useEffect(() => {
+    const savedApiKeys = localStorage.getItem('apiKeys');
+    if (savedApiKeys) {
+      const apiKeys: ApiKeys = JSON.parse(savedApiKeys);
+      setProviders(prev => prev.map(provider => ({
+        ...provider,
+        apiKey: apiKeys[provider.id as keyof ApiKeys] || ''
+      })));
+    }
+  }, []);
 
   const handleProviderToggle = (providerId: string) => {
     setProviders(prev => {
@@ -51,6 +69,7 @@ export const LLMProviderSection = () => {
   };
 
   const handleApiKeyUpdate = (providerId: string, apiKey: string) => {
+    // Update both the providers state and the API Keys storage
     setProviders(prev => {
       const updated = prev.map(provider =>
         provider.id === providerId
@@ -61,9 +80,19 @@ export const LLMProviderSection = () => {
       return updated;
     });
 
+    // Update API Keys storage
+    const savedApiKeys = localStorage.getItem('apiKeys');
+    const apiKeys: ApiKeys = savedApiKeys ? JSON.parse(savedApiKeys) : {
+      openai: '',
+      deepseek: '',
+      fmp: ''
+    };
+    apiKeys[providerId as keyof ApiKeys] = apiKey;
+    localStorage.setItem('apiKeys', JSON.stringify(apiKeys));
+
     toast({
       title: "API Key Updated",
-      description: "The API key has been saved successfully.",
+      description: "The API key has been saved successfully in both locations.",
     });
   };
 
