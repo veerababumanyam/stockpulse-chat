@@ -27,7 +27,7 @@ export const AgentListFilters = ({
   setActiveFilter
 }: AgentListFiltersProps) => {
   const toggleSortDirection = () => {
-    setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+    setSortDirection(sortDirection === "asc" ? "desc" : "asc");
   };
 
   return (
