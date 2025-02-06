@@ -143,16 +143,17 @@ export class SocialMediaScraperAgent extends BaseAgent {
   private static calculateTimeDistribution(data: any[]): { daysSpan: number; newest?: string; oldest?: string } {
     if (!Array.isArray(data) || data.length === 0) return { daysSpan: 0 };
 
-    const dates = data
-      .map(item => item.publishedDate)
-      .filter((date): date is string => typeof date === 'string')
-      .map(date => new Date(date).getTime())
-      .filter(timestamp => !isNaN(timestamp));
+    const timestamps: number[] = data
+      .map(item => {
+        const date = new Date(item.publishedDate);
+        return !isNaN(date.getTime()) ? date.getTime() : null;
+      })
+      .filter((timestamp): timestamp is number => timestamp !== null);
 
-    if (dates.length === 0) return { daysSpan: 0 };
+    if (timestamps.length === 0) return { daysSpan: 0 };
 
-    const newest = Math.max(...dates);
-    const oldest = Math.min(...dates);
+    const newest = Math.max(...timestamps);
+    const oldest = Math.min(...timestamps);
     const daysSpan = Math.ceil((newest - oldest) / (1000 * 60 * 60 * 24));
 
     return {
