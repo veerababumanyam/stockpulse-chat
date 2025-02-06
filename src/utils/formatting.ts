@@ -26,3 +26,21 @@ export const getRecommendationColor = (rating: string) => {
       return 'bg-yellow-500';
   }
 };
+
+export const formatPrice = (price: number | string) => {
+  if (typeof price === 'string') return price;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(price);
+};
+
+export const formatVolume = (volume: number) => {
+  return new Intl.NumberFormat('en-US', {
+    notation: 'compact',
+    compactDisplay: 'short'
+  }).format(volume);
+};
+
