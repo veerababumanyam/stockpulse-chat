@@ -1,4 +1,3 @@
-
 import { FundamentalAnalysisAgent } from './FundamentalAnalysisAgent';
 import { TechnicalAnalysisAgent } from './TechnicalAnalysisAgent';
 import { NewsAnalysisAgent } from './NewsAnalysisAgent';
@@ -23,6 +22,8 @@ import { ETFFlowAgent } from './ETFFlowAgent';
 import { LegalDocumentAgent } from './LegalDocumentAgent';
 import { PatentAnalysisAgent } from './PatentAnalysisAgent';
 import { BigPlayerTrackingAgent } from './BigPlayerTrackingAgent';
+import { AnomalyDetectionAgent } from './AnomalyDetectionAgent';
+import { CorrelationAnalysisAgent } from './CorrelationAnalysisAgent';
 
 interface AgentResult {
   data: any;
@@ -75,7 +76,9 @@ export class OrchestratorAgent {
         this.executeAgent('etfFlow', () => ETFFlowAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('legalDocument', () => LegalDocumentAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('patentAnalysis', () => PatentAnalysisAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('bigPlayerTracking', () => BigPlayerTrackingAgent.analyze(stockData.quote.symbol))
+        this.executeAgent('bigPlayerTracking', () => BigPlayerTrackingAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('anomalyDetection', () => AnomalyDetectionAgent.analyze(stockData)),
+        this.executeAgent('correlationAnalysis', () => CorrelationAnalysisAgent.analyze(stockData))
       ];
 
       await Promise.all(agentPromises);
