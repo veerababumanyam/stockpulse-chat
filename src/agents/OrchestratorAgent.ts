@@ -13,6 +13,8 @@ import { TechnicalDataAgent } from './TechnicalDataAgent';
 import { MarketResearchAgent } from './MarketResearchAgent';
 import { DataIntegrationAgent } from './DataIntegrationAgent';
 import { ValuationAnalysisAgent } from './ValuationAnalysisAgent';
+import { CashFlowAnalysisAgent } from './CashFlowAnalysisAgent';
+import { VolatilityAnalysisAgent } from './VolatilityAnalysisAgent';
 
 export class OrchestratorAgent {
   static async orchestrateAnalysis(stockData: any) {
@@ -32,7 +34,9 @@ export class OrchestratorAgent {
         technicalData,
         marketResearch,
         dataIntegration,
-        valuation
+        valuation,
+        cashFlow,
+        volatility
       ] = await Promise.all([
         FundamentalAnalysisAgent.analyze(stockData),
         TechnicalAnalysisAgent.analyze(stockData),
@@ -47,7 +51,9 @@ export class OrchestratorAgent {
         TechnicalDataAgent.analyze(stockData.quote.symbol),
         MarketResearchAgent.analyze(stockData.quote.symbol),
         DataIntegrationAgent.analyze(stockData),
-        ValuationAnalysisAgent.analyze(stockData.quote.symbol)
+        ValuationAnalysisAgent.analyze(stockData.quote.symbol),
+        CashFlowAnalysisAgent.analyze(stockData.quote.symbol),
+        VolatilityAnalysisAgent.analyze(stockData.quote.symbol)
       ]);
 
       return this.formatOutput({
@@ -66,7 +72,9 @@ export class OrchestratorAgent {
         technicalData,
         marketResearch,
         dataIntegration,
-        valuation
+        valuation,
+        cashFlow,
+        volatility
       });
     } catch (error) {
       console.error('Error in orchestration:', error);
@@ -86,6 +94,14 @@ ${this.formatSection(data.fundamental, 'Fundamental metrics and company health')
 ------------------------
 ${this.formatSection(data.technical, 'Technical indicators and price action')}
 ${this.formatSection(data.technicalData, 'Detailed technical data')}
+
+💰 Cash Flow Analysis
+------------------------
+${this.formatSection(data.cashFlow, 'Cash flow metrics and sustainability')}
+
+📊 Volatility Analysis
+------------------------
+${this.formatSection(data.volatility, 'Volatility metrics and risk assessment')}
 
 🏢 Market Research & Competition
 ------------------------
@@ -130,6 +146,8 @@ ${this.formatSection(data.dataIntegration, 'Integrated data analysis')}
 • Market Sentiment: ${data.sentiment.analysis.overallSentiment || 'N/A'}
 • ESG Rating: ${data.esg.analysis.overallESGRating || 'N/A'}
 • Valuation Status: ${data.valuation.analysis.intrinsicValue || 'N/A'}
+• Cash Flow Health: ${data.cashFlow.analysis.cashFlowStrength || 'N/A'}
+• Volatility Status: ${data.volatility.analysis.volatilityTrend || 'N/A'}
 `;
   }
 
