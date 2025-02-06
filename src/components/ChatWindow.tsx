@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageSquare, Send, Key } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -49,6 +48,20 @@ export const ChatWindow = () => {
   const [apiKeys, setApiKeys] = useState<ApiKeys>({ openai: "", fmp: "" });
   const { toast } = useToast();
 
+  // Load API keys on component mount
+  useEffect(() => {
+    const savedKeys = localStorage.getItem('apiKeys');
+    if (savedKeys) {
+      const parsedKeys = JSON.parse(savedKeys);
+      setApiKeys(parsedKeys);
+      setShowApiKeyForm(false);
+      toast({
+        title: "API Keys Loaded",
+        description: "Your saved API keys have been loaded successfully",
+      });
+    }
+  }, []);
+
   const handleApiKeySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!apiKeys.openai || !apiKeys.fmp) {
@@ -59,10 +72,12 @@ export const ChatWindow = () => {
       });
       return;
     }
+    // Save API keys to localStorage
+    localStorage.setItem('apiKeys', JSON.stringify(apiKeys));
     setShowApiKeyForm(false);
     toast({
       title: "Success",
-      description: "API keys set successfully",
+      description: "API keys saved successfully",
     });
   };
 
