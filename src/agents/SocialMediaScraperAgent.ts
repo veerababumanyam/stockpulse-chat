@@ -140,10 +140,17 @@ export class SocialMediaScraperAgent extends BaseAgent {
       }));
   }
 
-  private static calculateTimeDistribution(data: any[]): any {
+  private static calculateTimeDistribution(data: any[]): { daysSpan: number; newest?: string; oldest?: string } {
     if (!Array.isArray(data) || data.length === 0) return { daysSpan: 0 };
 
-    const dates = data.map(item => new Date(item.publishedDate).getTime());
+    const dates = data
+      .map(item => item.publishedDate)
+      .filter((date): date is string => typeof date === 'string')
+      .map(date => new Date(date).getTime())
+      .filter(timestamp => !isNaN(timestamp));
+
+    if (dates.length === 0) return { daysSpan: 0 };
+
     const newest = Math.max(...dates);
     const oldest = Math.min(...dates);
     const daysSpan = Math.ceil((newest - oldest) / (1000 * 60 * 60 * 24));
