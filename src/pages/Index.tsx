@@ -13,7 +13,8 @@ import {
   Database,
   ChartBar,
   Scale,
-  Search
+  Search,
+  Lock
 } from "lucide-react";
 
 const Index = () => {
@@ -323,4 +324,3 @@ const Index = () => {
 };
 
 export default Index;
-
