@@ -28,14 +28,27 @@ export class TechnicalAnalysisAgent {
   }
 
   private static getTrendSignal(price: number, ma50: number, ma200: number): string {
-    if (price > ma50 && ma50 > ma200) return 'Strong Uptrend';
-    if (price < ma50 && ma50 < ma200) return 'Strong Downtrend';
-    return 'Mixed Trend';
+    if (price > ma50 && ma50 > ma200) {
+      const strength = ((price - ma200) / ma200) * 100;
+      if (strength > 10) return 'Very Strong Uptrend';
+      return 'Strong Uptrend';
+    }
+    if (price < ma50 && ma50 < ma200) {
+      const strength = ((ma200 - price) / ma200) * 100;
+      if (strength > 10) return 'Very Strong Downtrend';
+      return 'Strong Downtrend';
+    }
+    if (price > ma50) return 'Bullish';
+    if (price < ma50) return 'Bearish';
+    return 'Neutral';
   }
 
   private static getVolumeSignal(volume: number, avgVolume: number): string {
-    if (volume > avgVolume * 1.5) return 'High Volume - Strong Signal';
-    if (volume < avgVolume * 0.5) return 'Low Volume - Weak Signal';
+    const volumeRatio = volume / avgVolume;
+    if (volumeRatio > 2.0) return 'Extremely High Volume';
+    if (volumeRatio > 1.5) return 'High Volume';
+    if (volumeRatio < 0.5) return 'Very Low Volume';
+    if (volumeRatio < 0.75) return 'Low Volume';
     return 'Normal Volume';
   }
 
@@ -43,9 +56,28 @@ export class TechnicalAnalysisAgent {
     const trendStrength = this.getTrendSignal(price, ma50, ma200);
     const volumeStrength = this.getVolumeSignal(volume, avgVolume);
     
-    if (trendStrength.includes('Strong') && volumeStrength.includes('Strong')) {
-      return 'Strong Buy/Sell Signal';
+    // Strong Buy Signals
+    if ((trendStrength.includes('Strong Uptrend') || trendStrength === 'Bullish') && 
+        (volumeStrength.includes('High') || volumeStrength.includes('Extremely'))) {
+      return 'Strong Buy';
     }
-    return 'Monitor for Better Entry/Exit';
+    
+    // Strong Sell Signals
+    if ((trendStrength.includes('Strong Downtrend') || trendStrength === 'Bearish') && 
+        (volumeStrength.includes('High') || volumeStrength.includes('Extremely'))) {
+      return 'Strong Sell';
+    }
+    
+    // Buy Signals
+    if (trendStrength.includes('Uptrend') || trendStrength === 'Bullish') {
+      return 'Buy';
+    }
+    
+    // Sell Signals
+    if (trendStrength.includes('Downtrend') || trendStrength === 'Bearish') {
+      return 'Sell';
+    }
+
+    return price > ma50 ? 'Buy with Caution' : 'Sell with Caution';
   }
 }
