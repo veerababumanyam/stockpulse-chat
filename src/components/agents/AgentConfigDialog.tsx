@@ -69,7 +69,9 @@ export const AgentConfigDialog = ({
             provider: provider.name,
             models: provider.selectedModels || []
           })).filter(p => p.models.length > 0);
-          setAvailableModels(models);
+          
+          // Initialize with empty arrays if no models are available
+          setAvailableModels(models.length > 0 ? models : []);
           
           // Flatten models for searchable list
           const allModels = models.flatMap(provider => provider.models);
@@ -81,7 +83,14 @@ export const AgentConfigDialog = ({
           }
         } catch (error) {
           console.error('Error parsing providers:', error);
+          // Initialize with empty arrays in case of error
+          setAvailableModels([]);
+          setFlatModels([]);
         }
+      } else {
+        // Initialize with empty arrays if no providers are saved
+        setAvailableModels([]);
+        setFlatModels([]);
       }
     };
 
@@ -161,28 +170,36 @@ export const AgentConfigDialog = ({
                 <Command>
                   <CommandInput placeholder="Search model..." />
                   <CommandEmpty>No model found.</CommandEmpty>
-                  {availableModels.map(({ provider, models }) => (
-                    <CommandGroup key={provider} heading={provider}>
-                      {models.map((model) => (
-                        <CommandItem
-                          key={model}
-                          value={model}
-                          onSelect={(currentValue) => {
-                            setConfig({ ...config, model: currentValue });
-                            setOpenCombobox(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              config.model === model ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {model}
-                        </CommandItem>
-                      ))}
+                  {availableModels.length > 0 ? (
+                    availableModels.map(({ provider, models }) => (
+                      <CommandGroup key={provider} heading={provider}>
+                        {models.map((model) => (
+                          <CommandItem
+                            key={model}
+                            value={model}
+                            onSelect={(currentValue) => {
+                              setConfig({ ...config, model: currentValue });
+                              setOpenCombobox(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                config.model === model ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {model}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    ))
+                  ) : (
+                    <CommandGroup heading="No Models">
+                      <CommandItem disabled>
+                        Please configure models in LLM Providers tab
+                      </CommandItem>
                     </CommandGroup>
-                  ))}
+                  )}
                 </Command>
               </PopoverContent>
             </Popover>
