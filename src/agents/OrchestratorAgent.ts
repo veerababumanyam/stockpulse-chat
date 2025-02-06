@@ -39,6 +39,15 @@ import { DeepLearningAgent } from './DeepLearningAgent';
 import { ReinforcementLearningAgent } from './ReinforcementLearningAgent';
 import { EnsembleModelingAgent } from './EnsembleModelingAgent';
 import { BayesianInferenceAgent } from './BayesianInferenceAgent';
+import { InvestmentTrendAgent } from './InvestmentTrendAgent';
+import { LegalImpactAgent } from './LegalImpactAgent';
+import { PatentValueAgent } from './PatentValueAgent';
+import { SupplyDemandAgent } from './SupplyDemandAgent';
+import { GeopoliticalImpactAgent } from './GeopoliticalImpactAgent';
+import { CurrencyImpactAgent } from './CurrencyImpactAgent';
+import { CommodityImpactAgent } from './CommodityImpactAgent';
+import { TechnologicalDisruptionAgent } from './TechnologicalDisruptionAgent';
+import { DemographicTrendAgent } from './DemographicTrendAgent';
 
 interface AgentResult {
   data: any;
@@ -108,7 +117,18 @@ export class OrchestratorAgent {
         this.executeAgent('deepLearning', () => DeepLearningAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('reinforcementLearning', () => ReinforcementLearningAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('ensembleModeling', () => EnsembleModelingAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('bayesianInference', () => BayesianInferenceAgent.analyze(stockData.quote.symbol))
+        this.executeAgent('bayesianInference', () => BayesianInferenceAgent.analyze(stockData.quote.symbol)),
+        
+        // Add new specialized analysis agents
+        this.executeAgent('investmentTrend', () => InvestmentTrendAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('legalImpact', () => LegalImpactAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('patentValue', () => PatentValueAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('supplyDemand', () => SupplyDemandAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('geopoliticalImpact', () => GeopoliticalImpactAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('currencyImpact', () => CurrencyImpactAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('commodityImpact', () => CommodityImpactAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('technologicalDisruption', () => TechnologicalDisruptionAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('demographicTrend', () => DemographicTrendAgent.analyze(stockData.quote.symbol))
       ];
 
       await Promise.all(agentPromises);
