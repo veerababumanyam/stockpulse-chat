@@ -28,17 +28,24 @@ export class NewsAnalysisAgent {
           }
         };
       }
+
+      const filteredNews = newsData
+        .filter((news: any) => news.title && news.text) // Only include news with title and text
+        .map((news: any) => ({
+          title: news.title,
+          date: new Date(news.publishedDate).toLocaleDateString(),
+          summary: news.text.substring(0, 150) + '...', // Add a brief summary
+          sentiment: this.analyzeSentiment(news.text)
+        }))
+        .filter((news: any) => news.title && news.date); // Additional filter for mapped data
       
       return {
         type: 'news',
         analysis: {
-          recentNews: newsData.map((news: any) => ({
-            title: news.title,
-            date: new Date(news.publishedDate).toLocaleDateString(),
-            summary: news.text,
-            sentiment: this.analyzeSentiment(news.text)
-          })),
-          overallSentiment: this.getOverallSentiment(newsData)
+          recentNews: filteredNews,
+          overallSentiment: filteredNews.length > 0 
+            ? this.getOverallSentiment(newsData)
+            : 'No recent news available'
         }
       };
     } catch (error) {

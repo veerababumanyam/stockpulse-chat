@@ -36,66 +36,72 @@ export class OrchestratorAgent {
   }
 
   private static formatOutput(data: any): string {
+    // Filter out sections with no data
+    const hasNews = data.news.analysis.recentNews && data.news.analysis.recentNews.length > 0;
+    const hasRecommendations = data.analyst.analysis.recommendations && data.analyst.analysis.recommendations.length > 0;
+    const hasEstimates = data.analyst.analysis.estimates && data.analyst.analysis.estimates.length > 0;
+
     return `
 📊 Analysis Report for ${data.companyName} (${data.symbol})
 
 🔎 Fundamental Analysis
 ------------------------
-Valuation Metrics:
-• P/E Ratio: ${data.fundamental.analysis.valuationMetrics?.peRatio || 'N/A'}
-• Market Cap: ${data.fundamental.analysis.valuationMetrics?.marketCap ? this.formatLargeNumber(data.fundamental.analysis.valuationMetrics.marketCap) : 'N/A'}
+${data.fundamental.analysis.valuationMetrics ? `Valuation Metrics:
+• P/E Ratio: ${data.fundamental.analysis.valuationMetrics.peRatio || 'N/A'}
+• Market Cap: ${data.fundamental.analysis.valuationMetrics.marketCap ? this.formatLargeNumber(data.fundamental.analysis.valuationMetrics.marketCap) : 'N/A'}` : 'Valuation metrics not available'}
 
-Financial Health:
-• Debt to Equity: ${data.fundamental.analysis.financialHealth?.debtToEquity || 'N/A'}
-• Current Ratio: ${data.fundamental.analysis.financialHealth?.currentRatio || 'N/A'}
+${data.fundamental.analysis.financialHealth ? `Financial Health:
+• Debt to Equity: ${data.fundamental.analysis.financialHealth.debtToEquity || 'N/A'}
+• Current Ratio: ${data.fundamental.analysis.financialHealth.currentRatio || 'N/A'}` : 'Financial health metrics not available'}
 
-Recommendation: ${data.fundamental.analysis.recommendation || 'N/A'}
+Recommendation: ${data.fundamental.analysis.recommendation || 'No recommendation available'}
 
 📈 Technical Analysis
 ------------------------
-Price Action:
-• Current Price: $${data.technical.analysis.priceAction?.currentPrice || 'N/A'}
-• 50-day MA: $${data.technical.analysis.priceAction?.ma50 || 'N/A'}
-• 200-day MA: $${data.technical.analysis.priceAction?.ma200 || 'N/A'}
+${data.technical.analysis.priceAction ? `Price Action:
+• Current Price: $${data.technical.analysis.priceAction.currentPrice || 'N/A'}
+• 50-day MA: $${data.technical.analysis.priceAction.ma50 || 'N/A'}
+• 200-day MA: $${data.technical.analysis.priceAction.ma200 || 'N/A'}` : 'Price action data not available'}
 
-Signals:
-• Trend: ${data.technical.analysis.signals?.trendSignal || 'N/A'}
-• Volume: ${data.technical.analysis.signals?.volumeSignal || 'N/A'}
-• Overall: ${data.technical.analysis.signals?.overallSignal || 'N/A'}
+${data.technical.analysis.signals ? `Signals:
+• Trend: ${data.technical.analysis.signals.trendSignal || 'N/A'}
+• Volume: ${data.technical.analysis.signals.volumeSignal || 'N/A'}
+• Overall: ${data.technical.analysis.signals.overallSignal || 'N/A'}` : 'Technical signals not available'}
 
-📰 Recent News Analysis
+${hasNews ? `📰 Recent News Analysis
 ------------------------
-${(data.news.analysis.recentNews || []).map((news: any) => `
-${news.date || 'N/A'}: ${news.title || 'N/A'}
-Sentiment: ${news.sentiment || 'N/A'}
+${data.news.analysis.recentNews.map((news: any) => `
+${news.date}: ${news.title}
+${news.summary || ''}
+Sentiment: ${news.sentiment}
 `).join('\n')}
 
-Overall News Sentiment: ${data.news.analysis.overallSentiment || 'N/A'}
+Overall News Sentiment: ${data.news.analysis.overallSentiment}` : ''}
 
-👥 Analyst Coverage
+${hasRecommendations || hasEstimates ? `👥 Analyst Coverage
 ------------------------
-Recent Recommendations:
-${(data.analyst.analysis.recommendations || []).map((rec: any) => `
-${rec.date || 'N/A'}: ${rec.company || 'N/A'}
-• Recommendation: ${rec.recommendation || 'N/A'}
-• Target Price: ${rec.targetPrice ? `$${rec.targetPrice}` : 'N/A'}
-`).join('\n')}
+${hasRecommendations ? `Recent Recommendations:
+${data.analyst.analysis.recommendations.map((rec: any) => `
+${rec.date}: ${rec.company}
+• Recommendation: ${rec.recommendation}
+• Target Price: ${rec.targetPrice ? `$${rec.targetPrice}` : 'Not provided'}
+`).join('\n')}` : 'No recent analyst recommendations available'}
 
-Recent Estimates:
-${(data.analyst.analysis.estimates || []).map((est: any) => `
-${est.date || 'N/A'}:
-• EPS: Est. ${est.estimatedEPS ? `$${est.estimatedEPS}` : 'N/A'} | Act. ${est.actualEPS ? `$${est.actualEPS}` : 'N/A'}
-• Revenue: Est. ${est.estimatedRevenue ? this.formatLargeNumber(est.estimatedRevenue) : 'N/A'} | Act. ${est.actualRevenue ? this.formatLargeNumber(est.actualRevenue) : 'N/A'}
-`).join('\n')}
+${hasEstimates ? `Recent Estimates:
+${data.analyst.analysis.estimates.map((est: any) => `
+${est.date}:
+• EPS: ${est.estimatedEPS ? `Est. $${est.estimatedEPS}` : 'Est. N/A'} | ${est.actualEPS ? `Act. $${est.actualEPS}` : 'Act. pending'}
+• Revenue: ${est.estimatedRevenue ? `Est. ${this.formatLargeNumber(est.estimatedRevenue)}` : 'Est. N/A'} | ${est.actualRevenue ? `Act. ${this.formatLargeNumber(est.actualRevenue)}` : 'Act. pending'}
+`).join('\n')}` : 'No recent analyst estimates available'}
 
-Consensus: ${data.analyst.analysis.consensus || 'N/A'}
+Consensus: ${data.analyst.analysis.consensus}` : ''}
 
 🎯 Overall Assessment
 ------------------------
-• Fundamental Outlook: ${data.fundamental.analysis.recommendation || 'N/A'}
-• Technical Signals: ${data.technical.analysis.signals?.overallSignal || 'N/A'}
-• Market Sentiment: ${data.news.analysis.overallSentiment || 'N/A'}
-• Analyst Consensus: ${data.analyst.analysis.consensus || 'N/A'}
+• Fundamental Outlook: ${data.fundamental.analysis.recommendation || 'No recommendation available'}
+• Technical Signals: ${data.technical.analysis.signals?.overallSignal || 'No signals available'}
+• Market Sentiment: ${data.news.analysis.overallSentiment || 'No sentiment data available'}
+• Analyst Consensus: ${data.analyst.analysis.consensus || 'No consensus available'}
 `;
   }
 
