@@ -47,6 +47,98 @@ export const AIAnalysisTab = ({ aiAnalysis, isLoading }: AIAnalysisTabProps) => 
     );
   }
 
+  const renderAnalysisContent = (result: any) => {
+    if (!result?.data?.analysis) return null;
+
+    const { analysis } = result.data;
+    const sections = [];
+
+    // Handle signals
+    if (analysis.signals && Object.keys(analysis.signals).length > 0) {
+      sections.push(
+        <div key="signals">
+          <h4 className="font-medium mb-2">Signals</h4>
+          {Object.entries(analysis.signals).map(([key, value]: [string, any]) => (
+            <div key={key} className="flex justify-between items-center mb-2">
+              <span className="capitalize text-muted-foreground">
+                {key.replace(/([A-Z])/g, ' $1').trim()}
+              </span>
+              <Badge variant={
+                typeof value === 'string' && value.toLowerCase().includes('buy') ? 'default' :
+                typeof value === 'string' && value.toLowerCase().includes('sell') ? 'destructive' :
+                'secondary'
+              }>
+                {value}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // Handle metrics
+    if (analysis.metrics && Object.keys(analysis.metrics).length > 0) {
+      sections.push(
+        <div key="metrics">
+          <h4 className="font-medium mb-2">Metrics</h4>
+          {Object.entries(analysis.metrics).map(([key, value]: [string, any]) => (
+            <div key={key} className="flex justify-between items-center mb-2">
+              <span className="capitalize text-muted-foreground">
+                {key.replace(/([A-Z])/g, ' $1').trim()}
+              </span>
+              <span>{typeof value === 'number' ? value.toFixed(2) : value.toString()}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // Handle trends
+    if (analysis.trends && Array.isArray(analysis.trends) && analysis.trends.length > 0) {
+      sections.push(
+        <div key="trends">
+          <h4 className="font-medium mb-2">Trends</h4>
+          <ul className="list-disc list-inside space-y-1">
+            {analysis.trends.map((trend: string, index: number) => (
+              <li key={index} className="text-muted-foreground">{trend}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    // Handle other analysis fields
+    const otherFields = Object.entries(analysis).filter(([key]) => 
+      !['signals', 'metrics', 'trends'].includes(key)
+    );
+
+    if (otherFields.length > 0) {
+      sections.push(
+        <div key="other">
+          <h4 className="font-medium mb-2">Additional Analysis</h4>
+          {otherFields.map(([key, value]) => (
+            <div key={key} className="mb-2">
+              <span className="capitalize font-medium">
+                {key.replace(/([A-Z])/g, ' $1').trim()}:
+              </span>
+              <span className="ml-2 text-muted-foreground">
+                {typeof value === 'object' ? JSON.stringify(value, null, 2) : value.toString()}
+              </span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return sections.length > 0 ? (
+      <div className="space-y-4">
+        {sections}
+      </div>
+    ) : (
+      <p className="text-muted-foreground">No detailed analysis available</p>
+    );
+  };
+
   return (
     <div className="grid grid-cols-1 gap-4">
       {/* Overview Card */}
@@ -88,7 +180,7 @@ export const AIAnalysisTab = ({ aiAnalysis, isLoading }: AIAnalysisTabProps) => 
       </Card>
 
       {/* Individual Analysis Cards */}
-      {Object.entries(aiAnalysis.formattedData.results).map(([agentName, result]: [string, any]) => (
+      {Object.entries(aiAnalysis.formattedData.results).map(([agentName, result]) => (
         <Card key={agentName}>
           <CardHeader>
             <CardTitle className="capitalize">
@@ -99,52 +191,7 @@ export const AIAnalysisTab = ({ aiAnalysis, isLoading }: AIAnalysisTabProps) => 
             {result?.error ? (
               <p className="text-destructive">{result.error}</p>
             ) : (
-              <div className="space-y-4">
-                {result?.data?.analysis?.signals && (
-                  <div>
-                    <h4 className="font-medium mb-2">Signals</h4>
-                    {Object.entries(result.data.analysis.signals).map(([key, value]: [string, any]) => (
-                      <div key={key} className="flex justify-between items-center">
-                        <span className="capitalize text-muted-foreground">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
-                        </span>
-                        <Badge variant={
-                          typeof value === 'string' && value.toLowerCase().includes('buy') ? 'default' :
-                          typeof value === 'string' && value.toLowerCase().includes('sell') ? 'destructive' :
-                          'secondary'
-                        }>
-                          {value}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {result?.data?.analysis?.metrics && (
-                  <div>
-                    <h4 className="font-medium mb-2">Metrics</h4>
-                    {Object.entries(result.data.analysis.metrics).map(([key, value]: [string, any]) => (
-                      <div key={key} className="flex justify-between items-center">
-                        <span className="capitalize text-muted-foreground">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
-                        </span>
-                        <span>{typeof value === 'object' ? JSON.stringify(value) : value}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {result?.data?.analysis?.trends && Array.isArray(result.data.analysis.trends) && (
-                  <div>
-                    <h4 className="font-medium mb-2">Trends</h4>
-                    <ul className="list-disc list-inside space-y-1">
-                      {result.data.analysis.trends.map((trend: string, index: number) => (
-                        <li key={index} className="text-muted-foreground">{trend}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
+              renderAnalysisContent(result)
             )}
           </CardContent>
         </Card>
