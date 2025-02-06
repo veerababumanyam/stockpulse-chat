@@ -25,9 +25,27 @@ export const SearchBar = () => {
 
     setIsLoading(true);
     try {
-      // Replace with your FMP API key
-      const apiKey = "YOUR_FMP_API_KEY";
-      const data = await fetchStockData(query, apiKey);
+      const savedKeys = localStorage.getItem('apiKeys');
+      if (!savedKeys) {
+        toast({
+          title: "API Key Missing",
+          description: "Please set your FMP API key in the API Keys page",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { fmp } = JSON.parse(savedKeys);
+      if (!fmp) {
+        toast({
+          title: "FMP API Key Missing",
+          description: "Please set your FMP API key in the API Keys page",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const data = await fetchStockData(query, fmp);
       
       if (data) {
         setStockData(data);
@@ -42,7 +60,7 @@ export const SearchBar = () => {
       console.error("Search error:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch stock data",
+        description: "Failed to fetch stock data. Please check your API key.",
         variant: "destructive",
       });
     } finally {
@@ -93,3 +111,4 @@ export const SearchBar = () => {
     </div>
   );
 };
+
