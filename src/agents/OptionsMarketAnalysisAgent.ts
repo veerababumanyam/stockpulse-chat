@@ -10,12 +10,17 @@ export class OptionsMarketAnalysisAgent extends BaseAgent {
       }
       const { fmp } = JSON.parse(savedKeys);
 
+      if (!fmp) {
+        throw new Error('FMP API key is missing');
+      }
+
       const response = await fetch(
-        `https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?apikey=${fmp}`
+        `https://financialmodelingprep.com/api/v3/stock-price-change/${symbol}?apikey=${fmp}`
       );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch options data');
+        console.error('Options market API error:', response.status, response.statusText);
+        return this.getFallbackAnalysis();
       }
 
       const data = await response.json();
@@ -37,43 +42,58 @@ export class OptionsMarketAnalysisAgent extends BaseAgent {
       };
     } catch (error) {
       console.error('Error in options market analysis:', error);
-      return {
-        type: 'options-market',
-        analysis: {
-          signals: {
-            overallSignal: 'NEUTRAL'
-          },
-          metrics: {},
-          sentiment: 'Unable to determine'
-        }
-      };
+      return this.getFallbackAnalysis();
     }
   }
 
+  private static getFallbackAnalysis(): AnalysisResult {
+    return {
+      type: 'options-market',
+      analysis: {
+        signals: {
+          overallSignal: 'NEUTRAL'
+        },
+        metrics: {
+          impliedVolatility: 'Data unavailable',
+          putCallRatio: {
+            ratio: 'N/A',
+            trend: 'Data unavailable'
+          },
+          optionsVolume: {
+            callVolume: 'N/A',
+            putVolume: 'N/A',
+            volumeTrend: 'Data unavailable'
+          }
+        },
+        sentiment: 'Data currently unavailable'
+      }
+    };
+  }
+
   private static determineOptionsSignal(data: any): string {
-    return 'NEUTRAL'; // Placeholder until real options data available
+    return 'NEUTRAL';
   }
 
   private static calculateImpliedVolatility(data: any): string {
-    return 'Moderate'; // Placeholder until real options data available
+    return 'Data unavailable';
   }
 
   private static analyzePutCallRatio(data: any): any {
     return {
-      ratio: 'Data pending',
-      trend: 'Analysis pending'
+      ratio: 'N/A',
+      trend: 'Data unavailable'
     };
   }
 
   private static analyzeOptionsVolume(data: any): any {
     return {
-      callVolume: 'Data pending',
-      putVolume: 'Data pending',
-      volumeTrend: 'Analysis pending'
+      callVolume: 'N/A',
+      putVolume: 'N/A',
+      volumeTrend: 'Data unavailable'
     };
   }
 
   private static determineOptionsSentiment(data: any): string {
-    return 'Neutral'; // Placeholder until real options data available
+    return 'Data currently unavailable';
   }
 }
