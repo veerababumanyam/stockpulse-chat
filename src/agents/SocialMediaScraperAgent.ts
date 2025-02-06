@@ -71,13 +71,14 @@ export class SocialMediaScraperAgent extends BaseAgent {
       else sentimentCounts.neutral++;
     });
 
+    const total = data.length || 1;
     return {
       overallSentiment: sentimentScore > 0 ? 'Positive' : sentimentScore < 0 ? 'Negative' : 'Neutral',
       sentimentScore: sentimentScore,
       distribution: {
-        positive: ((sentimentCounts.positive / (data.length || 1)) * 100).toFixed(2) + '%',
-        negative: ((sentimentCounts.negative / (data.length || 1)) * 100).toFixed(2) + '%',
-        neutral: ((sentimentCounts.neutral / (data.length || 1)) * 100).toFixed(2) + '%'
+        positive: ((sentimentCounts.positive / total) * 100).toFixed(2) + '%',
+        negative: ((sentimentCounts.negative / total) * 100).toFixed(2) + '%',
+        neutral: ((sentimentCounts.neutral / total) * 100).toFixed(2) + '%'
       }
     };
   }
