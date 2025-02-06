@@ -223,15 +223,15 @@ Format numbers appropriately (e.g., millions as 'M', billions as 'B'). Always in
             key={index}
             className={`mb-4 p-3 rounded-lg ${
               message.isUser 
-                ? "bg-primary/10 ml-auto w-fit max-w-[85%]" 
-                : "bg-muted/50 mr-auto w-fit max-w-[85%] whitespace-pre-line"
+                ? "bg-primary/10 ml-auto w-fit max-w-[95%]" 
+                : "bg-muted/50 mr-auto w-fit max-w-[95%] whitespace-pre-line"
             }`}
           >
             {message.content}
           </div>
         ))}
         {isLoading && (
-          <div className="bg-muted/50 mr-auto w-fit max-w-[85%] mb-4 p-3 rounded-lg">
+          <div className="bg-muted/50 mr-auto w-fit max-w-[95%] mb-4 p-3 rounded-lg">
             Analyzing stock data...
           </div>
         )}
