@@ -113,7 +113,9 @@ export class SocialMediaScraperAgent extends BaseAgent {
     return {
       totalMentions: data.length,
       uniqueSources: sources.size,
-      mentionsPerDay: (data.length / Math.max(1, timeDistribution.daysSpan)).toFixed(2),
+      mentionsPerDay: timeDistribution.daysSpan > 0 
+        ? (data.length / timeDistribution.daysSpan).toFixed(2)
+        : '0',
       sourceDistribution: Array.from(sources).map(source => ({
         source,
         count: data.filter(item => item.site === source).length
@@ -124,7 +126,7 @@ export class SocialMediaScraperAgent extends BaseAgent {
   private static calculateTimeDistribution(data: any[]): { daysSpan: number; newest?: string; oldest?: string } {
     if (!Array.isArray(data) || data.length === 0) return { daysSpan: 0 };
 
-    const timestamps = data
+    const timestamps: number[] = data
       .map(item => {
         const date = new Date(item.publishedDate);
         return isNaN(date.getTime()) ? null : date.getTime();
@@ -165,4 +167,3 @@ export class SocialMediaScraperAgent extends BaseAgent {
       }));
   }
 }
-
