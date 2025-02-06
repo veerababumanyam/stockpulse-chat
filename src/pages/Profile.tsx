@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { Navigation } from "@/components/Navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -48,48 +49,52 @@ const Profile = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 mt-16">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold flex items-center gap-2">
-            <Key className="w-6 h-6" />
-            API Key Management
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert className="mb-6">
-            <AlertDescription>
-              Manage your API keys for various services. These keys are stored securely in your browser's local storage.
-            </AlertDescription>
-          </Alert>
-          
-          <form onSubmit={handleApiKeySubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">OpenAI API Key</label>
-              <Input
-                type="password"
-                value={apiKeys.openai}
-                onChange={(e) => setApiKeys(prev => ({ ...prev, openai: e.target.value }))}
-                placeholder="Enter OpenAI API Key"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">FMP API Key</label>
-              <Input
-                type="password"
-                value={apiKeys.fmp}
-                onChange={(e) => setApiKeys(prev => ({ ...prev, fmp: e.target.value }))}
-                placeholder="Enter FMP API Key"
-              />
-            </div>
-            <Button type="submit" className="w-full">
-              Save API Keys
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <div className="container mx-auto px-4 py-8 mt-16">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold flex items-center gap-2">
+              <Key className="w-6 h-6" />
+              API Key Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Alert className="mb-6">
+              <AlertDescription>
+                Manage your API keys for various services. These keys are stored securely in your browser's local storage.
+              </AlertDescription>
+            </Alert>
+            
+            <form onSubmit={handleApiKeySubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">OpenAI API Key</label>
+                <Input
+                  type="password"
+                  value={apiKeys.openai}
+                  onChange={(e) => setApiKeys(prev => ({ ...prev, openai: e.target.value }))}
+                  placeholder="Enter OpenAI API Key"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">FMP API Key</label>
+                <Input
+                  type="password"
+                  value={apiKeys.fmp}
+                  onChange={(e) => setApiKeys(prev => ({ ...prev, fmp: e.target.value }))}
+                  placeholder="Enter FMP API Key"
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                Save API Keys
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
 
 export default Profile;
+
