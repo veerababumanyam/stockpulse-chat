@@ -10,16 +10,19 @@ export class SocialMediaScraperAgent extends BaseAgent {
       }
       const { fmp } = JSON.parse(savedKeys);
 
-      // Use stock news as a proxy for social media sentiment since we don't have direct social API access
+      // Use stock news as a proxy for social media sentiment
       const socialData = await this.fetchData(
         `https://financialmodelingprep.com/api/v3/stock_news?tickers=${symbol}&limit=100&apikey=${fmp}`,
         fmp
       );
 
+      // Use Deepseek for enhanced sentiment analysis
+      const sentimentAnalysis = await this.analyzeSocialSentiment(socialData);
+
       return {
         type: 'social-media-scraper',
         analysis: {
-          sentiment: this.analyzeSocialSentiment(socialData),
+          sentiment: sentimentAnalysis,
           trendingTopics: this.extractTrendingTopics(socialData),
           socialMetrics: this.calculateSocialMetrics(socialData),
           influencerMentions: this.analyzeInfluencerMentions(socialData)
@@ -39,48 +42,46 @@ export class SocialMediaScraperAgent extends BaseAgent {
     }
   }
 
-  private static analyzeSocialSentiment(data: any[]): any {
-    if (!Array.isArray(data)) return {};
+  private static async analyzeSocialSentiment(data: any[]): Promise<any> {
+    if (!Array.isArray(data) || data.length === 0) {
+      return {
+        overallSentiment: 'Neutral',
+        sentimentScore: 0,
+        distribution: {
+          positive: '0%',
+          negative: '0%',
+          neutral: '100%'
+        }
+      };
+    }
 
-    const sentimentWords = {
-      positive: ['bullish', 'growth', 'up', 'gain', 'positive', 'success'],
-      negative: ['bearish', 'down', 'loss', 'negative', 'fail', 'risk']
-    };
+    const newsTexts = data.map(item => `${item.title} ${item.text}`).join('\n');
+    const prompt = `Analyze the sentiment of the following news articles:\n${newsTexts}\n\nProvide a structured analysis with overall sentiment (Positive/Negative/Neutral), sentiment score (-1 to 1), and distribution percentages.`;
 
-    let sentimentScore = 0;
-    let sentimentCounts = { positive: 0, negative: 0, neutral: 0 };
-
-    data.forEach(item => {
-      const text = (item.title + ' ' + item.text).toLowerCase();
-      let itemSentiment = 0;
-
-      sentimentWords.positive.forEach(word => {
-        const count = (text.match(new RegExp(word, 'g')) || []).length;
-        sentimentScore += count;
-        itemSentiment += count;
-      });
-
-      sentimentWords.negative.forEach(word => {
-        const count = (text.match(new RegExp(word, 'g')) || []).length;
-        sentimentScore -= count;
-        itemSentiment -= count;
-      });
-
-      if (itemSentiment > 0) sentimentCounts.positive++;
-      else if (itemSentiment < 0) sentimentCounts.negative++;
-      else sentimentCounts.neutral++;
-    });
-
-    const total = data.length || 1;
-    return {
-      overallSentiment: sentimentScore > 0 ? 'Positive' : sentimentScore < 0 ? 'Negative' : 'Neutral',
-      sentimentScore: sentimentScore,
-      distribution: {
-        positive: ((sentimentCounts.positive / total) * 100).toFixed(2) + '%',
-        negative: ((sentimentCounts.negative / total) * 100).toFixed(2) + '%',
-        neutral: ((sentimentCounts.neutral / total) * 100).toFixed(2) + '%'
-      }
-    };
+    try {
+      const analysis = await this.analyzeWithDeepseek(prompt);
+      const parsedAnalysis = JSON.parse(analysis);
+      return {
+        overallSentiment: parsedAnalysis.overallSentiment || 'Neutral',
+        sentimentScore: parsedAnalysis.sentimentScore || 0,
+        distribution: parsedAnalysis.distribution || {
+          positive: '0%',
+          negative: '0%',
+          neutral: '100%'
+        }
+      };
+    } catch (error) {
+      console.error('Error in Deepseek sentiment analysis:', error);
+      return {
+        overallSentiment: 'Neutral',
+        sentimentScore: 0,
+        distribution: {
+          positive: '0%',
+          negative: '0%',
+          neutral: '100%'
+        }
+      };
+    }
   }
 
   private static extractTrendingTopics(data: any[]): string[] {
