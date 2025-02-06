@@ -32,9 +32,10 @@ interface AgentCardProps {
   onEdit: () => void;
   onToggle: () => void;
   onDelete: () => void;
+  onTest: () => void;
 }
 
-export const AgentCard = ({ agent, onEdit, onToggle, onDelete }: AgentCardProps) => {
+export const AgentCard = ({ agent, onEdit, onToggle, onDelete, onTest }: AgentCardProps) => {
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
 
   return (
