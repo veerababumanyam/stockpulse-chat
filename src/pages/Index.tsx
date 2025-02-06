@@ -26,13 +26,6 @@ const Index = () => {
             >
               Dashboard
             </Button>
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate('/api-keys')}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              API Keys
-            </Button>
             <Button
               variant="ghost"
               size="icon"
