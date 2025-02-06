@@ -16,4 +16,11 @@ export interface ApiKeys {
   deepseek?: string;
   gemini?: string;
   fmp?: string;
+  ollama?: string;
 }
+
+export interface OllamaConfig {
+  baseUrl: string;
+  apiKey?: string;
+}
+

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
@@ -13,6 +12,7 @@ import {
   fetchGeminiModels 
 } from "@/utils/modelApis";
 import { ProviderCard } from "./ProviderCard";
+import { OllamaConfig } from "./OllamaConfig";
 import type { LLMProvider, ApiKeys } from "@/types/llm";
 
 export const LLMProviderSection = () => {
@@ -58,7 +58,7 @@ export const LLMProviderSection = () => {
       const updatedProviders = [...providers];
 
       for (const provider of updatedProviders) {
-        if (!apiKeys[provider.id as keyof ApiKeys]) {
+        if (!apiKeys[provider.id as keyof ApiKeys] && provider.id !== 'ollama') {
           continue;
         }
 
@@ -80,6 +80,18 @@ export const LLMProviderSection = () => {
             case 'gemini':
               models = await fetchGeminiModels(apiKeys.gemini!);
               break;
+            case 'ollama':
+              // Default Ollama models
+              models = [
+                'llama2',
+                'llama2-uncensored',
+                'mistral',
+                'mixtral',
+                'neural-chat',
+                'codellama',
+                'phi'
+              ];
+              break;
           }
 
           provider.models = models;
@@ -90,7 +102,7 @@ export const LLMProviderSection = () => {
           console.error(`Error fetching models for ${provider.name}:`, error);
           toast({
             title: `Error Fetching Models`,
-            description: `Could not fetch models for ${provider.name}. Please check your API key.`,
+            description: `Could not fetch models for ${provider.name}. Please check your configuration.`,
             variant: "destructive",
           });
         }
@@ -111,7 +123,7 @@ export const LLMProviderSection = () => {
   const handleProviderToggle = (providerId: string) => {
     const hasValidApiKey = apiKeys && apiKeys[providerId as keyof ApiKeys];
     
-    if (!hasValidApiKey) {
+    if (!hasValidApiKey && providerId !== 'ollama') {
       toast({
         title: "API Key Required",
         description: "Please set up your API key in the API Keys page first.",
@@ -185,14 +197,20 @@ export const LLMProviderSection = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {providers.map((provider) => (
-          <ProviderCard
-            key={provider.id}
-            provider={provider}
-            isLoading={isLoading}
-            onToggle={handleProviderToggle}
-            onModelSelection={handleModelSelection}
-            onRefresh={refreshModels}
-          />
+          <React.Fragment key={provider.id}>
+            <ProviderCard
+              provider={provider}
+              isLoading={isLoading}
+              onToggle={handleProviderToggle}
+              onModelSelection={handleModelSelection}
+              onRefresh={refreshModels}
+            />
+            {provider.id === 'ollama' && provider.isEnabled && (
+              <div className="md:col-span-2">
+                <OllamaConfig />
+              </div>
+            )}
+          </React.Fragment>
         ))}
       </div>
     </div>

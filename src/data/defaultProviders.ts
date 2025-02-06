@@ -1,4 +1,3 @@
-
 import { LLMProvider } from "@/types/llm";
 
 export const defaultProviders: LLMProvider[] = [
@@ -68,6 +67,21 @@ export const defaultProviders: LLMProvider[] = [
       'Mathematical reasoning',
       'Domain-specific analysis',
       'Technical documentation generation'
+    ],
+    models: [],
+    selectedModels: []
+  },
+  {
+    id: 'ollama',
+    name: 'Ollama',
+    isEnabled: false,
+    description: 'Open-source, self-hosted LLM provider supporting various models',
+    capabilities: [
+      'Self-hosted deployment',
+      'Multiple model support',
+      'Local processing',
+      'Custom model integration',
+      'IP-based access'
     ],
     models: [],
     selectedModels: []
