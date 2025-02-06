@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Send } from "lucide-react";
 import { Input } from "./ui/input";
@@ -210,7 +211,7 @@ Format numbers appropriately (e.g., millions as 'M', billions as 'B'). Always in
   };
 
   return (
-    <div className="h-[90vh] glass-panel flex flex-col">
+    <div className="h-[90vh] glass-panel flex flex-col bg-[#F1F0FB]/80 border-[#E5DEFF]">
       {/* Messages container with flex-grow */}
       <div className="flex-1 overflow-y-auto p-4 scrollbar-none">
         {messages.map((message, index) => (
@@ -218,15 +219,15 @@ Format numbers appropriately (e.g., millions as 'M', billions as 'B'). Always in
             key={index}
             className={`mb-4 p-3 rounded-lg ${
               message.isUser 
-                ? "bg-primary/10 ml-auto w-fit max-w-[95%]" 
-                : "bg-muted/50 mr-auto w-fit max-w-[95%] whitespace-pre-line"
+                ? "bg-[#8B5CF6]/10 ml-auto w-fit max-w-[95%]" 
+                : "bg-[#E5DEFF]/50 mr-auto w-fit max-w-[95%] whitespace-pre-line"
             }`}
           >
             {message.content}
           </div>
         ))}
         {isLoading && (
-          <div className="bg-muted/50 mr-auto w-fit max-w-[95%] mb-4 p-3 rounded-lg">
+          <div className="bg-[#E5DEFF]/50 mr-auto w-fit max-w-[95%] mb-4 p-3 rounded-lg">
             Analyzing stock data...
           </div>
         )}
@@ -235,7 +236,7 @@ Format numbers appropriately (e.g., millions as 'M', billions as 'B'). Always in
       {/* Input form at the bottom */}
       <form
         onSubmit={handleSubmit}
-        className="p-4 border-t border-border/50 bg-background/50 backdrop-blur-sm mt-auto"
+        className="p-4 border-t border-[#E5DEFF]/50 bg-white/50 backdrop-blur-sm mt-auto"
       >
         <div className="flex gap-2">
           <Input
@@ -243,8 +244,9 @@ Format numbers appropriately (e.g., millions as 'M', billions as 'B'). Always in
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about stocks..."
             disabled={isLoading}
+            className="bg-white/70"
           />
-          <Button type="submit" disabled={isLoading}>
+          <Button type="submit" disabled={isLoading} className="bg-[#8B5CF6] hover:bg-[#7C3AED]">
             <Send className="w-5 h-5" />
           </Button>
         </div>
@@ -252,3 +254,4 @@ Format numbers appropriately (e.g., millions as 'M', billions as 'B'). Always in
     </div>
   );
 };
+
