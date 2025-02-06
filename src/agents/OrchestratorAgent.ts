@@ -31,6 +31,10 @@ import { MomentumAnalysisAgent } from './MomentumAnalysisAgent';
 import { TechnicalDepthAgent } from './TechnicalDepthAgent';
 import { FundamentalForensicAgent } from './FundamentalForensicAgent';
 import { SentimentSynthesizerAgent } from './SentimentSynthesizerAgent';
+import { MachineLearningAgent } from './MachineLearningAgent';
+import { NLPAgent } from './NLPAgent';
+import { TimeSeriesForecasterAgent } from './TimeSeriesForecasterAgent';
+import { ScenarioAnalysisAgent } from './ScenarioAnalysisAgent';
 
 interface AgentResult {
   data: any;
@@ -92,7 +96,11 @@ export class OrchestratorAgent {
         this.executeAgent('momentumAnalysis', () => MomentumAnalysisAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('technicalDepth', () => TechnicalDepthAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('fundamentalForensic', () => FundamentalForensicAgent.analyze(stockData.quote.symbol)),
-        this.executeAgent('sentimentSynthesizer', () => SentimentSynthesizerAgent.analyze(stockData.quote.symbol))
+        this.executeAgent('sentimentSynthesizer', () => SentimentSynthesizerAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('machineLearning', () => MachineLearningAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('nlp', () => NLPAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('timeSeries', () => TimeSeriesForecasterAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('scenario', () => ScenarioAnalysisAgent.analyze(stockData.quote.symbol))
       ];
 
       await Promise.all(agentPromises);
