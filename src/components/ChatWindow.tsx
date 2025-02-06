@@ -1,43 +1,16 @@
 
 import { useState, useEffect } from "react";
-import { Send, Download } from "lucide-react";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
 import { useToast } from "./ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
 import { generateAnalysisPDF } from "@/utils/pdfGenerator";
-
-interface Message {
-  content: string;
-  isUser: boolean;
-  data?: any;
-}
-
-interface ApiKeys {
-  openai: string;
-  fmp: string;
-}
-
-interface AnalysisResult {
-  textOutput: string;
-  formattedData: {
-    symbol: string;
-    companyName: string;
-    recommendation: string;
-    confidenceScore: number;
-    priceProjections: {
-      threeMonths: number;
-      sixMonths: number;
-      twelveMonths: number;
-      twentyFourMonths: number;
-    };
-    results: Record<string, any>;
-  };
-}
+import { fetchStockData } from "@/utils/stockApi";
+import { Message as MessageType, ApiKeys, AnalysisResult } from "@/types/chat";
+import Message from "./chat/Message";
+import ChatInput from "./chat/ChatInput";
 
 const ChatWindow = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<MessageType[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [apiKeys, setApiKeys] = useState<ApiKeys>({ openai: "", fmp: "" });
@@ -52,47 +25,6 @@ const ChatWindow = () => {
     }
   }, []);
 
-  const fetchStockData = async (query: string) => {
-    try {
-      const cleanQuery = query.toLowerCase().replace(/[^a-z0-9\s]/g, '');
-      const words = cleanQuery.split(' ');
-      const searchTerm = words.find(word => word.length >= 2) || cleanQuery;
-
-      console.log('Searching for:', searchTerm);
-
-      const searchResponse = await fetch(
-        `https://financialmodelingprep.com/api/v3/search?query=${searchTerm}&limit=1&apikey=${apiKeys.fmp}`
-      );
-      const searchResults = await searchResponse.json();
-      
-      if (searchResults && searchResults.length > 0) {
-        const symbol = searchResults[0].symbol;
-        console.log('Found symbol:', symbol);
-        
-        const [quoteResponse, profileResponse] = await Promise.all([
-          fetch(`https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${apiKeys.fmp}`),
-          fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKeys.fmp}`)
-        ]);
-
-        const [quoteData, profileData] = await Promise.all([
-          quoteResponse.json(),
-          profileResponse.json()
-        ]);
-
-        if (quoteData[0] && profileData[0]) {
-          return {
-            quote: quoteData[0],
-            profile: profileData[0]
-          };
-        }
-      }
-      return null;
-    } catch (error) {
-      console.error('Error fetching stock data:', error);
-      throw new Error('Failed to fetch stock data');
-    }
-  };
-
   const handleDownloadPDF = async (analysisData: any) => {
     try {
       console.log('Starting PDF generation with data:', analysisData);
@@ -100,7 +32,6 @@ const ChatWindow = () => {
         throw new Error('No analysis data available');
       }
       
-      // Wait for the PDF generation to complete
       const success = await generateAnalysisPDF(analysisData);
       
       if (success) {
@@ -115,7 +46,7 @@ const ChatWindow = () => {
       console.error('Error generating PDF:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to generate PDF report",
+        description: error instanceof Error ? error.message : "Failed to generate PDF report",
         variant: "destructive",
       });
     }
@@ -125,28 +56,30 @@ const ChatWindow = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = { content: input, isUser: true };
+    const userMessage: MessageType = { content: input, isUser: true };
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
     try {
-      const stockData = await fetchStockData(input);
+      const stockData = await fetchStockData(input, apiKeys.fmp);
       
       if (!stockData) {
         throw new Error('No stock data found for the query');
       }
 
-      const analysis = await OrchestratorAgent.orchestrateAnalysis(stockData) as AnalysisResult;
+      const analysis = await OrchestratorAgent.orchestrateAnalysis(stockData);
       
       if (!analysis || typeof analysis === 'string') {
         throw new Error('Invalid analysis response');
       }
 
-      const aiMessage: Message = {
-        content: analysis.textOutput,
+      const analysisResult = analysis as unknown as AnalysisResult;
+
+      const aiMessage: MessageType = {
+        content: analysisResult.textOutput,
         isUser: false,
-        data: analysis.formattedData
+        data: analysisResult.formattedData
       };
 
       setMessages(prev => [...prev, aiMessage]);
@@ -154,7 +87,7 @@ const ChatWindow = () => {
       console.error('Error:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to analyze stock data",
+        description: error instanceof Error ? error.message : "Failed to analyze stock data",
         variant: "destructive",
       });
     } finally {
@@ -166,28 +99,11 @@ const ChatWindow = () => {
     <div className="h-[90vh] glass-panel flex flex-col bg-[#F1F0FB]/80 border-[#E5DEFF]">
       <div className="flex-1 overflow-y-auto p-4 scrollbar-none">
         {messages.map((message, index) => (
-          <div key={index} className="mb-4">
-            {!message.isUser && message.data && (
-              <div className="mb-2">
-                <Button
-                  onClick={() => handleDownloadPDF(message.data)}
-                  className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] flex items-center justify-center gap-2 mb-4"
-                >
-                  <Download className="w-4 h-4" />
-                  Download Analysis Report
-                </Button>
-              </div>
-            )}
-            <div
-              className={`p-3 rounded-lg ${
-                message.isUser 
-                  ? "bg-[#8B5CF6]/10 ml-auto w-fit max-w-[95%]" 
-                  : "bg-[#E5DEFF]/50 mr-auto w-fit max-w-[95%] whitespace-pre-line"
-              }`}
-            >
-              {message.content}
-            </div>
-          </div>
+          <Message 
+            key={index} 
+            message={message} 
+            onDownload={handleDownloadPDF}
+          />
         ))}
         {isLoading && (
           <div className="bg-[#E5DEFF]/50 mr-auto w-fit max-w-[95%] mb-4 p-3 rounded-lg">
@@ -196,23 +112,12 @@ const ChatWindow = () => {
         )}
       </div>
 
-      <form
+      <ChatInput
+        input={input}
+        isLoading={isLoading}
+        onInputChange={setInput}
         onSubmit={handleSubmit}
-        className="p-4 border-t border-[#E5DEFF]/50 bg-white/50 backdrop-blur-sm mt-auto"
-      >
-        <div className="flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about stocks..."
-            disabled={isLoading}
-            className="bg-white/70"
-          />
-          <Button type="submit" disabled={isLoading} className="bg-[#8B5CF6] hover:bg-[#7C3AED]">
-            <Send className="w-5 h-5" />
-          </Button>
-        </div>
-      </form>
+      />
     </div>
   );
 };
