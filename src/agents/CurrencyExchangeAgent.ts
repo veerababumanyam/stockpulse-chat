@@ -1,4 +1,3 @@
-
 import { BaseAgent, AnalysisResult } from './BaseAgent';
 
 export class CurrencyExchangeAgent extends BaseAgent {
@@ -104,14 +103,14 @@ export class CurrencyExchangeAgent extends BaseAgent {
   }
 
   private static calculateExposureLevel(countries: string[]): string {
-    const uniqueRegions = new Set(countries.map(this.getRegion));
+    const uniqueRegions = new Set(countries.map(this.getRegionForCurrency));
     
     if (uniqueRegions.size > 3) return 'High';
     if (uniqueRegions.size > 1) return 'Medium';
     return 'Low';
   }
 
-  private static getRegion(country: string): string {
+  private static getRegionForCurrency(country: string): string {
     const regionMap: Record<string, string> = {
       'United States': 'North America',
       'Canada': 'North America',
@@ -186,7 +185,7 @@ export class CurrencyExchangeAgent extends BaseAgent {
 
   private static calculateDiversificationScore(profile: any): number {
     const countries = profile?.operatingCountries || [];
-    const regions = new Set(countries.map(this.getRegion));
+    const regions = new Set(countries.map(this.getRegionForCurrency));
     return Math.min(regions.size / 5, 1);
   }
 
@@ -348,4 +347,3 @@ export class CurrencyExchangeAgent extends BaseAgent {
     return strategies;
   }
 }
-

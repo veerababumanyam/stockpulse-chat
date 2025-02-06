@@ -1,4 +1,3 @@
-
 import { BaseAgent, AnalysisResult } from './BaseAgent';
 
 export class SocialMediaScraperAgent extends BaseAgent {
@@ -140,7 +139,7 @@ export class SocialMediaScraperAgent extends BaseAgent {
     
     // Calculate days span using milliseconds to days conversion
     const millisecondsPerDay = 24 * 60 * 60 * 1000; // milliseconds in a day
-    const daysSpan = Math.ceil((newestTimestamp - oldestTimestamp) / millisecondsPerDay);
+    const daysSpan = Math.ceil((Number(newestTimestamp) - Number(oldestTimestamp)) / millisecondsPerDay);
 
     return {
       daysSpan,
@@ -200,4 +199,3 @@ export class SocialMediaScraperAgent extends BaseAgent {
       .map(([word]) => word);
   }
 }
-
