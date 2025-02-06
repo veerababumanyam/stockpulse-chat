@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { useLocation } from "react-router-dom";
@@ -57,6 +56,7 @@ const SearchResults = () => {
   const [stockData, setStockData] = useState<any>(null);
   const [historicalData, setHistoricalData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -93,10 +93,16 @@ const SearchResults = () => {
           
           // Start AI analysis
           try {
-            const aiAnalysis = await OrchestratorAgent.orchestrateAnalysis(data);
-            console.log('AI Analysis:', aiAnalysis);
+            const analysis = await OrchestratorAgent.orchestrateAnalysis(data);
+            setAiAnalysis(analysis);
+            console.log('AI Analysis:', analysis);
           } catch (error) {
             console.error('AI Analysis error:', error);
+            toast({
+              title: "AI Analysis Error",
+              description: "Failed to generate AI analysis. Please try again.",
+              variant: "destructive",
+            });
           }
 
           // Fetch historical data
@@ -205,13 +211,14 @@ const SearchResults = () => {
             </div>
 
             <Tabs defaultValue="overview" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-6">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-7">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="charts">Charts</TabsTrigger>
                 <TabsTrigger value="financials">Financials</TabsTrigger>
                 <TabsTrigger value="valuation">Valuation</TabsTrigger>
                 <TabsTrigger value="analysis">Analysis</TabsTrigger>
                 <TabsTrigger value="news">News</TabsTrigger>
+                <TabsTrigger value="ai-analysis">AI Analysis</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview">
@@ -649,6 +656,82 @@ const SearchResults = () => {
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="ai-analysis">
+                <div className="grid grid-cols-1 gap-4">
+                  {aiAnalysis ? (
+                    Object.entries(aiAnalysis.results).map(([agentName, result]: [string, any]) => (
+                      <Card key={agentName}>
+                        <CardHeader>
+                          <CardTitle className="capitalize">
+                            {agentName.replace(/([A-Z])/g, ' $1').trim()} Analysis
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {result.error ? (
+                            <p className="text-destructive">{result.error}</p>
+                          ) : (
+                            <div className="space-y-4">
+                              {result.data?.analysis?.signals && (
+                                <div>
+                                  <h4 className="font-medium mb-2">Signals</h4>
+                                  {Object.entries(result.data.analysis.signals).map(([key, value]: [string, any]) => (
+                                    <div key={key} className="flex justify-between items-center">
+                                      <span className="capitalize text-muted-foreground">
+                                        {key.replace(/([A-Z])/g, ' $1').trim()}
+                                      </span>
+                                      <Badge variant={
+                                        typeof value === 'string' && value.toLowerCase().includes('buy') ? 'default' :
+                                        typeof value === 'string' && value.toLowerCase().includes('sell') ? 'destructive' :
+                                        'secondary'
+                                      }>
+                                        {value}
+                                      </Badge>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {result.data?.analysis?.metrics && (
+                                <div>
+                                  <h4 className="font-medium mb-2">Metrics</h4>
+                                  {Object.entries(result.data.analysis.metrics).map(([key, value]: [string, any]) => (
+                                    <div key={key} className="flex justify-between items-center">
+                                      <span className="capitalize text-muted-foreground">
+                                        {key.replace(/([A-Z])/g, ' $1').trim()}
+                                      </span>
+                                      <span>{JSON.stringify(value)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {result.data?.analysis?.trends && (
+                                <div>
+                                  <h4 className="font-medium mb-2">Trends</h4>
+                                  <ul className="list-disc list-inside space-y-1">
+                                    {result.data.analysis.trends.map((trend: string, index: number) => (
+                                      <li key={index} className="text-muted-foreground">{trend}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <p className="text-center text-muted-foreground">
+                          AI analysis is being generated...
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               </TabsContent>
             </Tabs>
           </>
