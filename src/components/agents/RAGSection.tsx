@@ -48,7 +48,18 @@ const defaultConfig: RAGConfig = {
 export const RAGSection = () => {
   const [config, setConfig] = useState<RAGConfig>(() => {
     const savedConfig = localStorage.getItem('rag-config');
-    return savedConfig ? JSON.parse(savedConfig) : defaultConfig;
+    if (!savedConfig) return defaultConfig;
+    
+    // Merge saved config with default config to ensure all properties exist
+    const parsed = JSON.parse(savedConfig);
+    return {
+      ...defaultConfig,
+      ...parsed,
+      preprocessing: {
+        ...defaultConfig.preprocessing,
+        ...(parsed.preprocessing || {})
+      }
+    };
   });
 
   const [documents, setDocuments] = useState<File[]>([]);
@@ -383,4 +394,3 @@ export const RAGSection = () => {
     </div>
   );
 };
-
