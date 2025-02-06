@@ -98,13 +98,13 @@ export class OrchestratorAgent {
     return `
 📊 Analysis Report for ${data.companyName} (${data.symbol})
 
-🎯 Summary & Recommendations
-------------------------
-• Technical Position: ${data.results.technical?.data?.analysis.signals?.overallSignal || 'N/A'}
-• Fundamental Outlook: ${data.results.fundamental?.data?.analysis.recommendation || 'N/A'}
-• Risk Rating: ${data.results.risk?.data?.analysis.riskLevel || 'N/A'}
-• ESG Rating: ${data.results.esg?.data?.analysis.overallESGRating || 'N/A'}
-• Valuation Status: ${data.results.valuation?.data?.analysis.intrinsicValue || 'N/A'}
+🎯 KEY RECOMMENDATIONS
+============================
+${this.formatHighlight(`Technical Position: ${data.results.technical?.data?.analysis.signals?.overallSignal || 'N/A'}`)}
+${this.formatHighlight(`Fundamental Outlook: ${data.results.fundamental?.data?.analysis.recommendation || 'N/A'}`)}
+${this.formatHighlight(`Risk Rating: ${data.results.risk?.data?.analysis.riskLevel || 'N/A'}`)}
+${this.formatHighlight(`ESG Rating: ${data.results.esg?.data?.analysis.overallESGRating || 'N/A'}`)}
+${this.formatHighlight(`Valuation Status: ${data.results.valuation?.data?.analysis.intrinsicValue || 'N/A'}`)}
 
 💰 Fundamental Analysis
 ------------------------
@@ -142,10 +142,10 @@ ${this.formatSection(data.results.patentAnalysis?.data, 'Innovation and R&D')}
 ------------------------
 ${this.formatSection(data.results.bigPlayerTracking?.data, 'Institutional movements')}
 
-📰 News & Market Sentiment
-------------------------
-${this.formatSection(data.results.news?.data, 'Recent developments')}
-${this.formatSection(data.results.sentiment?.data, 'Market sentiment')}
+📰 MARKET SENTIMENT ANALYSIS
+============================
+${this.formatHighlight(this.formatSection(data.results.news?.data, 'Recent developments'))}
+${this.formatHighlight(this.formatSection(data.results.sentiment?.data, 'Market sentiment'))}
 
 💼 Additional Insights
 ------------------------
@@ -156,6 +156,10 @@ ${this.formatSection(data.results.sentiment?.data, 'Market sentiment')}
 • ETF Flows: ${this.formatSection(data.results.etfFlow?.data, 'Fund movements')}
 • Legal Analysis: ${this.formatSection(data.results.legalDocument?.data, 'Legal considerations')}
 `;
+  }
+
+  private static formatHighlight(text: string): string {
+    return `*** ${text} ***`;
   }
 
   private static formatSection(data: any, fallbackMessage: string): string {
