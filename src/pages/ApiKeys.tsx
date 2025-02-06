@@ -7,21 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { ExternalLink, Key } from "lucide-react";
-
-interface ApiKeys {
-  openai: string;
-  anthropic: string;
-  openrouter: string;
-  deepseek: string;
-  fmp: string;
-}
+import type { ApiKeys } from "@/types/llm";
 
 const ApiKeys = () => {
   const [apiKeys, setApiKeys] = useState<ApiKeys>({ 
     openai: "", 
     anthropic: "", 
     openrouter: "", 
-    deepseek: "", 
+    deepseek: "",
+    gemini: "", 
     fmp: "" 
   });
   const { toast } = useToast();
@@ -29,22 +23,41 @@ const ApiKeys = () => {
   useEffect(() => {
     const savedKeys = localStorage.getItem('apiKeys');
     if (savedKeys) {
-      const parsedKeys = JSON.parse(savedKeys);
-      setApiKeys(prev => ({ ...prev, ...parsedKeys }));
-      toast({
-        title: "API Keys Loaded",
-        description: "Your saved API keys have been loaded successfully",
-      });
+      try {
+        const parsedKeys = JSON.parse(savedKeys);
+        setApiKeys(prev => ({ ...prev, ...parsedKeys }));
+        console.log('Loaded API keys from localStorage');
+      } catch (error) {
+        console.error('Error parsing saved API keys:', error);
+        toast({
+          title: "Error Loading API Keys",
+          description: "There was an error loading your saved API keys",
+          variant: "destructive",
+        });
+      }
     }
   }, []);
 
   const handleApiKeySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('apiKeys', JSON.stringify(apiKeys));
-    toast({
-      title: "Success",
-      description: "API keys saved successfully",
-    });
+    try {
+      // Filter out empty API keys before saving
+      const nonEmptyKeys = Object.fromEntries(
+        Object.entries(apiKeys).filter(([_, value]) => value.trim().length > 0)
+      );
+      localStorage.setItem('apiKeys', JSON.stringify(nonEmptyKeys));
+      toast({
+        title: "Success",
+        description: "API keys saved successfully",
+      });
+    } catch (error) {
+      console.error('Error saving API keys:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save API keys",
+        variant: "destructive",
+      });
+    }
   };
 
   const renderApiKeyLink = (provider: string) => {
@@ -53,6 +66,7 @@ const ApiKeys = () => {
       anthropic: "https://console.anthropic.com/account/keys",
       openrouter: "https://openrouter.ai/keys",
       deepseek: "https://platform.deepseek.com/api-keys",
+      gemini: "https://makersuite.google.com/app/apikey",
       fmp: "https://site.financialmodelingprep.com/developer/docs/api-keys",
     };
 
@@ -125,6 +139,20 @@ const ApiKeys = () => {
                   value={apiKeys.openrouter}
                   onChange={(e) => setApiKeys(prev => ({ ...prev, openrouter: e.target.value }))}
                   placeholder="Enter OpenRouter API Key"
+                  className="bg-white/70 border-[#E5DEFF]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">Google Gemini API Key</label>
+                  {renderApiKeyLink('gemini')}
+                </div>
+                <Input
+                  type="password"
+                  value={apiKeys.gemini}
+                  onChange={(e) => setApiKeys(prev => ({ ...prev, gemini: e.target.value }))}
+                  placeholder="Enter Google Gemini API Key"
                   className="bg-white/70 border-[#E5DEFF]"
                 />
               </div>
