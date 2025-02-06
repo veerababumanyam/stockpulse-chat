@@ -1,4 +1,3 @@
-
 import { BaseAgent, AnalysisResult } from './BaseAgent';
 
 export class SocialMediaScraperAgent extends BaseAgent {
@@ -137,15 +136,17 @@ export class SocialMediaScraperAgent extends BaseAgent {
       };
     }
 
-    const newest = Math.max(...timestamps);
-    const oldest = Math.min(...timestamps);
+    const newestTimestamp = Math.max(...timestamps);
+    const oldestTimestamp = Math.min(...timestamps);
     
-    const daysSpan = Math.ceil((newest - oldest) / (1000 * 60 * 60 * 24)) || 0;
+    // Calculate days span using milliseconds to days conversion
+    const millisecondsPerDay = 1000 * 60 * 60 * 24;
+    const daysSpan = Math.ceil((newestTimestamp - oldestTimestamp) / millisecondsPerDay);
 
     return {
       daysSpan,
-      newest: this.formatDate(new Date(newest)),
-      oldest: this.formatDate(new Date(oldest))
+      newest: this.formatDate(new Date(newestTimestamp)),
+      oldest: this.formatDate(new Date(oldestTimestamp))
     };
   }
 

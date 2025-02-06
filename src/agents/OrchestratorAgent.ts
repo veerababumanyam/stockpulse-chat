@@ -24,6 +24,10 @@ import { PatentAnalysisAgent } from './PatentAnalysisAgent';
 import { BigPlayerTrackingAgent } from './BigPlayerTrackingAgent';
 import { AnomalyDetectionAgent } from './AnomalyDetectionAgent';
 import { CorrelationAnalysisAgent } from './CorrelationAnalysisAgent';
+import { SectorRotationAgent } from './SectorRotationAgent';
+import { MarketBreadthAgent } from './MarketBreadthAgent';
+import { TrendAnalysisAgent } from './TrendAnalysisAgent';
+import { MomentumAnalysisAgent } from './MomentumAnalysisAgent';
 
 interface AgentResult {
   data: any;
@@ -78,7 +82,11 @@ export class OrchestratorAgent {
         this.executeAgent('patentAnalysis', () => PatentAnalysisAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('bigPlayerTracking', () => BigPlayerTrackingAgent.analyze(stockData.quote.symbol)),
         this.executeAgent('anomalyDetection', () => AnomalyDetectionAgent.analyze(stockData)),
-        this.executeAgent('correlationAnalysis', () => CorrelationAnalysisAgent.analyze(stockData))
+        this.executeAgent('correlationAnalysis', () => CorrelationAnalysisAgent.analyze(stockData)),
+        this.executeAgent('sectorRotation', () => SectorRotationAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('marketBreadth', () => MarketBreadthAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('trendAnalysis', () => TrendAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('momentumAnalysis', () => MomentumAnalysisAgent.analyze(stockData.quote.symbol))
       ];
 
       await Promise.all(agentPromises);
