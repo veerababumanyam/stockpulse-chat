@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { Input } from "./ui/input";
@@ -41,6 +42,35 @@ interface StockData {
   };
 }
 
+const formatLargeNumber = (num: number): string => {
+  if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
+  if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
+  if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
+  return `$${num.toLocaleString()}`;
+};
+
+const formatStockData = (stockData: StockData): string => {
+  const { quote, profile } = stockData;
+  return `
+📈 ${profile.companyName} (${quote.symbol})
+
+Current Price: $${quote.price.toFixed(2)}
+Price Change: ${quote.change >= 0 ? '↗️' : '↘️'} $${Math.abs(quote.change).toFixed(2)} (${quote.changesPercentage.toFixed(2)}%)
+Market Cap: ${formatLargeNumber(quote.marketCap)}
+Volume: ${quote.volume.toLocaleString()}
+
+Trading Range:
+• Day: $${quote.dayLow.toFixed(2)} - $${quote.dayHigh.toFixed(2)}
+• 52-Week: $${quote.yearLow.toFixed(2)} - $${quote.yearHigh.toFixed(2)}
+
+Company Info:
+• Sector: ${profile.sector}
+• Industry: ${profile.industry}
+• CEO: ${profile.ceo}
+
+${profile.description}`;
+};
+
 export const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -67,16 +97,12 @@ export const ChatWindow = () => {
 
   const fetchStockData = async (query: string): Promise<StockData | null> => {
     try {
-      // Clean and prepare the search query
       const cleanQuery = query.toLowerCase().replace(/[^a-z0-9\s]/g, '');
-      
-      // Extract potential stock symbols or company names
       const words = cleanQuery.split(' ');
       const searchTerm = words.find(word => word.length >= 2) || cleanQuery;
 
       console.log('Searching for:', searchTerm);
 
-      // Search for the stock
       const searchResponse = await fetch(
         `https://financialmodelingprep.com/api/v3/search?query=${searchTerm}&limit=1&apikey=${apiKeys.fmp}`
       );
@@ -86,7 +112,6 @@ export const ChatWindow = () => {
         const symbol = searchResults[0].symbol;
         console.log('Found symbol:', symbol);
         
-        // Fetch detailed quote data
         const [quoteResponse, profileResponse] = await Promise.all([
           fetch(`https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${apiKeys.fmp}`),
           fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKeys.fmp}`)
@@ -131,23 +156,11 @@ export const ChatWindow = () => {
     setIsLoading(true);
 
     try {
-      // First fetch relevant stock data
       const stockData = await fetchStockData(input);
       
-      // Prepare context with stock data
       let context = "No specific stock data found for the query.";
       if (stockData) {
-        const { quote, profile } = stockData;
-        context = `Current stock data for ${profile.companyName} (${quote.symbol}):
-- Current Price: $${quote.price}
-- Price Change: $${quote.change} (${quote.changesPercentage.toFixed(2)}%)
-- Market Cap: $${(quote.marketCap / 1e9).toFixed(2)}B
-- Volume: ${quote.volume.toLocaleString()}
-- 52-Week Range: $${quote.yearLow} - $${quote.yearHigh}
-- Sector: ${profile.sector}
-- Industry: ${profile.industry}
-- CEO: ${profile.ceo}
-- Description: ${profile.description}`;
+        context = formatStockData(stockData);
       }
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -211,7 +224,7 @@ Format numbers appropriately (e.g., millions as 'M', billions as 'B'). Always in
             className={`mb-4 p-3 rounded-lg ${
               message.isUser 
                 ? "bg-primary/10 ml-auto max-w-[80%]" 
-                : "bg-muted/50 mr-auto max-w-[80%]"
+                : "bg-muted/50 mr-auto max-w-[80%] whitespace-pre-line"
             }`}
           >
             {message.content}
