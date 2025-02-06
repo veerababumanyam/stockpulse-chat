@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { useLocation } from "react-router-dom";
@@ -166,16 +167,20 @@ const SearchResults = () => {
               formatLargeNumber={formatLargeNumber}
             />
 
-            <Tabs defaultValue="overview" className="space-y-4">
+            <Tabs defaultValue="ai-analysis" className="space-y-4">
               <TabsList className="grid w-full grid-cols-2 md:grid-cols-7">
+                <TabsTrigger value="ai-analysis">AI Analysis</TabsTrigger>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="charts">Charts</TabsTrigger>
                 <TabsTrigger value="financials">Financials</TabsTrigger>
                 <TabsTrigger value="valuation">Valuation</TabsTrigger>
                 <TabsTrigger value="analysis">Analysis</TabsTrigger>
                 <TabsTrigger value="news">News</TabsTrigger>
-                <TabsTrigger value="ai-analysis">AI Analysis</TabsTrigger>
               </TabsList>
+
+              <TabsContent value="ai-analysis">
+                <AIAnalysisTab aiAnalysis={aiAnalysis} isLoading={isLoading} />
+              </TabsContent>
 
               <TabsContent value="overview">
                 <OverviewTab stockData={stockData} formatLargeNumber={formatLargeNumber} />
@@ -495,3 +500,4 @@ const SearchResults = () => {
 };
 
 export default SearchResults;
+
