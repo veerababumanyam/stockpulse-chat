@@ -49,6 +49,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
 
 const SearchResults = () => {
   const location = useLocation();
@@ -89,6 +90,15 @@ const SearchResults = () => {
         const data = await fetchStockData(query, fmp);
         if (data) {
           setStockData(data);
+          
+          // Start AI analysis
+          try {
+            const aiAnalysis = await OrchestratorAgent.orchestrateAnalysis(data);
+            console.log('AI Analysis:', aiAnalysis);
+          } catch (error) {
+            console.error('AI Analysis error:', error);
+          }
+
           // Fetch historical data
           const historicalResponse = await fetch(
             `https://financialmodelingprep.com/api/v3/historical-price-full/${data.quote.symbol}?apikey=${fmp}`
