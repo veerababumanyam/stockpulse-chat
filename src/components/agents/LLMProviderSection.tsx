@@ -11,13 +11,22 @@ import type { LLMProvider, ApiKeys } from "@/types/llm";
 
 export const LLMProviderSection = () => {
   const [providers, setProviders] = useState<LLMProvider[]>(() => {
-    try {
-      const savedProviders = localStorage.getItem('llm-providers');
-      return savedProviders ? JSON.parse(savedProviders) : defaultProviders;
-    } catch (error) {
-      console.error('Error parsing saved providers:', error);
-      return defaultProviders;
+    const savedProviders = localStorage.getItem('llm-providers');
+    if (savedProviders) {
+      try {
+        const parsed = JSON.parse(savedProviders);
+        // Ensure we have all default providers
+        const allProviders = defaultProviders.map(defaultProvider => {
+          const savedProvider = parsed.find((p: LLMProvider) => p.id === defaultProvider.id);
+          return savedProvider || defaultProvider;
+        });
+        return allProviders;
+      } catch (error) {
+        console.error('Error parsing saved providers:', error);
+        return defaultProviders;
+      }
     }
+    return defaultProviders;
   });
   
   const [isLoading, setIsLoading] = useState(false);
