@@ -1,8 +1,10 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, Trash2, TestTube2 } from "lucide-react";
+import { AgentTestDialog } from "./AgentTestDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +35,8 @@ interface AgentCardProps {
 }
 
 export const AgentCard = ({ agent, onEdit, onToggle, onDelete }: AgentCardProps) => {
+  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
+
   return (
     <Card className="relative">
       <CardHeader>
@@ -67,6 +71,15 @@ export const AgentCard = ({ agent, onEdit, onToggle, onDelete }: AgentCardProps)
             <Edit2 className="w-4 h-4" />
             Edit
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+            onClick={() => setIsTestDialogOpen(true)}
+          >
+            <TestTube2 className="w-4 h-4" />
+            Test
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
@@ -93,6 +106,11 @@ export const AgentCard = ({ agent, onEdit, onToggle, onDelete }: AgentCardProps)
           </AlertDialog>
         </div>
       </CardContent>
+      <AgentTestDialog
+        open={isTestDialogOpen}
+        onOpenChange={setIsTestDialogOpen}
+        agent={agent}
+      />
     </Card>
   );
 };
