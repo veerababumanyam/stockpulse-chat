@@ -1,98 +1,13 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
+
 import { useState, useEffect } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { Link } from "react-router-dom";
-import { AlertCircle, Info, Settings2, RefreshCw } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-
-interface LLMProvider {
-  id: string;
-  name: string;
-  isEnabled: boolean;
-  models: string[];
-  description: string;
-  capabilities: string[];
-  selectedModels?: string[];
-}
-
-interface ApiKeys {
-  openai?: string;
-  anthropic?: string;
-  openrouter?: string;
-  deepseek?: string;
-  fmp?: string;
-}
-
-const defaultProviders: LLMProvider[] = [
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    isEnabled: true,
-    description: 'Leading AI technology provider offering state-of-the-art language models',
-    capabilities: [
-      'Advanced natural language understanding',
-      'Context-aware responses',
-      'Code generation and analysis',
-      'Multi-modal capabilities with vision models'
-    ],
-    models: [],
-    selectedModels: []
-  },
-  {
-    id: 'anthropic',
-    name: 'Anthropic',
-    isEnabled: false,
-    description: 'Provider of Claude models known for their safety and reliability',
-    capabilities: [
-      'Constitutional AI principles',
-      'Long context windows',
-      'Factual responses',
-      'Complex reasoning tasks'
-    ],
-    models: [],
-    selectedModels: []
-  },
-  {
-    id: 'openrouter',
-    name: 'OpenRouter',
-    isEnabled: false,
-    description: 'Gateway to multiple AI models with unified API access',
-    capabilities: [
-      'Access to multiple model providers',
-      'Unified API interface',
-      'Cost optimization',
-      'Model performance comparison'
-    ],
-    models: [],
-    selectedModels: []
-  },
-  {
-    id: 'deepseek',
-    name: 'Deepseek',
-    isEnabled: false,
-    description: 'Specialized AI models focused on deep learning and specific domain expertise',
-    capabilities: [
-      'Specialized code understanding',
-      'Mathematical reasoning',
-      'Domain-specific analysis',
-      'Technical documentation generation'
-    ],
-    models: [],
-    selectedModels: []
-  }
-];
+import { AlertCircle } from "lucide-react";
+import { defaultProviders } from "@/data/defaultProviders";
+import { fetchOpenAIModels, fetchAnthropicModels, fetchOpenRouterModels, fetchDeepseekModels } from "@/utils/modelApis";
+import { ProviderCard } from "./ProviderCard";
+import type { LLMProvider, ApiKeys } from "@/types/llm";
 
 export const LLMProviderSection = () => {
   const [providers, setProviders] = useState<LLMProvider[]>(() => {
@@ -108,7 +23,6 @@ export const LLMProviderSection = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const [apiKeys, setApiKeys] = useState<ApiKeys>({});
-  const [selectedProvider, setSelectedProvider] = useState<LLMProvider | null>(null);
 
   useEffect(() => {
     const savedApiKeys = localStorage.getItem('apiKeys');
@@ -123,159 +37,62 @@ export const LLMProviderSection = () => {
     }
   }, []);
 
-  const fetchOpenAIModels = async (apiKey: string) => {
+  const refreshModels = async () => {
+    setIsLoading(true);
     try {
-      const response = await fetch('https://api.openai.com/v1/models', {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Filter out deprecated models and get all available models
-      return data.data
-        .map((model: any) => model.id)
-        .filter((modelId: string) => (
-          !modelId.includes('instruct') && // Filter out instruct models
-          !modelId.includes('davinci') && // Filter out older davinci models
-          !modelId.includes('curie') && // Filter out older curie models
-          !modelId.includes('babbage') && // Filter out older babbage models
-          !modelId.includes('ada') && // Filter out older ada models
-          !modelId.includes('embedding') && // Filter out embedding models
-          !modelId.includes('similarity') && // Filter out similarity models
-          !modelId.includes('search') && // Filter out search models
-          !modelId.includes('edit') && // Filter out edit models
-          !modelId.includes('2020') && // Filter out old models
-          !modelId.includes('2021') && // Filter out old models
-          !modelId.includes('2022') // Filter out old models
-        ))
-        .sort((a: string, b: string) => a.localeCompare(b)); // Sort alphabetically
-    } catch (error) {
-      console.error('Error fetching OpenAI models:', error);
-      throw error;
-    }
-  };
+      const updatedProviders = [...providers];
 
-const fetchAnthropicModels = async (apiKey: string) => {
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/models', {
-      headers: {
-        'x-api-key': apiKey,
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.models.map((model: any) => model.id).sort();
-  } catch (error) {
-    console.error('Error fetching Anthropic models:', error);
-    throw error;
-  }
-};
-
-const fetchOpenRouterModels = async (apiKey: string) => {
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/models', {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.data.map((model: any) => model.id).sort();
-  } catch (error) {
-    console.error('Error fetching OpenRouter models:', error);
-    throw error;
-  }
-};
-
-  const fetchDeepseekModels = async (apiKey: string) => {
-    try {
-      const response = await fetch('https://api.deepseek.com/v1/models', {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await response.json();
-      return data.data.map((model: any) => model.id);
-    } catch (error) {
-      console.error('Error fetching Deepseek models:', error);
-      throw error;
-    }
-  };
-
-const refreshModels = async () => {
-  setIsLoading(true);
-  try {
-    const updatedProviders = [...providers];
-
-    for (const provider of updatedProviders) {
-      if (!apiKeys[provider.id as keyof ApiKeys]) {
-        continue;
-      }
-
-      try {
-        let models: string[] = [];
-        switch (provider.id) {
-          case 'openai':
-            models = await fetchOpenAIModels(apiKeys.openai!);
-            console.log('Fetched OpenAI models:', models);
-            break;
-          case 'anthropic':
-            models = await fetchAnthropicModels(apiKeys.anthropic!);
-            console.log('Fetched Anthropic models:', models);
-            break;
-          case 'openrouter':
-            models = await fetchOpenRouterModels(apiKeys.openrouter!);
-            console.log('Fetched OpenRouter models:', models);
-            break;
-          case 'deepseek':
-            models = await fetchDeepseekModels(apiKeys.deepseek!);
-            console.log('Fetched Deepseek models:', models);
-            break;
+      for (const provider of updatedProviders) {
+        if (!apiKeys[provider.id as keyof ApiKeys]) {
+          continue;
         }
 
-        provider.models = models;
-        provider.selectedModels = provider.selectedModels?.filter(model => 
-          models.includes(model)
-        ) || [];
-      } catch (error) {
-        console.error(`Error fetching models for ${provider.name}:`, error);
-        toast({
-          title: `Error Fetching Models`,
-          description: `Could not fetch models for ${provider.name}. Please check your API key.`,
-          variant: "destructive",
-        });
-      }
-    }
+        try {
+          let models: string[] = [];
+          switch (provider.id) {
+            case 'openai':
+              models = await fetchOpenAIModels(apiKeys.openai!);
+              console.log('Fetched OpenAI models:', models);
+              break;
+            case 'anthropic':
+              models = await fetchAnthropicModels(apiKeys.anthropic!);
+              console.log('Fetched Anthropic models:', models);
+              break;
+            case 'openrouter':
+              models = await fetchOpenRouterModels(apiKeys.openrouter!);
+              console.log('Fetched OpenRouter models:', models);
+              break;
+            case 'deepseek':
+              models = await fetchDeepseekModels(apiKeys.deepseek!);
+              console.log('Fetched Deepseek models:', models);
+              break;
+          }
 
-    setProviders(updatedProviders);
-    localStorage.setItem('llm-providers', JSON.stringify(updatedProviders));
-    
-    toast({
-      title: "Models Updated",
-      description: "Available models have been refreshed successfully.",
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+          provider.models = models;
+          provider.selectedModels = provider.selectedModels?.filter(model => 
+            models.includes(model)
+          ) || [];
+        } catch (error) {
+          console.error(`Error fetching models for ${provider.name}:`, error);
+          toast({
+            title: `Error Fetching Models`,
+            description: `Could not fetch models for ${provider.name}. Please check your API key.`,
+            variant: "destructive",
+          });
+        }
+      }
+
+      setProviders(updatedProviders);
+      localStorage.setItem('llm-providers', JSON.stringify(updatedProviders));
+      
+      toast({
+        title: "Models Updated",
+        description: "Available models have been refreshed successfully.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleProviderToggle = (providerId: string) => {
     const hasValidApiKey = apiKeys && apiKeys[providerId as keyof ApiKeys];
@@ -353,112 +170,15 @@ const refreshModels = async () => {
       </Alert>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {providers && providers.map((provider) => (
-          <Card key={provider.id} className="relative">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>{provider.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {provider.description}
-                  </p>
-                </div>
-                <Switch
-                  checked={provider.isEnabled}
-                  onCheckedChange={() => handleProviderToggle(provider.id)}
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium mb-2 flex items-center gap-2">
-                    <Info className="h-4 w-4" />
-                    Key Capabilities
-                  </h3>
-                  <ul className="space-y-1 list-disc list-inside text-sm text-muted-foreground">
-                    {provider.capabilities && provider.capabilities.map((capability, index) => (
-                      <li key={index}>{capability}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium">Available Models</h3>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="flex items-center gap-2"
-                          onClick={() => setSelectedProvider(provider)}
-                        >
-                          <Settings2 className="h-4 w-4" />
-                          Configure Models
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Configure Models for {provider.name}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 mt-4">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm text-muted-foreground">
-                              Select the models you want to use with your AI agents
-                            </p>
-                            <Button
-                              onClick={refreshModels}
-                              disabled={isLoading}
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center gap-2"
-                            >
-                              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                              Refresh
-                            </Button>
-                          </div>
-                          {provider.models.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">
-                              No models available. Click the "Refresh" button to fetch available models.
-                            </p>
-                          ) : (
-                            <ScrollArea className="h-[300px] pr-4">
-                              <div className="space-y-2">
-                                {provider.models.map((model) => (
-                                  <div key={model} className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id={`${provider.id}-${model}`}
-                                      checked={(provider.selectedModels || []).includes(model)}
-                                      onCheckedChange={(checked) => 
-                                        handleModelSelection(provider.id, model, checked as boolean)
-                                      }
-                                    />
-                                    <label
-                                      htmlFor={`${provider.id}-${model}`}
-                                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                    >
-                                      {model}
-                                    </label>
-                                  </div>
-                                ))}
-                              </div>
-                            </ScrollArea>
-                          )}
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {provider.selectedModels && provider.selectedModels.map((model) => (
-                      <Badge key={model} variant="secondary">
-                        {model}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {providers.map((provider) => (
+          <ProviderCard
+            key={provider.id}
+            provider={provider}
+            isLoading={isLoading}
+            onToggle={handleProviderToggle}
+            onModelSelection={handleModelSelection}
+            onRefresh={refreshModels}
+          />
         ))}
       </div>
     </div>
