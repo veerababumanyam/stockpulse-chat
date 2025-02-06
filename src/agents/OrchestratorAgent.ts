@@ -19,105 +19,74 @@ import { DividendAnalysisAgent } from './DividendAnalysisAgent';
 import { NewsScraperAgent } from './NewsScraperAgent';
 import { FinancialStatementAgent } from './FinancialStatementAgent';
 import { ETFFlowAgent } from './ETFFlowAgent';
-// New imports
 import { LegalDocumentAgent } from './LegalDocumentAgent';
 import { PatentAnalysisAgent } from './PatentAnalysisAgent';
 import { BigPlayerTrackingAgent } from './BigPlayerTrackingAgent';
-import { SocialMediaScraperAgent } from './SocialMediaScraperAgent';
+// Temporarily commented out SocialMediaScraperAgent
+// import { SocialMediaScraperAgent } from './SocialMediaScraperAgent';
+
+interface AgentResult {
+  data: any;
+  error?: string;
+}
 
 export class OrchestratorAgent {
   static async orchestrateAnalysis(stockData: any) {
+    const results = new Map<string, AgentResult>();
+
     try {
-      // Run all analyses in parallel
-      const [
-        fundamental,
-        technical,
-        news,
-        analyst,
-        marketSentiment,
-        risk,
-        macro,
-        dataQuality,
-        competitive,
-        esg,
-        technicalData,
-        marketResearch,
-        dataIntegration,
-        valuation,
-        cashFlow,
-        volatility,
-        growthTrends,
-        dividend,
-        newsScraper,
-        financialStatement,
-        etfFlow,
-        // New analyses
-        legalDocument,
-        patentAnalysis,
-        bigPlayerTracking,
-        socialMediaScraper
-      ] = await Promise.all([
-        FundamentalAnalysisAgent.analyze(stockData),
-        TechnicalAnalysisAgent.analyze(stockData),
-        NewsAnalysisAgent.analyze(stockData.quote.symbol),
-        AnalystRecommendationsAgent.analyze(stockData.quote.symbol),
-        MarketSentimentAgent.analyze(stockData.quote.symbol),
-        RiskAssessmentAgent.analyze(stockData),
-        MacroeconomicAnalysisAgent.analyze(stockData.quote.symbol),
-        DataCleansingAgent.analyze(stockData),
-        CompetitiveAnalysisAgent.analyze(stockData.quote.symbol),
-        ESGAnalysisAgent.analyze(stockData.quote.symbol),
-        TechnicalDataAgent.analyze(stockData.quote.symbol),
-        MarketResearchAgent.analyze(stockData.quote.symbol),
-        DataIntegrationAgent.analyze(stockData),
-        ValuationAnalysisAgent.analyze(stockData.quote.symbol),
-        CashFlowAnalysisAgent.analyze(stockData.quote.symbol),
-        VolatilityAnalysisAgent.analyze(stockData.quote.symbol),
-        GrowthTrendAnalysisAgent.analyze(stockData.quote.symbol),
-        DividendAnalysisAgent.analyze(stockData.quote.symbol),
-        NewsScraperAgent.analyze(stockData.quote.symbol),
-        FinancialStatementAgent.analyze(stockData.quote.symbol),
-        ETFFlowAgent.analyze(stockData.quote.symbol),
-        // New agent calls
-        LegalDocumentAgent.analyze(stockData.quote.symbol),
-        PatentAnalysisAgent.analyze(stockData.quote.symbol),
-        BigPlayerTrackingAgent.analyze(stockData.quote.symbol),
-        SocialMediaScraperAgent.analyze(stockData.quote.symbol)
-      ]);
+      const agentPromises = [
+        this.executeAgent('fundamental', () => FundamentalAnalysisAgent.analyze(stockData)),
+        this.executeAgent('technical', () => TechnicalAnalysisAgent.analyze(stockData)),
+        this.executeAgent('news', () => NewsAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('analyst', () => AnalystRecommendationsAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('sentiment', () => MarketSentimentAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('risk', () => RiskAssessmentAgent.analyze(stockData)),
+        this.executeAgent('macro', () => MacroeconomicAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('dataQuality', () => DataCleansingAgent.analyze(stockData)),
+        this.executeAgent('competitive', () => CompetitiveAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('esg', () => ESGAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('technicalData', () => TechnicalDataAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('marketResearch', () => MarketResearchAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('dataIntegration', () => DataIntegrationAgent.analyze(stockData)),
+        this.executeAgent('valuation', () => ValuationAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('cashFlow', () => CashFlowAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('volatility', () => VolatilityAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('growthTrends', () => GrowthTrendAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('dividend', () => DividendAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('newsScraper', () => NewsScraperAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('financialStatement', () => FinancialStatementAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('etfFlow', () => ETFFlowAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('legalDocument', () => LegalDocumentAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('patentAnalysis', () => PatentAnalysisAgent.analyze(stockData.quote.symbol)),
+        this.executeAgent('bigPlayerTracking', () => BigPlayerTrackingAgent.analyze(stockData.quote.symbol)),
+        // Temporarily disabled SocialMediaScraperAgent
+        // this.executeAgent('socialMedia', () => SocialMediaScraperAgent.analyze(stockData.quote.symbol))
+      ];
+
+      await Promise.all(agentPromises);
 
       return this.formatOutput({
         symbol: stockData.quote.symbol,
         companyName: stockData.profile.companyName,
-        fundamental,
-        technical,
-        news,
-        analyst,
-        sentiment: marketSentiment,
-        risk,
-        macro,
-        dataQuality,
-        competitive,
-        esg,
-        technicalData,
-        marketResearch,
-        dataIntegration,
-        valuation,
-        cashFlow,
-        volatility,
-        growthTrends,
-        dividend,
-        newsScraper,
-        financialStatement,
-        etfFlow,
-        // New analysis results
-        legalDocument,
-        patentAnalysis,
-        bigPlayerTracking,
-        socialMediaScraper
+        results: Object.fromEntries(results)
       });
     } catch (error) {
       console.error('Error in orchestration:', error);
       throw new Error('Error analyzing stock data. Please try again.');
+    }
+  }
+
+  private static async executeAgent(name: string, agentFn: () => Promise<any>): Promise<void> {
+    try {
+      const result = await agentFn();
+      results.set(name, { data: result });
+    } catch (error) {
+      console.error(`Error in ${name} agent:`, error);
+      results.set(name, { 
+        data: null, 
+        error: `${name} analysis failed: ${error.message}` 
+      });
     }
   }
 
@@ -127,91 +96,91 @@ export class OrchestratorAgent {
 
 🔎 Fundamental Analysis
 ------------------------
-${this.formatSection(data.fundamental, 'Fundamental metrics and company health')}
+${this.formatSection(data.results.fundamental?.data, 'Fundamental metrics and company health')}
 
 📈 Technical Analysis
 ------------------------
-${this.formatSection(data.technical, 'Technical indicators and price action')}
-${this.formatSection(data.technicalData, 'Detailed technical data')}
+${this.formatSection(data.results.technical?.data, 'Technical indicators and price action')}
+${this.formatSection(data.results.technicalData?.data, 'Detailed technical data')}
 
 💰 Cash Flow Analysis
 ------------------------
-${this.formatSection(data.cashFlow, 'Cash flow metrics and sustainability')}
+${this.formatSection(data.results.cashFlow?.data, 'Cash flow metrics and sustainability')}
 
 📊 Volatility Analysis
 ------------------------
-${this.formatSection(data.volatility, 'Volatility metrics and risk assessment')}
+${this.formatSection(data.results.volatility?.data, 'Volatility metrics and risk assessment')}
 
 🏢 Market Research & Competition
 ------------------------
-${this.formatSection(data.marketResearch, 'Market research and sector analysis')}
-${this.formatSection(data.competitive, 'Competitive position and peer comparison')}
+${this.formatSection(data.results.marketResearch?.data, 'Market research and sector analysis')}
+${this.formatSection(data.results.competitive?.data, 'Competitive position and peer comparison')}
 
 💰 Valuation Analysis
 ------------------------
-${this.formatSection(data.valuation, 'Valuation metrics and intrinsic value')}
+${this.formatSection(data.results.valuation?.data, 'Valuation metrics and intrinsic value')}
 
 📰 News & Sentiment Analysis
 ------------------------
-${this.formatSection(data.news, 'Recent news and market sentiment')}
-${this.formatSection(data.sentiment, 'Overall market sentiment')}
-${this.formatSection(data.newsScraper, 'Scraped news and sentiment')}
+${this.formatSection(data.results.news?.data, 'Recent news and market sentiment')}
+${this.formatSection(data.results.sentiment?.data, 'Overall market sentiment')}
+${this.formatSection(data.results.newsScraper?.data, 'Scraped news and sentiment')}
 
 🏦 Financial Health
 ------------------------
-${this.formatSection(data.financialStatement, 'Financial statement analysis')}
+${this.formatSection(data.results.financialStatement?.data, 'Financial statement analysis')}
 
 💸 ETF Flow Analysis
 ------------------------
-${this.formatSection(data.etfFlow, 'ETF flow and holdings analysis')}
+${this.formatSection(data.results.etfFlow?.data, 'ETF flow and holdings analysis')}
 
 👥 Expert Analysis
 ------------------------
-${this.formatSection(data.analyst, 'Analyst recommendations and forecasts')}
+${this.formatSection(data.results.analyst?.data, 'Analyst recommendations and forecasts')}
 
 ⚠️ Risk Assessment
 ------------------------
-${this.formatSection(data.risk, 'Risk metrics and warnings')}
+${this.formatSection(data.results.risk?.data, 'Risk metrics and warnings')}
 
 🌐 Macroeconomic Context
 ------------------------
-${this.formatSection(data.macro, 'Macroeconomic factors and impact')}
+${this.formatSection(data.results.macro?.data, 'Macroeconomic factors and impact')}
 
 🌱 ESG Analysis
 ------------------------
-${this.formatSection(data.esg, 'Environmental, Social, and Governance metrics')}
+${this.formatSection(data.results.esg?.data, 'Environmental, Social, and Governance metrics')}
 
 📊 Data Quality & Integration
 ------------------------
-${this.formatSection(data.dataQuality, 'Data quality assessment')}
-${this.formatSection(data.dataIntegration, 'Integrated data analysis')}
+${this.formatSection(data.results.dataQuality?.data, 'Data quality assessment')}
+${this.formatSection(data.results.dataIntegration?.data, 'Integrated data analysis')}
 
 🏛️ Legal Document Analysis
 ------------------------
-${this.formatSection(data.legalDocument, 'Analysis of legal filings and documents')}
+${this.formatSection(data.results.legalDocument?.data, 'Analysis of legal filings and documents')}
 
 🧪 Patent Analysis
 ------------------------
-${this.formatSection(data.patentAnalysis, 'Analysis of company patents and innovation')}
+${this.formatSection(data.results.patentAnalysis?.data, 'Analysis of company patents and innovation')}
 
 🐳 Big Player Tracking
 ------------------------
-${this.formatSection(data.bigPlayerTracking, 'Tracking of institutional and big player holdings')}
+${this.formatSection(data.results.bigPlayerTracking?.data, 'Tracking of institutional and big player holdings')}
 
 📱 Social Media Scraping
 ------------------------
-${this.formatSection(data.socialMediaScraper, 'Scraped social media data and sentiment')}
+${this.formatSection(data.results.socialMedia?.data, 'Scraped social media data and sentiment')}
 
 🎯 Summary & Recommendations
 ------------------------
-• Technical Outlook: ${data.technical.analysis.signals?.overallSignal || 'N/A'}
-• Fundamental Position: ${data.fundamental.analysis.recommendation || 'N/A'}
-• Risk Level: ${data.risk.analysis.riskLevel || 'N/A'}
-• Market Sentiment: ${data.sentiment.analysis.overallSentiment || 'N/A'}
-• ESG Rating: ${data.esg.analysis.overallESGRating || 'N/A'}
-• Valuation Status: ${data.valuation.analysis.intrinsicValue || 'N/A'}
-• Cash Flow Health: ${data.cashFlow.analysis.cashFlowStrength || 'N/A'}
-• Volatility Status: ${data.volatility.analysis.volatilityTrend || 'N/A'}
+• Technical Outlook: ${data.results.technical?.data?.analysis.signals?.overallSignal || 'N/A'}
+• Fundamental Position: ${data.results.fundamental?.data?.analysis.recommendation || 'N/A'}
+• Risk Level: ${data.results.risk?.data?.analysis.riskLevel || 'N/A'}
+• Market Sentiment: ${data.results.sentiment?.data?.analysis.overallSentiment || 'N/A'}
+• ESG Rating: ${data.results.esg?.data?.analysis.overallESGRating || 'N/A'}
+• Valuation Status: ${data.results.valuation?.data?.analysis.intrinsicValue || 'N/A'}
+• Cash Flow Health: ${data.results.cashFlow?.data?.analysis.cashFlowStrength || 'N/A'}
+• Volatility Status: ${data.results.volatility?.data?.analysis.volatilityTrend || 'N/A'}
 `;
   }
 
