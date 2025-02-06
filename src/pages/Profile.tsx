@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -10,13 +11,13 @@ import { Key } from "lucide-react";
 interface ApiKeys {
   openai: string;
   fmp: string;
+  deepseek: string;
 }
 
 const Profile = () => {
-  const [apiKeys, setApiKeys] = useState<ApiKeys>({ openai: "", fmp: "" });
+  const [apiKeys, setApiKeys] = useState<ApiKeys>({ openai: "", fmp: "", deepseek: "" });
   const { toast } = useToast();
 
-  // Load API keys on component mount
   useEffect(() => {
     const savedKeys = localStorage.getItem('apiKeys');
     if (savedKeys) {
@@ -31,15 +32,14 @@ const Profile = () => {
 
   const handleApiKeySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!apiKeys.openai || !apiKeys.fmp) {
+    if (!apiKeys.openai || !apiKeys.fmp || !apiKeys.deepseek) {
       toast({
         title: "Error",
-        description: "Please enter both API keys",
+        description: "Please enter all API keys",
         variant: "destructive",
       });
       return;
     }
-    // Save API keys to localStorage
     localStorage.setItem('apiKeys', JSON.stringify(apiKeys));
     toast({
       title: "Success",
@@ -86,6 +86,16 @@ const Profile = () => {
                   className="bg-white/70 border-[#E5DEFF]"
                 />
               </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Deepseek API Key</label>
+                <Input
+                  type="password"
+                  value={apiKeys.deepseek}
+                  onChange={(e) => setApiKeys(prev => ({ ...prev, deepseek: e.target.value }))}
+                  placeholder="Enter Deepseek API Key"
+                  className="bg-white/70 border-[#E5DEFF]"
+                />
+              </div>
               <Button 
                 type="submit" 
                 className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
@@ -101,3 +111,4 @@ const Profile = () => {
 };
 
 export default Profile;
+

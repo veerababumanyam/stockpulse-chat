@@ -124,14 +124,17 @@ export class SocialMediaScraperAgent extends BaseAgent {
   private static calculateTimeDistribution(data: any[]): { daysSpan: number; newest?: string; oldest?: string } {
     if (!Array.isArray(data) || data.length === 0) return { daysSpan: 0 };
 
-    const validDates: number[] = data
-      .map(item => new Date(item.publishedDate).getTime())
-      .filter((timestamp): timestamp is number => !isNaN(timestamp));
+    const timestamps = data
+      .map(item => {
+        const date = new Date(item.publishedDate);
+        return isNaN(date.getTime()) ? null : date.getTime();
+      })
+      .filter((timestamp): timestamp is number => timestamp !== null);
 
-    if (validDates.length === 0) return { daysSpan: 0 };
+    if (timestamps.length === 0) return { daysSpan: 0 };
 
-    const newest = Math.max(...validDates);
-    const oldest = Math.min(...validDates);
+    const newest = Math.max(...timestamps);
+    const oldest = Math.min(...timestamps);
     
     const daysSpan = Math.ceil((newest - oldest) / (1000 * 60 * 60 * 24));
 
@@ -162,3 +165,4 @@ export class SocialMediaScraperAgent extends BaseAgent {
       }));
   }
 }
+

@@ -1,4 +1,6 @@
 
+import { DEEPSEEK_BASE_URL } from '@/utils/deepseekAPI';
+
 export interface AnalysisResult {
   type: string;
   analysis: Record<string, any>;
@@ -64,3 +66,4 @@ export abstract class BaseAgent {
     }
   }
 }
+

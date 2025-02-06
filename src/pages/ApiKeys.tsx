@@ -11,10 +11,11 @@ import { Key } from "lucide-react";
 interface ApiKeys {
   openai: string;
   fmp: string;
+  deepseek: string;
 }
 
 const ApiKeys = () => {
-  const [apiKeys, setApiKeys] = useState<ApiKeys>({ openai: "", fmp: "" });
+  const [apiKeys, setApiKeys] = useState<ApiKeys>({ openai: "", fmp: "", deepseek: "" });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -31,10 +32,10 @@ const ApiKeys = () => {
 
   const handleApiKeySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!apiKeys.openai || !apiKeys.fmp) {
+    if (!apiKeys.openai || !apiKeys.fmp || !apiKeys.deepseek) {
       toast({
         title: "Error",
-        description: "Please enter both API keys",
+        description: "Please enter all API keys",
         variant: "destructive",
       });
       return;
@@ -85,6 +86,16 @@ const ApiKeys = () => {
                   className="bg-white/70 border-[#E5DEFF]"
                 />
               </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Deepseek API Key</label>
+                <Input
+                  type="password"
+                  value={apiKeys.deepseek}
+                  onChange={(e) => setApiKeys(prev => ({ ...prev, deepseek: e.target.value }))}
+                  placeholder="Enter Deepseek API Key"
+                  className="bg-white/70 border-[#E5DEFF]"
+                />
+              </div>
               <Button 
                 type="submit" 
                 className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
@@ -100,3 +111,4 @@ const ApiKeys = () => {
 };
 
 export default ApiKeys;
+
