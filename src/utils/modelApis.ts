@@ -37,24 +37,29 @@ export const fetchOpenAIModels = async (apiKey: string) => {
   }
 };
 
+// Default models for providers with CORS restrictions
+const DEFAULT_ANTHROPIC_MODELS = [
+  'claude-3-opus',
+  'claude-3-sonnet',
+  'claude-3-haiku',
+  'claude-2.1',
+  'claude-2.0',
+  'claude-instant-1.2'
+];
+
+const DEFAULT_GEMINI_MODELS = [
+  'gemini-pro',
+  'gemini-pro-vision',
+  'gemini-ultra'
+];
+
 export const fetchAnthropicModels = async (apiKey: string) => {
   try {
-    const response = await fetch('https://api.anthropic.com/v1/models', {
-      headers: {
-        'x-api-key': apiKey,
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.models.map((model: any) => model.id).sort();
+    // Due to CORS restrictions, return default models
+    return DEFAULT_ANTHROPIC_MODELS;
   } catch (error) {
     console.error('Error fetching Anthropic models:', error);
-    throw error;
+    return DEFAULT_ANTHROPIC_MODELS; // Fallback to defaults
   }
 };
 
@@ -94,3 +99,14 @@ export const fetchDeepseekModels = async (apiKey: string) => {
     throw error;
   }
 };
+
+export const fetchGeminiModels = async (apiKey: string) => {
+  try {
+    // Due to CORS restrictions, return default models
+    return DEFAULT_GEMINI_MODELS;
+  } catch (error) {
+    console.error('Error fetching Gemini models:', error);
+    return DEFAULT_GEMINI_MODELS; // Fallback to defaults
+  }
+};
+

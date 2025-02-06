@@ -5,7 +5,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { Link } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import { defaultProviders } from "@/data/defaultProviders";
-import { fetchOpenAIModels, fetchAnthropicModels, fetchOpenRouterModels, fetchDeepseekModels } from "@/utils/modelApis";
+import { 
+  fetchOpenAIModels, 
+  fetchAnthropicModels, 
+  fetchOpenRouterModels, 
+  fetchDeepseekModels,
+  fetchGeminiModels 
+} from "@/utils/modelApis";
 import { ProviderCard } from "./ProviderCard";
 import type { LLMProvider, ApiKeys } from "@/types/llm";
 
@@ -61,19 +67,18 @@ export const LLMProviderSection = () => {
           switch (provider.id) {
             case 'openai':
               models = await fetchOpenAIModels(apiKeys.openai!);
-              console.log('Fetched OpenAI models:', models);
               break;
             case 'anthropic':
               models = await fetchAnthropicModels(apiKeys.anthropic!);
-              console.log('Fetched Anthropic models:', models);
               break;
             case 'openrouter':
               models = await fetchOpenRouterModels(apiKeys.openrouter!);
-              console.log('Fetched OpenRouter models:', models);
               break;
             case 'deepseek':
               models = await fetchDeepseekModels(apiKeys.deepseek!);
-              console.log('Fetched Deepseek models:', models);
+              break;
+            case 'gemini':
+              models = await fetchGeminiModels(apiKeys.gemini!);
               break;
           }
 
