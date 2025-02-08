@@ -22,7 +22,7 @@ interface ScreenerActionsProps {
   onSearch: (matchType: 'all' | 'any') => void;
 }
 
-const ScreenerActions = ({ isLoading, onSearch }: ScreenerActionsProps) => {
+const ScreenerActions: React.FC<ScreenerActionsProps> = ({ isLoading, onSearch }) => {
   const [matchType, setMatchType] = React.useState<'all' | 'any'>('all');
 
   return (
