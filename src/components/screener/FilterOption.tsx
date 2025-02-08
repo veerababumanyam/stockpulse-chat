@@ -33,10 +33,10 @@ export const FilterOptionComponent: React.FC<FilterOptionProps> = ({
             onChange={(e) =>
               onSelect(option.id, {
                 ...option.values,
-                min: parseFloat(e.target.value),
+                min: e.target.value ? parseFloat(e.target.value) : undefined,
               })
             }
-            value={option.values?.min || ''}
+            value={option.values?.min ?? ''}
           />
           <Input
             type="number"
@@ -45,17 +45,16 @@ export const FilterOptionComponent: React.FC<FilterOptionProps> = ({
             onChange={(e) =>
               onSelect(option.id, {
                 ...option.values,
-                max: parseFloat(e.target.value),
+                max: e.target.value ? parseFloat(e.target.value) : undefined,
               })
             }
-            value={option.values?.max || ''}
+            value={option.values?.max ?? ''}
           />
         </div>
       </div>
     );
   }
 
-  // Single select dropdown for non-range filters
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium text-muted-foreground">
