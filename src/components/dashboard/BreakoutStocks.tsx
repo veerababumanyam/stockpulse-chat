@@ -60,7 +60,7 @@ export const BreakoutStocks = () => {
 
   if (isLoading) {
     return (
-      <Card className="animate-pulse">
+      <Card className="animate-pulse h-full">
         <CardHeader>
           <CardTitle>Breakout Stocks</CardTitle>
         </CardHeader>
@@ -72,7 +72,7 @@ export const BreakoutStocks = () => {
   }
 
   return (
-    <Card className="backdrop-blur-sm bg-card/95 shadow-lg transition-all duration-200 hover:shadow-xl border-border/50">
+    <Card className="backdrop-blur-sm bg-card/95 shadow-lg transition-all duration-200 hover:shadow-xl border-border/50 h-full">
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           <span className="text-xl font-semibold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
@@ -96,7 +96,7 @@ export const BreakoutStocks = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[300px] pr-4">
+        <ScrollArea className="h-[400px] pr-4">
           {stocks.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
               <p className="text-muted-foreground">
@@ -145,3 +145,4 @@ export const BreakoutStocks = () => {
     </Card>
   );
 };
+
