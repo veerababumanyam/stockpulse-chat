@@ -12,10 +12,12 @@ const ScreenerHeader = () => {
 
   return (
     <ErrorBoundary>
-      <div className="space-y-4 animate-fade-in">
+      <div className="space-y-6 animate-fade-in">
         <HeaderSection />
-        <AISearchSection onResultsFound={setResults} />
-        <StatsSection resultsCount={results.length} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <AISearchSection onResultsFound={setResults} />
+          <StatsSection resultsCount={results.length} />
+        </div>
         <ScreenerResults results={results} />
       </div>
     </ErrorBoundary>
