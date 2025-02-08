@@ -1,7 +1,11 @@
 
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatPrice, formatPercentage, getPriceChangeColor } from "@/utils/formatting";
+import { 
+  formatPrice, 
+  formatPercentage, 
+  getPriceChangeColor 
+} from "@/utils/formatting";
 
 interface StockData {
   symbol: string;
@@ -17,7 +21,11 @@ interface MarketMoversProps {
   isLoading: boolean;
 }
 
-const MarketMoverCard = ({ title, stocks, icon: Icon }: { 
+const MarketMoverCard = ({ 
+  title, 
+  stocks, 
+  icon: Icon 
+}: { 
   title: string;
   stocks: StockData[];
   icon: any;
@@ -26,23 +34,37 @@ const MarketMoverCard = ({ title, stocks, icon: Icon }: {
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
       <CardTitle className="text-xl font-semibold">
         <div className="flex items-center gap-2">
-          <Icon className={`h-5 w-5 ${title.includes('Gainers') ? 'text-green-500' : 'text-red-500'}`} />
+          <Icon 
+            className={`h-5 w-5 ${
+              title.includes('Gainers') ? 'text-green-500' : 'text-red-500'
+            }`} 
+          />
           {title}
         </div>
       </CardTitle>
     </CardHeader>
     <CardContent>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {stocks.map((stock) => (
           <div 
             key={stock.symbol} 
-            className="flex items-center justify-between rounded-lg bg-card hover:bg-accent/50 p-3 transition-colors"
+            className="flex items-center justify-between rounded-lg bg-card hover:bg-accent/50 p-4 transition-colors cursor-pointer"
           >
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-lg">{stock.symbol}</span>
-                <span className={`text-sm font-medium ${getPriceChangeColor(stock.changePercent)}`}>
-                  {stock.changePercent > 0 ? '+' : ''}{formatPercentage(stock.changePercent)}
+                <span className="font-semibold text-lg tracking-tight">
+                  {stock.symbol}
+                </span>
+                <span 
+                  className={`text-sm font-medium ${getPriceChangeColor(stock.changePercent)} flex items-center gap-1`}
+                >
+                  {stock.changePercent > 0 ? (
+                    <TrendingUp className="h-4 w-4" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4" />
+                  )}
+                  {stock.changePercent > 0 ? '+' : ''}
+                  {formatPercentage(stock.changePercent)}
                 </span>
               </div>
               <div className="text-sm text-muted-foreground truncate max-w-[200px]">
@@ -50,9 +72,12 @@ const MarketMoverCard = ({ title, stocks, icon: Icon }: {
               </div>
             </div>
             <div className="text-right">
-              <div className="font-medium text-lg">{formatPrice(stock.price)}</div>
-              <div className={`text-sm ${getPriceChangeColor(stock.changePercent)}`}>
-                {stock.change > 0 ? '+' : ''}{formatPrice(stock.change)}
+              <div className="font-medium text-lg">
+                {formatPrice(stock.price)}
+              </div>
+              <div className={`text-sm ${getPriceChangeColor(stock.changePercent)} flex items-center justify-end gap-1`}>
+                {stock.change > 0 ? '+' : ''}
+                {formatPrice(stock.change)}
               </div>
             </div>
           </div>
@@ -72,7 +97,7 @@ export const MarketMovers = ({ gainers, losers, isLoading }: MarketMoversProps) 
               <div className="h-6 bg-muted rounded w-1/3 mb-6" />
               <div className="space-y-6">
                 {Array(5).fill(0).map((_, j) => (
-                  <div key={j} className="flex justify-between p-3 bg-muted/50 rounded-lg">
+                  <div key={j} className="flex justify-between p-4 bg-muted/50 rounded-lg">
                     <div className="space-y-2">
                       <div className="h-5 bg-muted rounded w-20" />
                       <div className="h-4 bg-muted rounded w-32" />

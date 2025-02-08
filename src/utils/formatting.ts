@@ -14,7 +14,9 @@ export const formatPercentage = (value: number | null | undefined) => {
 };
 
 export const getPriceChangeColor = (change: number) => {
-  if (isNaN(change) || change === 0) return 'text-muted-foreground';
+  if (change === null || change === undefined || isNaN(change)) {
+    return 'text-muted-foreground';
+  }
   return change > 0 ? 'text-green-500' : 'text-red-500';
 };
 
