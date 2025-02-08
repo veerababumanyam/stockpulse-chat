@@ -1,5 +1,5 @@
 
-import { ApiKeys } from './llm';
+import type { ApiKeys } from './llm';
 
 export interface Message {
   content: string;
@@ -7,7 +7,7 @@ export interface Message {
   data?: any;
 }
 
-export { ApiKeys };
+export type { ApiKeys };
 
 export interface AnalysisResult {
   textOutput: string;
