@@ -42,7 +42,7 @@ export const getRegionForCurrency = (country: string): string => {
   return regionMap[country] || 'Other';
 };
 
-export const calculateVolatilityMetrics = (forexData: any, baseCurrency: string): Record<string, number> => {
+export const calculateVolatilityMetrics = (forexData: any, baseCurrency: string): { average: number; max: number; min: number; } => {
   if (!Array.isArray(forexData)) return { average: 0, max: 0, min: 0 };
 
   const volatilities = forexData
@@ -73,3 +73,4 @@ export const analyzeCurrencyExposures = (profile: any, forexData: any): Currency
     volatilityMetrics: calculateVolatilityMetrics(forexData, mainCurrency)
   };
 };
+
