@@ -70,19 +70,17 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
     try {
       // First, get recommended stocks from scraped data
       const scrapedData = await scrapeAnalystRecommendations();
-      if (!scrapedData) return;
+      if (!scrapedData || !scrapedData.success) {
+        throw new Error('Failed to scrape recommendations');
+      }
 
       const recommendations: AIRecommendation[] = [];
       
       // Process each recommended stock
       const stocksToAnalyze = new Set([symbol]); // Start with the main symbol
       
-      if (scrapedData.analysis?.recentNews) {
-        scrapedData.analysis.recentNews.forEach((news: any) => {
-          // Extract mentioned stock symbols from news
-          const mentionedSymbols = extractSymbolsFromNews(news);
-          mentionedSymbols.forEach(sym => stocksToAnalyze.add(sym));
-        });
+      if (scrapedData.analysis?.recommendedStocks) {
+        scrapedData.analysis.recommendedStocks.forEach(sym => stocksToAnalyze.add(sym));
       }
 
       // Analyze each stock with OrchestratorAgent
@@ -92,24 +90,26 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
           profile: { companyName: stockSymbol }
         });
 
-        if (typeof aiAnalysis === 'object' && aiAnalysis.results) {
+        if (typeof aiAnalysis === 'object') {
           const results = aiAnalysis.results;
-          const sentiment = results.get('sentiment')?.data;
-          const fundamental = results.get('fundamental')?.data;
-          const technical = results.get('technical')?.data;
-          const growth = results.get('growthTrends')?.data;
-          
-          if (sentiment && fundamental && technical) {
-            recommendations.push({
-              symbol: stockSymbol,
-              confidence: (sentiment.confidence || 0.5) * 100,
-              sentiment: sentiment.score || 0,
-              sources: sentiment.sourceCount || 1,
-              recommendation: technical.signals?.overallSignal || 'HOLD',
-              fundamentalScore: calculateScore(fundamental),
-              technicalScore: calculateScore(technical),
-              growthScore: growth ? calculateScore(growth) : undefined
-            });
+          if (results) {
+            const sentiment = results.get('sentiment')?.data;
+            const fundamental = results.get('fundamental')?.data;
+            const technical = results.get('technical')?.data;
+            const growth = results.get('growthTrends')?.data;
+            
+            if (sentiment && fundamental && technical) {
+              recommendations.push({
+                symbol: stockSymbol,
+                confidence: (sentiment.confidence || 0.5) * 100,
+                sentiment: sentiment.score || 0,
+                sources: sentiment.sourceCount || 1,
+                recommendation: technical.signals?.overallSignal || 'HOLD',
+                fundamentalScore: calculateScore(fundamental),
+                technicalScore: calculateScore(technical),
+                growthScore: growth ? calculateScore(growth) : undefined
+              });
+            }
           }
         }
       }

@@ -1,8 +1,44 @@
 
 import { BaseAgent, AnalysisResult } from './BaseAgent';
 
+interface ScrapedNews {
+  title: string;
+  url: string;
+  source: string;
+  summary: string;
+  date: string;
+  symbols?: string[];
+}
+
+interface ScrapingResult {
+  success: boolean;
+  analysis?: {
+    recentNews: ScrapedNews[];
+    sources: string[];
+    recommendedStocks: string[];
+  };
+  error?: string;
+}
+
 export class NewsScraperAgent extends BaseAgent {
-  static async analyze(symbol: string): Promise<AnalysisResult> {
+  private static readonly FINANCIAL_SOURCES = [
+    'seekingalpha.com',
+    'marketbeat.com',
+    'thestreet.com',
+    'fool.com',
+    'cnbc.com',
+    'reuters.com',
+    'wsj.com',
+    'investors.com',
+    'marketwatch.com',
+    'nasdaq.com',
+    'finance.yahoo.com',
+    'google.com/finance',
+    'investing.com',
+    'tradingview.com'
+  ];
+
+  static async analyze(symbol: string): Promise<ScrapingResult> {
     try {
       const savedKeys = localStorage.getItem('apiKeys');
       if (!savedKeys) {
@@ -10,152 +46,92 @@ export class NewsScraperAgent extends BaseAgent {
       }
       const { fmp } = JSON.parse(savedKeys);
 
+      // Fetch news from FMP API for the given symbol
       const newsResponse = await this.fetchData(
-        `https://financialmodelingprep.com/api/v3/stock_news?tickers=${symbol}&limit=50&apikey=${fmp}`,
+        `https://financialmodelingprep.com/api/v3/stock_news?tickers=${symbol}&limit=100&apikey=${fmp}`,
         fmp
       );
 
-      const recentNews = this.processNewsData(newsResponse);
-      const sentimentAnalysis = this.analyzeSentiment(recentNews);
-      const impactAnalysis = this.analyzeNewsImpact(recentNews);
+      // Process and filter news by trusted sources
+      const processedNews = this.processNewsData(newsResponse);
+      const recommendedStocks = this.extractStockSymbols(processedNews);
 
       return {
-        type: 'news-scraper',
+        success: true,
         analysis: {
-          recentNews,
-          sentimentAnalysis,
-          impactAnalysis,
-          newsStats: this.calculateNewsStats(recentNews)
+          recentNews: processedNews,
+          sources: [...new Set(processedNews.map(news => news.source))],
+          recommendedStocks: [...new Set(recommendedStocks)]
         }
       };
     } catch (error) {
       console.error('Error in news scraping:', error);
       return {
-        type: 'news-scraper',
-        analysis: {
-          recentNews: [],
-          sentimentAnalysis: { overall: 'neutral', confidence: 0 },
-          impactAnalysis: [],
-          newsStats: { total: 0, categories: {} }
-        }
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to scrape news'
       };
     }
   }
 
-  private static processNewsData(news: any[]): any[] {
+  private static processNewsData(news: any[]): ScrapedNews[] {
     if (!Array.isArray(news)) return [];
     
-    return news.map(item => ({
-      title: item.title,
-      date: this.formatDate(item.publishedDate),
-      source: item.site,
-      url: item.url,
-      summary: item.text?.substring(0, 200) + '...',
-      sentiment: this.calculateNewsSentiment(item.title + ' ' + (item.text || ''))
-    }));
-  }
-
-  private static analyzeSentiment(news: any[]): any {
-    if (news.length === 0) return { overall: 'neutral', confidence: 0 };
-
-    const sentiments = news.map(item => item.sentiment);
-    const positiveCount = sentiments.filter(s => s === 'positive').length;
-    const negativeCount = sentiments.filter(s => s === 'negative').length;
-    const totalCount = sentiments.length;
-
-    const overallSentiment = this.determineOverallSentiment(positiveCount, negativeCount, totalCount);
-    const confidence = this.calculateSentimentConfidence(positiveCount, negativeCount, totalCount);
-
-    return {
-      overall: overallSentiment,
-      confidence,
-      breakdown: {
-        positive: (positiveCount / totalCount * 100).toFixed(1) + '%',
-        negative: (negativeCount / totalCount * 100).toFixed(1) + '%',
-        neutral: ((totalCount - positiveCount - negativeCount) / totalCount * 100).toFixed(1) + '%'
-      }
-    };
-  }
-
-  private static calculateNewsSentiment(text: string): string {
-    const positiveWords = ['surge', 'gain', 'rise', 'growth', 'profit', 'success', 'boost'];
-    const negativeWords = ['drop', 'fall', 'decline', 'loss', 'risk', 'concern', 'fail'];
-
-    let score = 0;
-    text = text.toLowerCase();
-
-    positiveWords.forEach(word => {
-      score += (text.match(new RegExp(word, 'g')) || []).length;
-    });
-
-    negativeWords.forEach(word => {
-      score -= (text.match(new RegExp(word, 'g')) || []).length;
-    });
-
-    if (score > 2) return 'positive';
-    if (score < -2) return 'negative';
-    return 'neutral';
-  }
-
-  private static analyzeNewsImpact(news: any[]): any[] {
     return news
-      .filter(item => item.sentiment !== 'neutral')
+      .filter(item => this.FINANCIAL_SOURCES.some(source => 
+        item.site?.toLowerCase().includes(source)
+      ))
       .map(item => ({
-        headline: item.title,
-        impact: item.sentiment === 'positive' ? 'Positive' : 'Negative',
-        date: item.date,
-        significance: this.calculateNewsSignificance(item)
-      }))
-      .sort((a, b) => b.significance - a.significance)
-      .slice(0, 5);
+        title: item.title,
+        url: item.url,
+        source: item.site,
+        summary: item.text?.substring(0, 200) + '...',
+        date: this.formatDate(item.publishedDate),
+        symbols: this.extractSymbolsFromNews(item)
+      }));
   }
 
-  private static calculateNewsStats(news: any[]): any {
-    const categories: Record<string, number> = {};
+  private static extractStockSymbols(news: ScrapedNews[]): string[] {
+    const symbols: Set<string> = new Set();
+    
     news.forEach(item => {
-      const source = item.source;
-      categories[source] = (categories[source] || 0) + 1;
+      const content = `${item.title} ${item.summary}`.toUpperCase();
+      
+      // Look for common patterns like "TICKER:" or "$TICKER"
+      const matches = content.match(/\$[A-Z]{1,5}|[A-Z]{1,5}:|[A-Z]{1,5}\s(?=is|has|was|reported)/g) || [];
+      
+      matches.forEach(match => {
+        const symbol = match.replace(/[$:\s]/g, '');
+        if (symbol.length >= 2 && symbol.length <= 5 && !this.isCommonWord(symbol)) {
+          symbols.add(symbol);
+        }
+      });
     });
-
-    return {
-      total: news.length,
-      categories,
-      sourceDiversity: Object.keys(categories).length
-    };
-  }
-
-  private static determineOverallSentiment(positive: number, negative: number, total: number): string {
-    const positiveRatio = positive / total;
-    const negativeRatio = negative / total;
-
-    if (positiveRatio > 0.6) return 'very positive';
-    if (positiveRatio > 0.4) return 'positive';
-    if (negativeRatio > 0.6) return 'very negative';
-    if (negativeRatio > 0.4) return 'negative';
-    return 'neutral';
-  }
-
-  private static calculateSentimentConfidence(positive: number, negative: number, total: number): number {
-    // Base confidence calculation
-    const dominantSentiment = Math.max(positive, negative);
-    const sentimentStrength = (dominantSentiment / total) * 100;
     
-    // Adjust confidence based on sample size
-    const sampleSizeAdjustment = Math.min(total / 10, 20); // Max 20 points for sample size
-    
-    return Math.min(Math.round(sentimentStrength + sampleSizeAdjustment), 100);
+    return Array.from(symbols);
   }
 
-  private static calculateNewsSignificance(newsItem: any): number {
-    let significance = 50; // Base significance
+  private static extractSymbolsFromNews(news: any): string[] {
+    const symbols: string[] = [];
+    const content = (news.title + ' ' + news.text).toUpperCase();
+    
+    // Look for common patterns
+    const matches = content.match(/\$[A-Z]{1,5}|[A-Z]{1,5}:|[A-Z]{1,5}\s(?=is|has|was|reported)/g) || [];
+    
+    matches.forEach(match => {
+      const symbol = match.replace(/[$:\s]/g, '');
+      if (symbol.length >= 2 && symbol.length <= 5 && !this.isCommonWord(symbol)) {
+        symbols.push(symbol);
+      }
+    });
+    
+    return [...new Set(symbols)];
+  }
 
-    // Adjust based on sentiment strength
-    significance += newsItem.sentiment === 'very positive' || newsItem.sentiment === 'very negative' ? 20 : 0;
-
-    // Adjust based on recency (newer news is more significant)
-    const daysSincePublication = (new Date().getTime() - new Date(newsItem.date).getTime()) / (1000 * 60 * 60 * 24);
-    significance -= Math.min(daysSincePublication * 2, 30); // Max 30 points reduction for old news
-
-    return Math.max(0, Math.min(100, significance));
+  private static isCommonWord(word: string): boolean {
+    const commonWords = new Set([
+      'THE', 'AND', 'FOR', 'NEW', 'NOW', 'HOW', 'WHY', 'WHO', 'WHAT', 'WHEN',
+      'CEO', 'CFO', 'IPO', 'USA', 'FDA', 'SEC', 'ETF', 'GDP'
+    ]);
+    return commonWords.has(word);
   }
 }
