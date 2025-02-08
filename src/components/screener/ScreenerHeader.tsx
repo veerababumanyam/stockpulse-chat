@@ -8,13 +8,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
@@ -22,7 +15,6 @@ import { generateScreeningCriteria } from "@/utils/aiScreener";
 import { fetchStockScreenerResults } from "@/utils/stockApi";
 
 const ScreenerHeader = () => {
-  const [showAIDialog, setShowAIDialog] = useState(false);
   const [aiQuery, setAiQuery] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
@@ -66,8 +58,6 @@ const ScreenerHeader = () => {
           description: `Found ${results.length} stocks matching your criteria`,
         });
       }
-      
-      setShowAIDialog(false);
     } catch (error: any) {
       console.error("AI Screener error:", error);
       toast({
@@ -133,47 +123,36 @@ const ScreenerHeader = () => {
 
       <Card className="p-6 bg-background/50 backdrop-blur-sm border-border/50">
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">AI Stock Screener</h3>
-              <p className="text-sm text-muted-foreground">
-                Describe the stocks you want to find in natural language
-              </p>
+          <div>
+            <h3 className="text-lg font-semibold">AI Stock Screener</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Describe the stocks you want to find in natural language
+            </p>
+            <div className="flex gap-3">
+              <Input
+                placeholder="Example: Show me high growth tech stocks with strong profitability"
+                value={aiQuery}
+                onChange={(e) => setAiQuery(e.target.value)}
+                className="flex-1"
+              />
+              <Button 
+                onClick={handleAISearch}
+                disabled={isProcessing}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 whitespace-nowrap"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Brain className="h-4 w-4 mr-2" />
+                    Search Stocks
+                  </>
+                )}
+              </Button>
             </div>
-            <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
-              <DialogTrigger asChild>
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-                  <Brain className="h-4 w-4 mr-2" />
-                  Start AI Search
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>AI Stock Screener</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <Input
-                    placeholder="Example: Show me high growth tech stocks with strong profitability"
-                    value={aiQuery}
-                    onChange={(e) => setAiQuery(e.target.value)}
-                  />
-                  <Button 
-                    onClick={handleAISearch}
-                    disabled={isProcessing}
-                    className="w-full"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      "Search Stocks"
-                    )}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
           </div>
         </div>
       </Card>
