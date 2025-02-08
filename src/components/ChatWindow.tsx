@@ -30,6 +30,7 @@ const ChatWindow = () => {
         navigate("/api-keys");
         return;
       }
+      console.log('API Keys loaded:', { hasFMP: !!parsedKeys.fmp });
       setApiKeys(parsedKeys);
     } else {
       toast({
@@ -78,6 +79,7 @@ const ChatWindow = () => {
     setIsLoading(true);
 
     try {
+      console.log('Starting analysis with FMP key:', !!apiKeys.fmp);
       if (!apiKeys.fmp) {
         throw new Error('FMP API key is required. Please set it in the API Keys page.');
       }
@@ -106,6 +108,13 @@ const ChatWindow = () => {
       };
 
       setMessages(prev => [...prev, aiMessage]);
+      
+      // Success toast
+      toast({
+        title: "Analysis Complete",
+        description: "Stock analysis has been generated successfully",
+      });
+
     } catch (error) {
       console.error('Error in chat handling:', error);
       const errorMessage = error instanceof Error ? error.message : "Failed to analyze stock data";
@@ -153,3 +162,4 @@ const ChatWindow = () => {
 };
 
 export default ChatWindow;
+
