@@ -21,42 +21,54 @@ export const MarketIndices = () => {
     const fetchIndices = async () => {
       try {
         const savedKeys = localStorage.getItem('apiKeys');
-        if (!savedKeys) throw new Error('API key not found');
+        if (!savedKeys) {
+          console.error('API key not found in localStorage');
+          throw new Error('API key not found');
+        }
         
         const { fmp } = JSON.parse(savedKeys);
-        
+        if (!fmp) {
+          console.error('FMP API key not found in parsed keys');
+          throw new Error('FMP API key not found');
+        }
+
+        console.log('Fetching market indices...');
         const response = await fetch(
           `https://financialmodelingprep.com/api/v3/quotes/index?apikey=${fmp}`
         );
 
-        if (!response.ok) throw new Error('Failed to fetch indices');
+        if (!response.ok) {
+          console.error('API response not OK:', response.status);
+          throw new Error('Failed to fetch indices');
+        }
         
         const data = await response.json();
+        console.log('Received data:', data);
         
-        // Filter out any malformed data
+        if (!Array.isArray(data)) {
+          console.error('Received data is not an array:', data);
+          throw new Error('Invalid data format');
+        }
+
+        // Filter and map the most important indices
+        const importantSymbols = ['^GSPC', '^DJI', '^IXIC', '^RUT', '^VIX'];
         const validIndices = data
-          .slice(0, 5)
-          .filter((index: any) => 
-            index?.symbol && 
-            index?.name && 
-            typeof index?.price === 'number' && 
-            typeof index?.change === 'number' && 
-            typeof index?.changePercentage === 'number'
-          )
+          .filter((index: any) => importantSymbols.includes(index?.symbol))
           .map((index: any) => ({
             symbol: index.symbol,
-            name: index.name,
-            price: index.price,
-            change: index.change,
-            changePercent: index.changePercentage
+            name: index.name || 'Unknown',
+            price: Number(index.price) || 0,
+            change: Number(index.change) || 0,
+            changePercent: Number(index.changesPercentage) || 0
           }));
 
+        console.log('Processed indices:', validIndices);
         setIndices(validIndices);
       } catch (error) {
         console.error('Error fetching indices:', error);
         toast({
           title: "Error",
-          description: "Failed to fetch market indices",
+          description: "Failed to fetch market indices. Please check your API key.",
           variant: "destructive",
         });
       } finally {
@@ -87,6 +99,21 @@ export const MarketIndices = () => {
     );
   }
 
+  if (indices.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Market Indices</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center text-muted-foreground">
+            No market data available. Please check your API key configuration.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -102,7 +129,7 @@ export const MarketIndices = () => {
               </div>
               <div className="text-right">
                 <div className="font-medium">
-                  ${typeof index.price === 'number' ? index.price.toFixed(2) : 'N/A'}
+                  ${index.price.toFixed(2)}
                 </div>
                 <div className={`text-sm flex items-center gap-1 ${
                   index.change >= 0 ? 'text-green-500' : 'text-red-500'
@@ -112,9 +139,7 @@ export const MarketIndices = () => {
                   ) : (
                     <TrendingDown className="w-4 h-4" />
                   )}
-                  {typeof index.changePercent === 'number' ? 
-                    `${index.changePercent.toFixed(2)}%` : 
-                    'N/A'}
+                  {index.changePercent.toFixed(2)}%
                 </div>
               </div>
             </div>
