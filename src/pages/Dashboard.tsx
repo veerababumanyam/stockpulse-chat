@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { ToastAction } from "@/components/ui/toast";
 import { MarketMovers } from "@/components/dashboard/MarketMovers";
 import { AnalystInsights } from "@/components/dashboard/AnalystInsights";
-import { MarketNews } from "@/components/dashboard/MarketNews";
+import { MarketNews } from "@/components/dashboard/market-news/MarketNews";
 import { BreakoutStocks } from "@/components/dashboard/BreakoutStocks";
 import { MarketIndices } from "@/components/dashboard/MarketIndices";
 import { EconomicCalendar } from "@/components/dashboard/EconomicCalendar";
