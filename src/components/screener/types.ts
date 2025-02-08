@@ -11,7 +11,7 @@ export type FilterOption = {
   type: 'range' | 'select' | 'date' | 'pine';
   options?: { label: string; value: string }[];
   values?: FilterValue;
-  category?: 'volatility' | 'momentum' | 'sentiment' | 'liquidity';
+  category?: 'fundamentals' | 'technicals' | 'earnings' | 'basics';
 };
 
 export type ADRCalculation = {

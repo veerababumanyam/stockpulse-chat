@@ -3,27 +3,28 @@ import { ScreenerCategory } from "./types";
 
 export const screenerCategories: ScreenerCategory[] = [
   {
-    id: 'volatility',
-    label: 'Volatility & Price Movement',
-    description: 'Filter stocks based on volatility metrics and price action',
-    icon: 'trending-up'
-  },
-  {
-    id: 'momentum',
-    label: 'Momentum & Growth',
-    description: 'Find stocks with strong growth and momentum indicators',
+    id: 'basics',
+    label: 'Basic Metrics',
+    description: 'Filter by basic stock metrics like price and market cap',
     icon: 'line-chart'
   },
   {
-    id: 'sentiment',
-    label: 'Market Sentiment',
-    description: 'Analyze market sentiment and analyst opinions',
+    id: 'fundamentals',
+    label: 'Fundamental Analysis',
+    description: 'Filter stocks based on fundamental metrics',
     icon: 'bar-chart'
   },
   {
-    id: 'liquidity',
-    label: 'Liquidity & Stability',
-    description: 'Filter by market cap and sector stability',
+    id: 'technicals',
+    label: 'Technical Analysis',
+    description: 'Filter based on technical indicators and analyst ratings',
+    icon: 'trending-up'
+  },
+  {
+    id: 'earnings',
+    label: 'Earnings Calendar',
+    description: 'Filter by recent and upcoming earnings dates',
     icon: 'dollar-sign'
   }
 ];
+

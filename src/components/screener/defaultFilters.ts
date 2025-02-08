@@ -2,71 +2,112 @@
 import { FilterOption } from "./types";
 
 export const defaultFilters: FilterOption[] = [
-  // Base filters
+  // Basic Filters
   {
     id: "market",
     label: "Market",
     type: "select",
     options: [{ label: "US", value: "us" }],
-    category: 'liquidity'
+    category: 'basics'
   },
   {
     id: "watchlist",
     label: "Watchlist",
     type: "select",
     options: [{ label: "My Watchlist", value: "my-watchlist" }],
-    category: 'liquidity'
-  },
-  // Volatility & Price Movement
-  {
-    id: "atr",
-    label: "ATR %",
-    type: "range",
-    category: 'volatility'
+    category: 'basics'
   },
   {
-    id: "beta",
-    label: "Beta",
-    type: "range",
-    category: 'volatility'
+    id: "index",
+    label: "Index",
+    type: "select",
+    options: [
+      { label: "S&P 500", value: "sp500" },
+      { label: "NASDAQ", value: "nasdaq" },
+      { label: "DOW", value: "dow" }
+    ],
+    category: 'basics'
   },
   {
-    id: "priceChange",
-    label: "Price Change %",
+    id: "price",
+    label: "Price",
     type: "range",
-    category: 'volatility'
+    category: 'basics'
   },
-  // Momentum & Growth
+  {
+    id: "change",
+    label: "Change %",
+    type: "range",
+    category: 'basics'
+  },
+  {
+    id: "marketCap",
+    label: "Market Cap",
+    type: "range",
+    category: 'basics'
+  },
+  // Fundamentals
+  {
+    id: "pe",
+    label: "P/E",
+    type: "range",
+    category: 'fundamentals'
+  },
+  {
+    id: "epsDilGrowth",
+    label: "EPS dil growth",
+    type: "range",
+    category: 'fundamentals'
+  },
+  {
+    id: "divYield",
+    label: "Div yield %",
+    type: "range",
+    category: 'fundamentals'
+  },
+  {
+    id: "sector",
+    label: "Sector",
+    type: "select",
+    category: 'fundamentals',
+    options: [
+      { label: "Technology", value: "technology" },
+      { label: "Healthcare", value: "healthcare" },
+      { label: "Finance", value: "finance" },
+      { label: "Consumer", value: "consumer" },
+      { label: "Industrial", value: "industrial" }
+    ],
+  },
   {
     id: "revenueGrowth",
     label: "Revenue Growth %",
     type: "range",
-    category: 'momentum'
-  },
-  {
-    id: "eps",
-    label: "EPS Growth %",
-    type: "range",
-    category: 'momentum'
+    category: 'fundamentals'
   },
   {
     id: "peg",
-    label: "PEG Ratio",
+    label: "PEG",
     type: "range",
-    category: 'momentum'
+    category: 'fundamentals'
   },
   {
     id: "roe",
     label: "ROE %",
     type: "range",
-    category: 'momentum'
+    category: 'fundamentals'
   },
-  // Market Sentiment
+  {
+    id: "beta",
+    label: "Beta",
+    type: "range",
+    category: 'fundamentals'
+  },
+  // Technical Indicators
   {
     id: "analystRating",
     label: "Analyst Rating",
     type: "select",
-    category: 'sentiment',
+    category: 'technicals',
     options: [
       { label: "Strong Buy", value: "strong_buy" },
       { label: "Buy", value: "buy" },
@@ -76,31 +117,22 @@ export const defaultFilters: FilterOption[] = [
   },
   {
     id: "performance",
-    label: "Performance",
-    type: "select",
-    category: 'sentiment',
-    options: [
-      { label: "Weekly", value: "weekly" },
-      { label: "Monthly", value: "monthly" },
-      { label: "Yearly", value: "yearly" },
-    ],
-  },
-  // Liquidity & Stability
-  {
-    id: "marketCap",
-    label: "Market Cap",
+    label: "Perf %",
     type: "range",
-    category: 'liquidity'
+    category: 'technicals'
+  },
+  // Earnings
+  {
+    id: "recentEarnings",
+    label: "Recent earnings date",
+    type: "date",
+    category: 'earnings'
   },
   {
-    id: "sector",
-    label: "Sector",
-    type: "select",
-    category: 'liquidity',
-    options: [
-      { label: "Technology", value: "technology" },
-      { label: "Healthcare", value: "healthcare" },
-      { label: "Finance", value: "finance" },
-    ],
-  },
+    id: "upcomingEarnings",
+    label: "Upcoming earnings date",
+    type: "date",
+    category: 'earnings'
+  }
 ];
+
