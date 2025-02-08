@@ -17,22 +17,31 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       throw new Error('FMP API key not found. Please add your Financial Modeling Prep API key in settings.');
     }
 
-    // Initialize required agents with analyze method
+    // Initialize required agents with analyze method and type conversion
     const fundamentalAgent = {
       analyze: async (data: any) => {
-        return FundamentalAnalysisAgent.analyze(data) as Promise<AgentScreeningResponse>;
+        const result = await FundamentalAnalysisAgent.analyze(data);
+        return {
+          screening: result.criteria || []
+        } as AgentScreeningResponse;
       }
     };
 
     const technicalAgent = {
       analyze: async (data: any) => {
-        return TechnicalAnalysisAgent.analyze(data) as Promise<AgentScreeningResponse>;
+        const result = await TechnicalAnalysisAgent.analyze(data);
+        return {
+          screening: result.criteria || []
+        } as AgentScreeningResponse;
       }
     };
 
     const sentimentAgent = {
       analyze: async (data: any) => {
-        return MarketSentimentAgent.analyze(data) as Promise<AgentScreeningResponse>;
+        const result = await MarketSentimentAgent.analyze(data);
+        return {
+          screening: result.criteria || []
+        } as AgentScreeningResponse;
       }
     };
 
