@@ -22,8 +22,15 @@ const ChatWindow = () => {
     if (savedKeys) {
       const parsedKeys = JSON.parse(savedKeys);
       setApiKeys(parsedKeys);
+    } else {
+      toast({
+        title: "API Keys Required",
+        description: "Please set your API keys in the API Keys page",
+        variant: "destructive",
+      });
+      navigate("/api-keys");
     }
-  }, []);
+  }, [navigate, toast]);
 
   const handleDownloadPDF = async (analysisData: any) => {
     try {
@@ -56,12 +63,19 @@ const ChatWindow = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
+    // Add user message to chat
     const userMessage: MessageType = { content: input, isUser: true };
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
     try {
+      // Validate API keys
+      if (!apiKeys.fmp) {
+        throw new Error('FMP API key is required. Please set it in the API Keys page.');
+      }
+
+      console.log('Fetching stock data for:', input);
       const stockData = await fetchStockData(input, apiKeys.fmp);
       
       if (!stockData) {
@@ -70,6 +84,8 @@ const ChatWindow = () => {
 
       console.log('Retrieved stock data:', stockData);
 
+      // Run analysis through OrchestratorAgent
+      console.log('Starting orchestrator analysis...');
       const analysis = await OrchestratorAgent.orchestrateAnalysis(stockData);
       console.log('Orchestrator analysis result:', analysis);
       
@@ -77,9 +93,11 @@ const ChatWindow = () => {
         throw new Error('Invalid analysis response');
       }
 
+      // Format the analysis result
       const analysisResult = analysis as unknown as AnalysisResult;
       console.log('Formatted analysis result:', analysisResult);
 
+      // Add AI response to chat
       const aiMessage: MessageType = {
         content: analysisResult.textOutput,
         isUser: false,
@@ -88,7 +106,7 @@ const ChatWindow = () => {
 
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error in chat handling:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to analyze stock data",
@@ -133,3 +151,4 @@ const ChatWindow = () => {
 };
 
 export default ChatWindow;
+
