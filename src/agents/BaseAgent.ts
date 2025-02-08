@@ -6,12 +6,31 @@ export interface AnalysisResult {
 }
 
 export abstract class BaseAgent {
-  protected static async fetchData(url: string, apiKey: string) {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`API call failed: ${response.statusText}`);
+  private static retryDelay = 1000; // 1 second
+  private static maxRetries = 3;
+
+  protected static async fetchData(url: string, apiKey: string, retryCount = 0): Promise<any> {
+    try {
+      const response = await fetch(url);
+      
+      if (response.status === 429 && retryCount < this.maxRetries) {
+        console.log(`Rate limit hit, retrying in ${this.retryDelay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, this.retryDelay));
+        return this.fetchData(url, apiKey, retryCount + 1);
+      }
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error('API rate limit reached. Please try again later or upgrade your plan.');
+        }
+        throw new Error(`API call failed: ${response.statusText}`);
+      }
+
+      return response.json();
+    } catch (error: any) {
+      console.error('Error in fetchData:', error);
+      throw new Error(error.message || 'Failed to fetch data');
     }
-    return response.json();
   }
 
   protected static formatDate(date: string | Date): string {
