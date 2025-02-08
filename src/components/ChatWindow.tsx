@@ -21,6 +21,15 @@ const ChatWindow = () => {
     const savedKeys = localStorage.getItem('apiKeys');
     if (savedKeys) {
       const parsedKeys = JSON.parse(savedKeys);
+      if (!parsedKeys.fmp) {
+        toast({
+          title: "FMP API Key Required",
+          description: "Please set your Financial Modeling Prep API key in the API Keys page",
+          variant: "destructive",
+        });
+        navigate("/api-keys");
+        return;
+      }
       setApiKeys(parsedKeys);
     } else {
       toast({
@@ -73,7 +82,7 @@ const ChatWindow = () => {
         throw new Error('FMP API key is required. Please set it in the API Keys page.');
       }
 
-      console.log('Fetching stock data for:', input);
+      console.log('Starting analysis for:', input);
       const stockData = await fetchStockData(input, apiKeys.fmp);
       
       if (!stockData) {
@@ -99,17 +108,18 @@ const ChatWindow = () => {
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error('Error in chat handling:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to analyze stock data";
+      
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to analyze stock data",
+        description: errorMessage,
         variant: "destructive",
       });
 
-      const errorMessage: MessageType = {
-        content: error instanceof Error ? error.message : "Failed to analyze stock data",
+      setMessages(prev => [...prev, {
+        content: errorMessage,
         isUser: false
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      }]);
     } finally {
       setIsLoading(false);
     }
@@ -143,4 +153,3 @@ const ChatWindow = () => {
 };
 
 export default ChatWindow;
-
