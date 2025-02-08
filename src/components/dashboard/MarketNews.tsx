@@ -4,6 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { NewsAnalysisAgent } from "@/agents/NewsAnalysisAgent";
 import { Badge } from "@/components/ui/badge";
+import { RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface NewsItem {
   title: string;
@@ -20,27 +22,41 @@ interface NewsItem {
 export const MarketNews = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [displayCount, setDisplayCount] = useState(5);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        const analysis = await NewsAnalysisAgent.analyze('SPY'); // Use SPY as a proxy for market news
-        setNews(analysis.analysis.keyHighlights || []);
-      } catch (error) {
-        console.error('Error fetching news:', error);
+  const fetchNews = async (showToast = false) => {
+    try {
+      const analysis = await NewsAnalysisAgent.analyze('SPY');
+      setNews(analysis.analysis.keyHighlights || []);
+      if (showToast) {
         toast({
-          title: "Error",
-          description: "Failed to fetch market news",
-          variant: "destructive",
+          title: "News Updated",
+          description: "Latest market news has been loaded",
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching news:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch market news",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
+  useEffect(() => {
     fetchNews();
   }, [toast]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchNews(true);
+  };
 
   const getSentimentColor = (sentiment: number) => {
     if (sentiment > 0.3) return "bg-green-500/10 text-green-500";
@@ -76,12 +92,24 @@ export const MarketNews = () => {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle>AI-Analyzed Market News</CardTitle>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="h-8"
+          >
+            <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {news.map((item, index) => (
+          {news.slice(0, displayCount).map((item, index) => (
             <div key={index} className="pb-4 border-b last:border-b-0">
               <a 
                 href={item.url}
@@ -105,6 +133,24 @@ export const MarketNews = () => {
               </a>
             </div>
           ))}
+          {news.length > 5 && displayCount === 5 && (
+            <Button
+              variant="link"
+              className="w-full mt-2"
+              onClick={() => setDisplayCount(news.length)}
+            >
+              View All News
+            </Button>
+          )}
+          {displayCount > 5 && (
+            <Button
+              variant="link"
+              className="w-full mt-2"
+              onClick={() => setDisplayCount(5)}
+            >
+              Show Less
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
