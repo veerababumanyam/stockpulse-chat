@@ -2,6 +2,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { AnalystRecommendationsAgent } from "@/agents/AnalystRecommendationsAgent";
 import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
+import { NewsScraperAgent } from "@/agents/NewsScraperAgent";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,9 @@ interface AIRecommendation {
   sentiment: number;
   sources: number;
   recommendation: string;
+  fundamentalScore?: number;
+  technicalScore?: number;
+  growthScore?: number;
 }
 
 export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
@@ -51,52 +55,66 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
+  const scrapeAnalystRecommendations = async () => {
+    try {
+      // Get latest analyst recommendations from NewsScraperAgent
+      const scrapedNews = await NewsScraperAgent.analyze(symbol);
+      return scrapedNews;
+    } catch (error) {
+      console.error('Error scraping recommendations:', error);
+      return null;
+    }
+  };
+
   const fetchAIAnalysis = async () => {
     try {
-      // Get orchestrated analysis from multiple agents
-      const aiAnalysis = await OrchestratorAgent.orchestrateAnalysis({
-        quote: { symbol },
-        profile: { companyName: symbol }
-      });
+      // First, get recommended stocks from scraped data
+      const scrapedData = await scrapeAnalystRecommendations();
+      if (!scrapedData) return;
 
-      // Extract relevant insights from different agents
       const recommendations: AIRecommendation[] = [];
       
-      if (typeof aiAnalysis === 'object' && aiAnalysis.results) {
-        const results = aiAnalysis.results;
-        const sentiment = results.get('sentiment')?.data;
-        const fundamental = results.get('fundamental')?.data;
-        const technical = results.get('technical')?.data;
-        const news = results.get('news')?.data;
-        
-        // Combine insights to form recommendations
-        if (sentiment && fundamental && technical) {
-          recommendations.push({
-            symbol,
-            confidence: (sentiment.confidence || 0.5) * 100,
-            sentiment: sentiment.score || 0,
-            sources: sentiment.sourceCount || 1,
-            recommendation: technical.signal || 'HOLD'
-          });
-        }
+      // Process each recommended stock
+      const stocksToAnalyze = new Set([symbol]); // Start with the main symbol
+      
+      if (scrapedData.analysis?.recentNews) {
+        scrapedData.analysis.recentNews.forEach((news: any) => {
+          // Extract mentioned stock symbols from news
+          const mentionedSymbols = extractSymbolsFromNews(news);
+          mentionedSymbols.forEach(sym => stocksToAnalyze.add(sym));
+        });
+      }
 
-        // Add additional stocks mentioned in news and analysis
-        if (news?.relatedStocks) {
-          news.relatedStocks.forEach((stock: any) => {
-            if (stock.symbol !== symbol) {
-              recommendations.push({
-                symbol: stock.symbol,
-                confidence: stock.confidence * 100,
-                sentiment: stock.sentiment,
-                sources: stock.mentions,
-                recommendation: stock.signal
-              });
-            }
-          });
+      // Analyze each stock with OrchestratorAgent
+      for (const stockSymbol of stocksToAnalyze) {
+        const aiAnalysis = await OrchestratorAgent.orchestrateAnalysis({
+          quote: { symbol: stockSymbol },
+          profile: { companyName: stockSymbol }
+        });
+
+        if (typeof aiAnalysis === 'object' && aiAnalysis.results) {
+          const results = aiAnalysis.results;
+          const sentiment = results.get('sentiment')?.data;
+          const fundamental = results.get('fundamental')?.data;
+          const technical = results.get('technical')?.data;
+          const growth = results.get('growthTrends')?.data;
+          
+          if (sentiment && fundamental && technical) {
+            recommendations.push({
+              symbol: stockSymbol,
+              confidence: (sentiment.confidence || 0.5) * 100,
+              sentiment: sentiment.score || 0,
+              sources: sentiment.sourceCount || 1,
+              recommendation: technical.signals?.overallSignal || 'HOLD',
+              fundamentalScore: calculateScore(fundamental),
+              technicalScore: calculateScore(technical),
+              growthScore: growth ? calculateScore(growth) : undefined
+            });
+          }
         }
       }
 
-      setAiRecommendations(recommendations);
+      setAiRecommendations(recommendations.sort((a, b) => b.confidence - a.confidence));
     } catch (error) {
       console.error('Error in AI analysis:', error);
       toast({
@@ -105,6 +123,44 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
         variant: "destructive",
       });
     }
+  };
+
+  const calculateScore = (data: any): number => {
+    // Convert analysis data into a normalized score (0-100)
+    if (!data) return 50;
+    let score = 50;
+    
+    if (data.signals?.overallSignal) {
+      switch (data.signals.overallSignal) {
+        case 'STRONG BUY': score += 25; break;
+        case 'BUY': score += 15; break;
+        case 'SELL': score -= 15; break;
+        case 'STRONG SELL': score -= 25; break;
+      }
+    }
+
+    if (data.confidence) {
+      score = (score + data.confidence) / 2;
+    }
+
+    return Math.min(100, Math.max(0, score));
+  };
+
+  const extractSymbolsFromNews = (news: any): string[] => {
+    // Basic symbol extraction (can be enhanced with regex patterns)
+    const symbols: string[] = [];
+    const content = (news.title + ' ' + news.summary).toUpperCase();
+    
+    // Look for common patterns like "TICKER:" or "$TICKER"
+    const matches = content.match(/\$[A-Z]{1,5}|[A-Z]{1,5}:/g) || [];
+    matches.forEach(match => {
+      const symbol = match.replace(/[$:]/g, '');
+      if (symbol.length >= 2 && symbol.length <= 5) {
+        symbols.push(symbol);
+      }
+    });
+    
+    return [...new Set(symbols)]; // Remove duplicates
   };
 
   const fetchAnalysis = async () => {
@@ -150,7 +206,7 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
     };
 
     initialize();
-  }, [symbol, toast]);
+  }, [symbol]);
 
   const getRecommendationColor = (recommendation: string) => {
     if (recommendation.includes('BUY')) return 'text-green-500';
@@ -164,11 +220,17 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
     return 'bg-yellow-500/10 text-yellow-500';
   };
 
+  const getScoreColor = (score: number) => {
+    if (score >= 70) return 'text-green-500';
+    if (score <= 30) return 'text-red-500';
+    return 'text-yellow-500';
+  };
+
   if (isLoading) {
     return (
       <Card className="animate-pulse">
         <CardHeader>
-          <CardTitle>Analyst Insights</CardTitle>
+          <CardTitle>Market Analysis</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-4 bg-muted rounded w-3/4 mb-4" />
@@ -185,7 +247,7 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle className="text-xl font-bold">AI-Enhanced Analyst Insights</CardTitle>
+        <CardTitle className="text-xl font-bold">AI-Enhanced Market Analysis</CardTitle>
         <Button 
           variant="outline" 
           size="sm" 
@@ -231,8 +293,8 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
         <Separator />
 
         <div>
-          <h4 className="font-semibold mb-3">AI-Powered Stock Recommendations</h4>
-          <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+          <h4 className="font-semibold mb-3">AI-Analyzed Stock Recommendations</h4>
+          <ScrollArea className="h-[300px] w-full rounded-md border p-4">
             <div className="space-y-4">
               {aiRecommendations.map((rec, index) => (
                 <div key={index} className="flex flex-col space-y-2 pb-3 last:pb-0 last:border-b-0 border-b">
@@ -241,6 +303,17 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
                     <Badge variant="outline" className={getSentimentBadge(rec.sentiment)}>
                       {rec.recommendation}
                     </Badge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div className={getScoreColor(rec.fundamentalScore || 0)}>
+                      Fund: {rec.fundamentalScore?.toFixed(1)}
+                    </div>
+                    <div className={getScoreColor(rec.technicalScore || 0)}>
+                      Tech: {rec.technicalScore?.toFixed(1)}
+                    </div>
+                    <div className={getScoreColor(rec.growthScore || 0)}>
+                      Growth: {rec.growthScore?.toFixed(1)}
+                    </div>
                   </div>
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Confidence: {rec.confidence.toFixed(1)}%</span>
