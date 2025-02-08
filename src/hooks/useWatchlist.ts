@@ -16,6 +16,7 @@ export interface WatchlistStock {
   aiAnalysis?: {
     signal: string;
     targetPrice: number;
+    target24Price: number;
     lastUpdated: string;
   };
   alerts?: {
@@ -58,12 +59,18 @@ export const useWatchlist = () => {
   const runAIAnalysis = async (stockData: any) => {
     try {
       const analysisResults = await OrchestratorAgent.orchestrateAnalysis(stockData);
-      const signal = analysisResults.results?.fundamental?.analysis?.summary?.recommendation || 'HOLD';
-      const targetPrice = analysisResults.results?.fundamental?.analysis?.pricePredictions?.twelveMonths?.price || 0;
+      if (!analysisResults?.results?.fundamental?.analysis) {
+        return null;
+      }
+      
+      const signal = analysisResults.results.fundamental.analysis.summary?.recommendation || 'HOLD';
+      const targetPrice = analysisResults.results.fundamental.analysis.pricePredictions?.twelveMonths?.price || 0;
+      const target24Price = analysisResults.results.fundamental.analysis.pricePredictions?.twentyFourMonths?.price || 0;
       
       return {
         signal,
         targetPrice,
+        target24Price,
         lastUpdated: new Date().toISOString()
       };
     } catch (err) {

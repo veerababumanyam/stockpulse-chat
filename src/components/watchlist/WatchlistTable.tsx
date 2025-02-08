@@ -72,6 +72,7 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
             <TableHead>Sector</TableHead>
             <TableHead className="text-right">AI Signal</TableHead>
             <TableHead className="text-right">12M Target</TableHead>
+            <TableHead className="text-right">24M Target</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -92,6 +93,9 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
               </TableCell>
               <TableCell className="text-right">
                 {stock.aiAnalysis?.targetPrice ? formatPrice(stock.aiAnalysis.targetPrice) : 'N/A'}
+              </TableCell>
+              <TableCell className="text-right">
+                {stock.aiAnalysis?.target24Price ? formatPrice(stock.aiAnalysis.target24Price) : 'N/A'}
               </TableCell>
               <TableCell className="text-right">
                 <Button
