@@ -142,6 +142,11 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
 
     const data = await response.json();
     
+    if (!Array.isArray(data)) {
+      console.error('Unexpected API response format:', data);
+      throw new Error('Invalid API response format');
+    }
+    
     // Sort results by market cap by default
     return data.sort((a: any, b: any) => b.marketCap - a.marketCap);
   } catch (error) {
