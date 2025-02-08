@@ -11,12 +11,12 @@ export class RateLimiter {
   private globalTimeout: NodeJS.Timeout | null;
 
   constructor() {
-    this.retryDelay = 2000;
-    this.maxRetries = 5;
-    this.rateLimitWindow = 60000;
+    this.retryDelay = 1000; // Reduced from 2000
+    this.maxRetries = 3; // Reduced from 5
+    this.rateLimitWindow = 30000; // Reduced from 60000
     this.requestCount = 0;
     this.lastRequestTime = Date.now();
-    this.maxRequestsPerMinute = 1;
+    this.maxRequestsPerMinute = 5; // Increased from 1
     this.pendingRequests = new Set();
     this.waitingTime = 0;
     this.globalTimeout = null;
@@ -24,7 +24,7 @@ export class RateLimiter {
 
   async handleRateLimit(requestId: string, retryCount: number): Promise<number> {
     if (this.pendingRequests.has(requestId)) {
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced from 3000
       return this.handleRateLimit(requestId, retryCount);
     }
 
@@ -42,11 +42,11 @@ export class RateLimiter {
     if (this.requestCount >= this.maxRequestsPerMinute) {
       baseWaitTime = Math.max(
         this.rateLimitWindow - timeSinceLastRequest + this.waitingTime,
-        this.retryDelay * Math.pow(2, retryCount)
+        this.retryDelay * Math.pow(1.5, retryCount) // Changed from 2 to 1.5
       );
     }
 
-    const minRequestInterval = 3000;
+    const minRequestInterval = 1000; // Reduced from 3000
     return Math.max(minRequestInterval, baseWaitTime);
   }
 

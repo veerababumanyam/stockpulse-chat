@@ -1,4 +1,3 @@
-
 export const fetchStockData = async (query: string, apiKey: string) => {
   try {
     if (!apiKey) {
@@ -11,27 +10,14 @@ export const fetchStockData = async (query: string, apiKey: string) => {
 
     console.log('Searching for:', searchTerm);
 
-    // Test the API key and connectivity first with market status
-    const testResponse = await fetch(
-      `https://financialmodelingprep.com/api/v3/is-the-market-open?apikey=${apiKey}`
-    );
-    
-    if (!testResponse.ok) {
-      if (testResponse.status === 403) {
-        throw new Error('Invalid or expired FMP API key');
-      }
-      throw new Error('FMP API connectivity issue. Status: ' + testResponse.status);
-    }
+    // Optimize by combining essential requests
+    const [searchResponse, marketStatus] = await Promise.all([
+      fetch(`https://financialmodelingprep.com/api/v3/search?query=${searchTerm}&limit=1&apikey=${apiKey}`),
+      fetch(`https://financialmodelingprep.com/api/v3/is-the-market-open?apikey=${apiKey}`)
+    ]);
 
-    const marketStatus = await testResponse.json();
-    console.log('Market status:', marketStatus);
-
-    const searchResponse = await fetch(
-      `https://financialmodelingprep.com/api/v3/search?query=${searchTerm}&limit=1&apikey=${apiKey}`
-    );
-
-    if (!searchResponse.ok) {
-      throw new Error('Failed to search for stock. Status: ' + searchResponse.status);
+    if (!searchResponse.ok || !marketStatus.ok) {
+      throw new Error('Failed to fetch initial data');
     }
 
     const searchResults = await searchResponse.json();
@@ -43,51 +29,21 @@ export const fetchStockData = async (query: string, apiKey: string) => {
     const symbol = searchResults[0].symbol;
     console.log('Found symbol:', symbol);
     
-    // Create an array of essential API requests first
-    const essentialRequests = [
-      fetch(`https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${apiKey}`),
-      fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKey}`)
-    ];
-
-    // Wait for essential data first
-    const [quoteResponse, profileResponse] = await Promise.all(essentialRequests);
-    
-    if (!quoteResponse.ok || !profileResponse.ok) {
-      throw new Error('Failed to fetch essential stock data');
-    }
-
-    const [quoteData, profileData] = await Promise.all([
-      quoteResponse.json(),
-      profileResponse.json()
+    // Optimize by fetching all data in parallel
+    const [quoteData, profileData, metricsData, ratiosData, analystData] = await Promise.all([
+      fetch(`https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${apiKey}`).then(r => r.json()),
+      fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKey}`).then(r => r.json()),
+      fetch(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${symbol}?apikey=${apiKey}`).then(r => r.json()),
+      fetch(`https://financialmodelingprep.com/api/v3/ratios-ttm/${symbol}?apikey=${apiKey}`).then(r => r.json()),
+      fetch(`https://financialmodelingprep.com/api/v3/analyst-estimates/${symbol}?limit=4&apikey=${apiKey}`).then(r => r.json())
     ]);
 
-    // If we have essential data, try to fetch additional data
-    const additionalRequests = [
-      fetch(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${symbol}?apikey=${apiKey}`),
-      fetch(`https://financialmodelingprep.com/api/v3/ratios-ttm/${symbol}?apikey=${apiKey}`),
-      fetch(`https://financialmodelingprep.com/api/v3/analyst-estimates/${symbol}?limit=4&apikey=${apiKey}`),
-    ];
-
-    // Use Promise.allSettled to handle partial failures
-    const additionalResponses = await Promise.allSettled(additionalRequests);
-    
-    const [metricsResponse, ratiosResponse, analystResponse] = await Promise.all(
-      additionalResponses.map(async (response) => {
-        if (response.status === 'fulfilled' && response.value.ok) {
-          return response.value.json();
-        }
-        console.warn('Failed to fetch some additional data');
-        return null;
-      })
-    );
-
-    // Return data with fallbacks for missing information
     return {
       quote: quoteData[0],
       profile: profileData[0],
-      metrics: metricsResponse?.[0] || {},
-      ratios: ratiosResponse?.[0] || {},
-      analyst: analystResponse || [],
+      metrics: metricsData[0] || {},
+      ratios: ratiosData[0] || {},
+      analyst: analystData || [],
       insider: [],
       upgrades: [],
       technical: [],
