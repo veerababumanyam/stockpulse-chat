@@ -12,16 +12,17 @@ export abstract class BaseAgent {
   private static rateLimitWindow = 60000; // 1 minute
   private static requestCount = 0;
   private static lastRequestTime = Date.now();
-  private static maxRequestsPerMinute = 2; // More restrictive limit
+  private static maxRequestsPerMinute = 1; // Even more restrictive limit
   private static pendingRequests: Set<string> = new Set();
   private static waitingTime = 0;
+  private static globalTimeout: NodeJS.Timeout | null = null;
 
   protected static async fetchData(url: string, apiKey: string, retryCount = 0): Promise<any> {
     const requestId = url;
 
     // Check if this exact request is already pending
     if (this.pendingRequests.has(requestId)) {
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s before retry
+      await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3s before retry
       return this.fetchData(url, apiKey, retryCount);
     }
 
@@ -39,17 +40,22 @@ export abstract class BaseAgent {
         this.waitingTime = 0;
       }
 
-      // Check if we've hit the rate limit
+      // Calculate base waiting time for rate limiting
+      let baseWaitTime = 0;
       if (this.requestCount >= this.maxRequestsPerMinute) {
-        const timeToWait = Math.max(
+        baseWaitTime = Math.max(
           this.rateLimitWindow - timeSinceLastRequest + this.waitingTime,
           this.retryDelay * Math.pow(2, retryCount)
         );
-        console.log(`Rate limit reached, waiting ${timeToWait}ms before next request`);
-        await new Promise(resolve => setTimeout(resolve, timeToWait));
-        this.requestCount = 0;
-        this.lastRequestTime = Date.now();
-        this.waitingTime = 0;
+      }
+
+      // Add additional delay between requests even if under rate limit
+      const minRequestInterval = 3000; // Minimum 3 seconds between requests
+      const requestInterval = Math.max(minRequestInterval, baseWaitTime);
+
+      if (requestInterval > 0) {
+        console.log(`Waiting ${requestInterval}ms before next request`);
+        await new Promise(resolve => setTimeout(resolve, requestInterval));
       }
 
       // Queue the request
@@ -57,6 +63,11 @@ export abstract class BaseAgent {
         this.requestQueue = this.requestQueue
           .then(async () => {
             try {
+              // Clear any existing global timeout
+              if (this.globalTimeout) {
+                clearTimeout(this.globalTimeout);
+              }
+
               // Increment before making request
               this.requestCount++;
               this.lastRequestTime = Date.now();
@@ -69,7 +80,12 @@ export abstract class BaseAgent {
                 
                 if (retryCount < this.maxRetries) {
                   this.waitingTime += backoffTime;
-                  await new Promise(resolve => setTimeout(resolve, backoffTime));
+                  
+                  // Set a global timeout to pause all requests
+                  await new Promise((resolve) => {
+                    this.globalTimeout = setTimeout(resolve, backoffTime);
+                  });
+                  
                   this.pendingRequests.delete(requestId);
                   return this.fetchData(url, apiKey, retryCount + 1);
                 } else {
