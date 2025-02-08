@@ -1,104 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
 import { BaseAnalysisAgent } from "@/agents/types/AgentTypes";
-import { RAGConfig, defaultConfig } from "@/components/agents/rag/types";
-
-interface AgentConfig {
-  id: string;
-  name: string;
-  description: string;
-  model: string;
-  temperature: number;
-  systemPrompt: string;
-  active: boolean;
-  rag?: RAGConfig;
-}
+import { defaultConfig } from "@/components/agents/rag/types";
+import { AgentConfig } from "@/types/agent";
+import { agentClassNames } from "@/config/agentClassNames";
+import { generateAgentId, generateAgentName, generateDescription } from "@/utils/agentUtils";
 
 const STORAGE_KEY = 'ai-agents-config';
-
-// Generate agent ID from class name
-const generateAgentId = (className: string) => {
-  return className.replace(/Agent$/, "").replace(/([A-Z])/g, "-$1").toLowerCase().slice(1);
-};
-
-// Generate agent name from class name
-const generateAgentName = (className: string) => {
-  return className.replace(/Agent$/, "").replace(/([A-Z])/g, " $1").trim();
-};
-
-// Generate description based on name
-const generateDescription = (name: string) => {
-  return `${name} specializing in ${name.toLowerCase()} analysis and insights`;
-};
-
-// Extract agent names from all available agents
-const agentClassNames = [
-  "FundamentalAnalysis",
-  "TechnicalAnalysis",
-  "NewsAnalysis",
-  "AnalystRecommendations",
-  "MarketSentiment",
-  "RiskAssessment",
-  "MacroeconomicAnalysis",
-  "DataCleansing",
-  "CompetitiveAnalysis",
-  "ESGAnalysis",
-  "TechnicalData",
-  "MarketResearch",
-  "DataIntegration",
-  "ValuationAnalysis",
-  "CashFlowAnalysis",
-  "VolatilityAnalysis",
-  "GrowthTrendAnalysis",
-  "DividendAnalysis",
-  "NewsScraper",
-  "FinancialStatement",
-  "ETFFlow",
-  "LegalDocument",
-  "PatentAnalysis",
-  "BigPlayerTracking",
-  "AnomalyDetection",
-  "CorrelationAnalysis",
-  "SectorRotation",
-  "MarketBreadth",
-  "TrendAnalysis",
-  "MomentumAnalysis",
-  "TechnicalDepth",
-  "FundamentalForensic",
-  "SentimentSynthesizer",
-  "MachineLearning",
-  "NLP",
-  "TimeSeriesForecaster",
-  "ScenarioAnalysis",
-  "DeepLearning",
-  "ReinforcementLearning",
-  "EnsembleModeling",
-  "BayesianInference",
-  "InvestmentTrend",
-  "LegalImpact",
-  "PatentValue",
-  "SupplyDemand",
-  "GeopoliticalImpact",
-  "CurrencyImpact",
-  "CommodityImpact",
-  "TechnologicalDisruption",
-  "DemographicTrend",
-  "AlternativeDataAnalysis",
-  "SeasonalityAnalysis",
-  "LiquidityAnalysis",
-  "OptionsMarketAnalysis",
-  "RegulatoryCompliance",
-  "InsiderTrading",
-  "Aggregator",
-  "BreakoutStocks",
-  "CommodityPrice",
-  "CurrencyExchange",
-  "EconomicData",
-  "GeopoliticalEvent",
-  "SocialMediaScraper",
-  "SupplyChainData"
-];
 
 const defaultAgents: AgentConfig[] = agentClassNames.map(className => ({
   id: generateAgentId(className),
@@ -125,7 +35,6 @@ export const useAgents = () => {
         if (agent.active) {
           const dynamicAgent = new BaseAnalysisAgent();
           if (agent.rag?.enabled) {
-            // Configure RAG capabilities for the agent
             dynamicAgent.configureRAG(agent.rag);
           }
           OrchestratorAgent.registerAgent(agent.id, dynamicAgent);
@@ -181,7 +90,6 @@ export const useAgents = () => {
       );
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newAgents));
 
-      // Update agent registration based on new active state
       const updatedAgent = newAgents.find(a => a.id === agentId);
       if (updatedAgent) {
         if (updatedAgent.active) {
