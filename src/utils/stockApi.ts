@@ -10,18 +10,17 @@ export const fetchStockData = async (query: string, apiKey: string) => {
 
     console.log('Searching for:', searchTerm);
 
-    // Optimize by combining essential requests
-    const [searchResponse, marketStatus] = await Promise.all([
+    // Only fetch essential data in parallel
+    const [searchResponse, quoteData] = await Promise.all([
       fetch(`https://financialmodelingprep.com/api/v3/search?query=${searchTerm}&limit=1&apikey=${apiKey}`),
-      fetch(`https://financialmodelingprep.com/api/v3/is-the-market-open?apikey=${apiKey}`)
+      fetch(`https://financialmodelingprep.com/api/v3/quote/${searchTerm}?apikey=${apiKey}`)
     ]);
 
-    if (!searchResponse.ok || !marketStatus.ok) {
-      throw new Error('Failed to fetch initial data');
+    if (!searchResponse.ok) {
+      throw new Error('Failed to fetch search results');
     }
 
     const searchResults = await searchResponse.json();
-    
     if (!searchResults || searchResults.length === 0) {
       throw new Error('No results found for the given search term');
     }
@@ -29,21 +28,20 @@ export const fetchStockData = async (query: string, apiKey: string) => {
     const symbol = searchResults[0].symbol;
     console.log('Found symbol:', symbol);
     
-    // Optimize by fetching all data in parallel
-    const [quoteData, profileData, metricsData, ratiosData, analystData] = await Promise.all([
-      fetch(`https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${apiKey}`).then(r => r.json()),
+    // Fetch additional data only if needed
+    const [profileData, metricsData] = await Promise.all([
       fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKey}`).then(r => r.json()),
       fetch(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${symbol}?apikey=${apiKey}`).then(r => r.json()),
-      fetch(`https://financialmodelingprep.com/api/v3/ratios-ttm/${symbol}?apikey=${apiKey}`).then(r => r.json()),
-      fetch(`https://financialmodelingprep.com/api/v3/analyst-estimates/${symbol}?limit=4&apikey=${apiKey}`).then(r => r.json())
     ]);
 
+    const quoteResult = await quoteData.json();
+
     return {
-      quote: quoteData[0],
+      quote: quoteResult[0],
       profile: profileData[0],
       metrics: metricsData[0] || {},
-      ratios: ratiosData[0] || {},
-      analyst: analystData || [],
+      ratios: {}, // Simplified to reduce API calls
+      analyst: [], // Simplified to reduce API calls
       insider: [],
       upgrades: [],
       technical: [],
