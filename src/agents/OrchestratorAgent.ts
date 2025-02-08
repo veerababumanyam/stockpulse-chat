@@ -1,3 +1,4 @@
+
 import { AgentResult, AgentResults, BaseAnalysisAgent, DynamicAgent } from './types/AgentTypes';
 import { OutputFormatter } from './utils/OutputFormatter';
 import { FundamentalAnalysisAgent } from './FundamentalAnalysisAgent';
@@ -61,7 +62,9 @@ export class OrchestratorAgent {
 
   private static async executeAgent(name: string, agentFn: () => Promise<any>): Promise<void> {
     try {
+      console.log(`Executing ${name} agent...`);
       const result = await agentFn();
+      console.log(`${name} agent result:`, result);
       this.results.set(name, { data: result });
     } catch (error: any) {
       console.error(`Error in ${name} agent:`, error);
@@ -74,8 +77,14 @@ export class OrchestratorAgent {
 
   static async orchestrateAnalysis(stockData: any) {
     this.results.clear();
+    console.log('Starting orchestration with stock data:', stockData);
 
     try {
+      // Ensure stockData has the required structure
+      if (!stockData || !stockData.quote || !stockData.quote.symbol) {
+        throw new Error('Invalid stock data structure');
+      }
+
       const agentPromises = [
         this.executeAgent('fundamental', () => FundamentalAnalysisAgent.analyze(stockData)),
         this.executeAgent('technical', () => TechnicalAnalysisAgent.analyze(stockData)),
@@ -126,19 +135,30 @@ export class OrchestratorAgent {
       ];
 
       await Promise.all(agentPromises);
+      console.log('All agent analyses completed');
 
-      return this.formatOutput({
+      const formattedOutput = this.formatOutput({
         symbol: stockData.quote.symbol,
-        companyName: stockData.profile.companyName,
+        companyName: stockData?.profile?.companyName || stockData.quote.symbol,
         results: Object.fromEntries(this.results)
       });
+
+      console.log('Formatted output:', formattedOutput);
+      return formattedOutput;
+
     } catch (error) {
       console.error('Error in orchestration:', error);
       throw new Error('Error analyzing stock data. Please try again.');
     }
   }
 
-  private static formatOutput(data: any): string {
-    return OutputFormatter.formatOutput(data);
+  private static formatOutput(data: any): any {
+    try {
+      console.log('Formatting output for data:', data);
+      return OutputFormatter.formatOutput(data);
+    } catch (error) {
+      console.error('Error in output formatting:', error);
+      throw new Error('Error formatting analysis results');
+    }
   }
 }

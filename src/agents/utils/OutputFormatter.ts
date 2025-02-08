@@ -9,31 +9,34 @@ export class OutputFormatter {
   }
 
   static formatOutput(data: any): any {
-    const consolidatedSignal = SignalAnalyzer.getConsolidatedSignal(data);
-    const currentPrice = data.results.technical?.data?.analysis?.priceAction?.currentPrice || 0;
+    console.log('OutputFormatter received data:', data);
     
-    const priceProjections = {
-      threeMonths: generatePricePrediction(currentPrice, 3, 90),
-      sixMonths: generatePricePrediction(currentPrice, 6, 85),
-      twelveMonths: generatePricePrediction(currentPrice, 12, 80),
-      twentyFourMonths: generatePricePrediction(currentPrice, 24, 75)
-    };
+    try {
+      const consolidatedSignal = SignalAnalyzer.getConsolidatedSignal(data);
+      const currentPrice = data.results.technical?.data?.analysis?.priceAction?.currentPrice || 0;
+      
+      const priceProjections = {
+        threeMonths: generatePricePrediction(currentPrice, 3, 90),
+        sixMonths: generatePricePrediction(currentPrice, 6, 85),
+        twelveMonths: generatePricePrediction(currentPrice, 12, 80),
+        twentyFourMonths: generatePricePrediction(currentPrice, 24, 75)
+      };
 
-    const formattedData = {
-      symbol: data.symbol,
-      companyName: data.companyName,
-      recommendation: consolidatedSignal,
-      confidenceScore: this.calculateOverallConfidence(data),
-      priceProjections: {
-        threeMonths: priceProjections.threeMonths.price,
-        sixMonths: priceProjections.sixMonths.price,
-        twelveMonths: priceProjections.twelveMonths.price,
-        twentyFourMonths: priceProjections.twentyFourMonths.price
-      },
-      results: data.results
-    };
+      const formattedData = {
+        symbol: data.symbol,
+        companyName: data.companyName,
+        recommendation: consolidatedSignal,
+        confidenceScore: this.calculateOverallConfidence(data),
+        priceProjections: {
+          threeMonths: priceProjections.threeMonths.price,
+          sixMonths: priceProjections.sixMonths.price,
+          twelveMonths: priceProjections.twelveMonths.price,
+          twentyFourMonths: priceProjections.twentyFourMonths.price
+        },
+        results: data.results
+      };
 
-    const textOutput = `
+      const textOutput = `
 📊 Analysis Report for ${data.companyName} (${data.symbol})
 
 🎯 CONSOLIDATED RECOMMENDATION
@@ -70,32 +73,30 @@ ${ResultFormatter.formatSection(data.results.valuation?.data, 'Fair value assess
 
 📈 FORECASTING
 ============================
-${ResultFormatter.formatSection(data.results.timeSeries?.data, 'Time series predictions')}
+${ResultFormatter.formatSection(data.results.timeSeries?.data, 'Time series predictions')}`;
 
-🔄 DOWNLOAD REPORT
-============================
-Use the "Download PDF" button below to save a detailed report.`;
-
-    return { textOutput, formattedData };
+      console.log('Generated text output:', textOutput);
+      return { textOutput, formattedData };
+    } catch (error) {
+      console.error('Error in OutputFormatter:', error);
+      throw error;
+    }
   }
 
   private static calculateOverallConfidence(data: any): number {
     let totalConfidence = 0;
     let validIndicators = 0;
 
-    // Technical Analysis Confidence
     if (data.results.technical?.data?.analysis?.confidenceScore) {
       totalConfidence += data.results.technical.data.analysis.confidenceScore;
       validIndicators++;
     }
 
-    // Fundamental Analysis Confidence
     if (data.results.fundamental?.data?.analysis?.confidenceScore) {
       totalConfidence += data.results.fundamental.data.analysis.confidenceScore;
       validIndicators++;
     }
 
-    // Sentiment Analysis Confidence
     if (data.results.sentiment?.data?.analysis?.confidenceScore) {
       totalConfidence += data.results.sentiment.data.analysis.confidenceScore;
       validIndicators++;
