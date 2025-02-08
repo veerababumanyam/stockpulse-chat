@@ -63,5 +63,14 @@ export const agentClassNames = [
   "EconomicData",
   "GeopoliticalEvent",
   "SocialMediaScraper",
-  "SupplyChainData"
+  "SupplyChainData",
+  "AIScreener",
+  "StockScreener",
+  "MarketScreener",
+  "TechnicalScreener",
+  "FundamentalScreener",
+  "FilterBasedScreener",
+  "PatternScreener",
+  "SmartScreener"
 ];
+

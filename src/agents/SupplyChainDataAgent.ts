@@ -130,3 +130,4 @@ export class SupplyChainDataAgent extends BaseAgent {
     return exposureMap[region] || 10;
   }
 }
+
