@@ -62,11 +62,12 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
       // Extract relevant insights from different agents
       const recommendations: AIRecommendation[] = [];
       
-      if (aiAnalysis) {
-        const sentiment = aiAnalysis.results.get('sentiment')?.data;
-        const fundamental = aiAnalysis.results.get('fundamental')?.data;
-        const technical = aiAnalysis.results.get('technical')?.data;
-        const news = aiAnalysis.results.get('news')?.data;
+      if (typeof aiAnalysis === 'object' && aiAnalysis.results) {
+        const results = aiAnalysis.results;
+        const sentiment = results.get('sentiment')?.data;
+        const fundamental = results.get('fundamental')?.data;
+        const technical = results.get('technical')?.data;
+        const news = results.get('news')?.data;
         
         // Combine insights to form recommendations
         if (sentiment && fundamental && technical) {
