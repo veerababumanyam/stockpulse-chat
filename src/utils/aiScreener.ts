@@ -1,5 +1,5 @@
 
-import { type ScreeningCriteria } from "@/components/screener/types";
+import { type ScreeningCriteria, type AgentScreeningResponse } from "@/components/screener/types";
 import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
 import { FundamentalAnalysisAgent } from "@/agents/FundamentalAnalysisAgent";
 import { TechnicalAnalysisAgent } from "@/agents/TechnicalAnalysisAgent";
@@ -17,10 +17,24 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       throw new Error('FMP API key not found. Please add your Financial Modeling Prep API key in settings.');
     }
 
-    // Initialize required agents
-    const fundamentalAgent = new FundamentalAnalysisAgent();
-    const technicalAgent = new TechnicalAnalysisAgent();
-    const sentimentAgent = new MarketSentimentAgent();
+    // Initialize required agents with analyze method
+    const fundamentalAgent = {
+      analyze: async (data: any) => {
+        return FundamentalAnalysisAgent.analyze(data) as Promise<AgentScreeningResponse>;
+      }
+    };
+
+    const technicalAgent = {
+      analyze: async (data: any) => {
+        return TechnicalAnalysisAgent.analyze(data) as Promise<AgentScreeningResponse>;
+      }
+    };
+
+    const sentimentAgent = {
+      analyze: async (data: any) => {
+        return MarketSentimentAgent.analyze(data) as Promise<AgentScreeningResponse>;
+      }
+    };
 
     // Register agents with orchestrator
     OrchestratorAgent.registerAgent('fundamental', fundamentalAgent);
@@ -30,19 +44,19 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
     console.log('Processing query with AI agents:', query);
 
     // Get analysis from each agent
-    const fundamentalCriteria = await OrchestratorAgent.executeAgent('fundamental', {
+    const fundamentalAnalysis = await fundamentalAgent.analyze({
       query,
       type: 'screening',
       context: { fmpKey: fmp }
     });
 
-    const technicalCriteria = await OrchestratorAgent.executeAgent('technical', {
+    const technicalAnalysis = await technicalAgent.analyze({
       query,
       type: 'screening',
       context: { fmpKey: fmp }
     });
 
-    const sentimentCriteria = await OrchestratorAgent.executeAgent('sentiment', {
+    const sentimentAnalysis = await sentimentAgent.analyze({
       query,
       type: 'screening',
       context: { fmpKey: fmp }
@@ -50,9 +64,9 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
 
     // Combine and process criteria from all agents
     const criteria: ScreeningCriteria[] = [
-      ...processCriteria(fundamentalCriteria?.screening || []),
-      ...processCriteria(technicalCriteria?.screening || []),
-      ...processCriteria(sentimentCriteria?.screening || [])
+      ...processCriteria(fundamentalAnalysis?.screening || []),
+      ...processCriteria(technicalAnalysis?.screening || []),
+      ...processCriteria(sentimentAnalysis?.screening || [])
     ];
 
     // Add default criteria if none provided

@@ -44,3 +44,13 @@ export type ScreenerResult = {
   roe?: number;
 };
 
+export type ScreeningCriteria = {
+  metric: string;
+  operator: 'greater' | 'less' | 'equal' | 'between';
+  value: number | string | number[];
+};
+
+export type AgentScreeningResponse = {
+  screening: ScreeningCriteria[];
+};
+
