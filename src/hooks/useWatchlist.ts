@@ -1,8 +1,17 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { fetchStockData } from "@/utils/stockApi";
 import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
+
+export interface Alert {
+  id: string;
+  stockSymbol: string;
+  price: number;
+  type: 'above' | 'below';
+  createdAt: string;
+  isTriggered?: boolean;
+  triggeredAt?: string;
+}
 
 export interface WatchlistStock {
   symbol: string;
@@ -19,11 +28,7 @@ export interface WatchlistStock {
     target24Price: number;
     lastUpdated: string;
   };
-  alerts?: {
-    priceAbove?: number;
-    priceBelow?: number;
-    volumeAbove?: number;
-  };
+  alerts: Alert[];
 }
 
 const STORAGE_KEY = 'watchlist-stocks';
@@ -98,7 +103,7 @@ export const useWatchlist = () => {
 
     return isWeekday && isMarketHours;
   };
-  
+
   const loadStocks = async () => {
     try {
       const savedKeys = localStorage.getItem('apiKeys');
@@ -118,6 +123,7 @@ export const useWatchlist = () => {
 
       const existingAnalysis = loadAIAnalysis();
       const updatedAnalysis = { ...existingAnalysis };
+      const savedAlerts = JSON.parse(localStorage.getItem('watchlist-alerts') || '{}');
 
       // Run AI analysis if needed
       if (shouldRunAnalysis()) {
@@ -139,7 +145,8 @@ export const useWatchlist = () => {
         marketCap: data.quote.marketCap,
         volume: data.quote.volume,
         sector: data.profile.sector,
-        aiAnalysis: updatedAnalysis[data.quote.symbol]
+        aiAnalysis: updatedAnalysis[data.quote.symbol],
+        alerts: savedAlerts[data.quote.symbol] || []
       })));
       setError(null);
     } catch (err) {
@@ -152,6 +159,66 @@ export const useWatchlist = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const addAlert = (symbol: string, price: number, type: 'above' | 'below') => {
+    const alert: Alert = {
+      id: Math.random().toString(36).substr(2, 9),
+      stockSymbol: symbol,
+      price,
+      type,
+      createdAt: new Date().toISOString()
+    };
+
+    setStocks(current => {
+      const newStocks = current.map(stock => {
+        if (stock.symbol === symbol) {
+          return {
+            ...stock,
+            alerts: [...stock.alerts, alert]
+          };
+        }
+        return stock;
+      });
+
+      // Save alerts to localStorage
+      const savedAlerts = JSON.parse(localStorage.getItem('watchlist-alerts') || '{}');
+      savedAlerts[symbol] = newStocks.find(s => s.symbol === symbol)?.alerts || [];
+      localStorage.setItem('watchlist-alerts', JSON.stringify(savedAlerts));
+
+      return newStocks;
+    });
+
+    toast({
+      title: "Alert added",
+      description: `Alert set for ${symbol} at $${price}`,
+    });
+  };
+
+  const removeAlert = (symbol: string, alertId: string) => {
+    setStocks(current => {
+      const newStocks = current.map(stock => {
+        if (stock.symbol === symbol) {
+          return {
+            ...stock,
+            alerts: stock.alerts.filter(alert => alert.id !== alertId)
+          };
+        }
+        return stock;
+      });
+
+      // Update localStorage
+      const savedAlerts = JSON.parse(localStorage.getItem('watchlist-alerts') || '{}');
+      savedAlerts[symbol] = newStocks.find(s => s.symbol === symbol)?.alerts || [];
+      localStorage.setItem('watchlist-alerts', JSON.stringify(savedAlerts));
+
+      return newStocks;
+    });
+
+    toast({
+      title: "Alert removed",
+      description: `Alert removed for ${symbol}`,
+    });
   };
 
   useEffect(() => {
@@ -186,6 +253,12 @@ export const useWatchlist = () => {
       const savedSymbols = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       const newSymbols = savedSymbols.filter((s: string) => s !== symbol);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSymbols));
+
+      // Remove alerts for the stock
+      const savedAlerts = JSON.parse(localStorage.getItem('watchlist-alerts') || '{}');
+      delete savedAlerts[symbol];
+      localStorage.setItem('watchlist-alerts', JSON.stringify(savedAlerts));
+
       await loadStocks();
       toast({
         title: "Stock removed",
@@ -246,5 +319,7 @@ export const useWatchlist = () => {
     addStock,
     removeStock,
     exportData,
+    addAlert,
+    removeAlert,
   };
 };

@@ -9,11 +9,12 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowUpDown, Trash2, Search } from "lucide-react";
+import { ArrowUpDown, Trash2, Search, Bell } from "lucide-react";
 import { useWatchlist, WatchlistStock } from "@/hooks/useWatchlist";
 import { formatLargeNumber, formatPrice, getPriceChangeColor } from "@/utils/formatting";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo } from "react";
+import { StockAlertsDialog } from "./StockAlertsDialog";
 
 interface WatchlistTableProps {
   stocks: WatchlistStock[];
@@ -27,9 +28,10 @@ type SortConfig = {
 };
 
 export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps) => {
-  const { removeStock } = useWatchlist();
+  const { removeStock, addAlert, removeAlert } = useWatchlist();
   const [filterValue, setFilterValue] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: '', direction: 'asc' });
+  const [selectedStock, setSelectedStock] = useState<WatchlistStock | null>(null);
 
   const handleSort = (key: keyof WatchlistStock) => {
     setSortConfig(current => ({
@@ -169,19 +171,44 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
                   {stock.aiAnalysis?.target24Price ? formatPrice(stock.aiAnalysis.target24Price) : 'N/A'}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeStock(stock.symbol)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedStock(stock)}
+                      className="relative"
+                    >
+                      <Bell className="h-4 w-4" />
+                      {stock.alerts.length > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-4 h-4 text-xs flex items-center justify-center">
+                          {stock.alerts.length}
+                        </span>
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeStock(stock.symbol)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      {selectedStock && (
+        <StockAlertsDialog
+          stock={selectedStock}
+          open={!!selectedStock}
+          onOpenChange={(open) => !open && setSelectedStock(null)}
+          onAddAlert={addAlert}
+          onRemoveAlert={removeAlert}
+        />
+      )}
     </div>
   );
 };
