@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { fetchStockData } from "@/utils/stockApi";
+import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
 
 export interface WatchlistStock {
   symbol: string;
@@ -12,6 +13,11 @@ export interface WatchlistStock {
   marketCap: number;
   volume: number;
   sector: string;
+  aiAnalysis?: {
+    signal: string;
+    targetPrice: number;
+    lastUpdated: string;
+  };
   alerts?: {
     priceAbove?: number;
     priceBelow?: number;
@@ -20,6 +26,7 @@ export interface WatchlistStock {
 }
 
 const STORAGE_KEY = 'watchlist-stocks';
+const AI_ANALYSIS_KEY = 'watchlist-ai-analysis';
 const UPDATE_INTERVAL = 60000; // 1 minute
 
 export const useWatchlist = () => {
@@ -27,6 +34,56 @@ export const useWatchlist = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
+
+  const loadAIAnalysis = () => {
+    try {
+      const savedAnalysis = localStorage.getItem(AI_ANALYSIS_KEY);
+      if (savedAnalysis) {
+        return JSON.parse(savedAnalysis);
+      }
+    } catch (err) {
+      console.error('Error loading AI analysis:', err);
+    }
+    return {};
+  };
+
+  const saveAIAnalysis = (analysis: Record<string, any>) => {
+    try {
+      localStorage.setItem(AI_ANALYSIS_KEY, JSON.stringify(analysis));
+    } catch (err) {
+      console.error('Error saving AI analysis:', err);
+    }
+  };
+
+  const runAIAnalysis = async (stockData: any) => {
+    try {
+      const analysisResults = await OrchestratorAgent.orchestrateAnalysis(stockData);
+      const signal = analysisResults.results?.fundamental?.analysis?.summary?.recommendation || 'HOLD';
+      const targetPrice = analysisResults.results?.fundamental?.analysis?.pricePredictions?.twelveMonths?.price || 0;
+      
+      return {
+        signal,
+        targetPrice,
+        lastUpdated: new Date().toISOString()
+      };
+    } catch (err) {
+      console.error('Error running AI analysis:', err);
+      return null;
+    }
+  };
+
+  const shouldRunAnalysis = () => {
+    const now = new Date();
+    const marketOpen = new Date(now);
+    marketOpen.setHours(9, 45, 0); // 15 minutes after market opens at 9:30
+    const marketClose = new Date(now);
+    marketClose.setHours(15, 45, 0); // 15 minutes before market closes at 16:00
+
+    const isWeekday = now.getDay() > 0 && now.getDay() < 6;
+    const isMarketHours = now >= marketOpen && now <= marketClose;
+
+    return isWeekday && isMarketHours;
+  };
   
   const loadStocks = async () => {
     try {
@@ -45,6 +102,20 @@ export const useWatchlist = () => {
         savedSymbols.map((symbol: string) => fetchStockData(symbol, fmp))
       );
 
+      const existingAnalysis = loadAIAnalysis();
+      const updatedAnalysis = { ...existingAnalysis };
+
+      // Run AI analysis if needed
+      if (shouldRunAnalysis()) {
+        for (const data of stocksData) {
+          const analysis = await runAIAnalysis(data);
+          if (analysis) {
+            updatedAnalysis[data.quote.symbol] = analysis;
+          }
+        }
+        saveAIAnalysis(updatedAnalysis);
+      }
+
       setStocks(stocksData.map(data => ({
         symbol: data.quote.symbol,
         companyName: data.profile.companyName,
@@ -54,6 +125,7 @@ export const useWatchlist = () => {
         marketCap: data.quote.marketCap,
         volume: data.quote.volume,
         sector: data.profile.sector,
+        aiAnalysis: updatedAnalysis[data.quote.symbol]
       })));
       setError(null);
     } catch (err) {

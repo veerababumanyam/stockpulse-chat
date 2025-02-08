@@ -45,6 +45,19 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
     );
   }
 
+  const getSignalColor = (signal: string) => {
+    switch (signal?.toUpperCase()) {
+      case 'STRONG BUY':
+      case 'BUY':
+        return 'text-green-600';
+      case 'STRONG SELL':
+      case 'SELL':
+        return 'text-red-600';
+      default:
+        return 'text-yellow-600';
+    }
+  };
+
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -57,6 +70,8 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
             <TableHead className="text-right">Market Cap</TableHead>
             <TableHead className="text-right">Volume</TableHead>
             <TableHead>Sector</TableHead>
+            <TableHead className="text-right">AI Signal</TableHead>
+            <TableHead className="text-right">12M Target</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -72,6 +87,12 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
               <TableCell className="text-right">{formatLargeNumber(stock.marketCap)}</TableCell>
               <TableCell className="text-right">{formatLargeNumber(stock.volume)}</TableCell>
               <TableCell>{stock.sector}</TableCell>
+              <TableCell className={`text-right font-medium ${getSignalColor(stock.aiAnalysis?.signal || 'HOLD')}`}>
+                {stock.aiAnalysis?.signal || 'HOLD'}
+              </TableCell>
+              <TableCell className="text-right">
+                {stock.aiAnalysis?.targetPrice ? formatPrice(stock.aiAnalysis.targetPrice) : 'N/A'}
+              </TableCell>
               <TableCell className="text-right">
                 <Button
                   variant="ghost"
