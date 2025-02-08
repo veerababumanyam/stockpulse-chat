@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Info, Download, Upload, RefreshCw, Brain, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -39,7 +38,6 @@ const ScreenerHeader = () => {
 
     setIsProcessing(true);
     try {
-      // Generate screening criteria using enhanced logic
       const criteria = await generateScreeningCriteria(aiQuery);
       console.log("Generated criteria:", criteria);
 
@@ -52,7 +50,6 @@ const ScreenerHeader = () => {
         return;
       }
 
-      // Fetch matching stocks using FMP API
       const results = await fetchStockScreenerResults(criteria);
       console.log("Screening results:", results);
 
@@ -69,7 +66,6 @@ const ScreenerHeader = () => {
         });
       }
       
-      // TODO: Update results in parent component
       setShowAIDialog(false);
     } catch (error: any) {
       console.error("AI Screener error:", error);
@@ -93,7 +89,7 @@ const ScreenerHeader = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
+          <Dialog>
             <DialogTrigger asChild>
               <TooltipProvider>
                 <Tooltip>
