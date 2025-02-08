@@ -30,14 +30,19 @@ export const useWatchlist = () => {
   
   const loadStocks = async () => {
     try {
-      const apiKey = localStorage.getItem('fmp-api-key');
-      if (!apiKey) {
-        throw new Error('API key not found. Please add your Financial Modeling Prep API key in settings.');
+      const savedKeys = localStorage.getItem('apiKeys');
+      if (!savedKeys) {
+        throw new Error('API keys not found. Please add your Financial Modeling Prep API key in settings.');
+      }
+
+      const { fmp } = JSON.parse(savedKeys);
+      if (!fmp) {
+        throw new Error('FMP API key not found. Please add your Financial Modeling Prep API key in settings.');
       }
 
       const savedSymbols = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       const stocksData = await Promise.all(
-        savedSymbols.map((symbol: string) => fetchStockData(symbol, apiKey))
+        savedSymbols.map((symbol: string) => fetchStockData(symbol, fmp))
       );
 
       setStocks(stocksData.map(data => ({
