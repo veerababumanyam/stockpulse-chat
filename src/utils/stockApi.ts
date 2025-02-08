@@ -123,14 +123,14 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
     
     // Process criteria and build query parameters
     criteria.forEach(({ metric, operator, value }) => {
-      if (operator === 'between' && Array.isArray(value)) {
+      if (metric === 'sector') {
+        url += `&sector=${encodeURIComponent(value)}`;
+      } else if (operator === 'between' && Array.isArray(value)) {
         url += `&${metric}MoreThan=${value[0]}&${metric}LessThan=${value[1]}`;
       } else if (operator === 'greater') {
         url += `&${metric}MoreThan=${value}`;
       } else if (operator === 'less') {
         url += `&${metric}LessThan=${value}`;
-      } else if (operator === 'equal') {
-        url += `&${metric}=${value}`;
       }
     });
 
@@ -149,14 +149,23 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
     }
 
     // Filter and sort results
-    return data
+    const filteredResults = data
       .filter((stock: any) => 
         stock && 
         stock.symbol && 
         stock.companyName && 
-        stock.marketCap > 0
+        stock.marketCap > 0 &&
+        stock.volume > 0
       )
-      .sort((a: any, b: any) => b.marketCap - a.marketCap);
+      .sort((a: any, b: any) => b.marketCap - a.marketCap)
+      .map((stock: any) => ({
+        ...stock,
+        change: stock.changesPercentage || 0,
+        changePercent: stock.changesPercentage || 0
+      }));
+
+    console.log('Filtered results count:', filteredResults.length);
+    return filteredResults;
   } catch (error) {
     console.error('Error fetching stock screener results:', error);
     throw error;

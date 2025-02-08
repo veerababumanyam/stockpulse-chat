@@ -20,7 +20,7 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
     const query_lower = query.toLowerCase();
     const criteria: ScreeningCriteria[] = [];
 
-    // Market Cap Criteria
+    // Market Cap Classifications
     if (query_lower.includes('large cap')) {
       criteria.push({
         metric: 'marketCap',
@@ -41,7 +41,24 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       });
     }
 
-    // Sector-based filtering
+    // Growth & Performance
+    if (query_lower.includes('high growth') || query_lower.includes('fast growing')) {
+      criteria.push({
+        metric: 'revenueGrowth',
+        operator: 'greater',
+        value: 20
+      });
+    }
+
+    if (query_lower.includes('profitable')) {
+      criteria.push({
+        metric: 'netProfitMargin',
+        operator: 'greater',
+        value: 0
+      });
+    }
+
+    // Sector Mapping with Granular Control
     const sectorMapping: { [key: string]: string } = {
       'tech': 'Technology',
       'technology': 'Technology',
@@ -50,7 +67,13 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       'finance': 'Financial',
       'financial': 'Financial',
       'consumer': 'Consumer Defensive',
-      'retail': 'Consumer Cyclical'
+      'retail': 'Consumer Cyclical',
+      'energy': 'Energy',
+      'industrial': 'Industrial',
+      'materials': 'Basic Materials',
+      'utilities': 'Utilities',
+      'real estate': 'Real Estate',
+      'telecom': 'Communication Services'
     };
 
     for (const [key, value] of Object.entries(sectorMapping)) {
@@ -63,25 +86,8 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       }
     }
 
-    // Performance and Growth Metrics
-    if (query_lower.includes('high growth')) {
-      criteria.push({
-        metric: 'revenueGrowth',
-        operator: 'greater',
-        value: 20
-      });
-    }
-
-    if (query_lower.includes('profitable')) {
-      criteria.push({
-        metric: 'netProfitMargin',
-        operator: 'greater',
-        value: 10
-      });
-    }
-
     // Value Metrics
-    if (query_lower.includes('undervalued')) {
+    if (query_lower.includes('undervalued') || query_lower.includes('cheap')) {
       criteria.push({
         metric: 'priceToEarningsRatio',
         operator: 'less',
@@ -90,11 +96,20 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
     }
 
     // Volume/Liquidity
-    if (query_lower.includes('high volume')) {
+    if (query_lower.includes('high volume') || query_lower.includes('liquid')) {
       criteria.push({
         metric: 'volume',
         operator: 'greater',
         value: 500000
+      });
+    }
+
+    // Performance Metrics
+    if (query_lower.includes('momentum') || query_lower.includes('performing')) {
+      criteria.push({
+        metric: 'beta',
+        operator: 'greater',
+        value: 1
       });
     }
 
@@ -103,16 +118,16 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       criteria.push({
         metric: 'marketCap',
         operator: 'greater',
-        value: 100000000 // Minimum market cap
+        value: 100000000 // Basic minimum market cap filter
       });
       criteria.push({
         metric: 'volume',
         operator: 'greater',
-        value: 10000 // Minimum volume
+        value: 10000 // Basic minimum volume filter
       });
     }
 
-    console.log('Generated criteria:', criteria);
+    console.log('Generated screening criteria:', criteria);
     return criteria;
   } catch (error) {
     console.error('Error generating criteria:', error);
