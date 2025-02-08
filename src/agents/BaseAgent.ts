@@ -1,4 +1,6 @@
+
 import { DEEPSEEK_BASE_URL } from '@/utils/deepseekAPI';
+import { APIClient } from '@/utils/APIClient';
 
 export interface AnalysisResult {
   type: string;
@@ -6,116 +8,10 @@ export interface AnalysisResult {
 }
 
 export abstract class BaseAgent {
-  private static retryDelay = 2000; // 2 seconds
-  private static maxRetries = 5;
-  private static requestQueue: Promise<any> = Promise.resolve();
-  private static rateLimitWindow = 60000; // 1 minute
-  private static requestCount = 0;
-  private static lastRequestTime = Date.now();
-  private static maxRequestsPerMinute = 1; // Even more restrictive limit
-  private static pendingRequests: Set<string> = new Set();
-  private static waitingTime = 0;
-  private static globalTimeout: NodeJS.Timeout | null = null;
+  private static apiClient = new APIClient();
 
-  protected static async fetchData(url: string, apiKey: string, retryCount = 0): Promise<any> {
-    const requestId = url;
-
-    // Check if this exact request is already pending
-    if (this.pendingRequests.has(requestId)) {
-      await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3s before retry
-      return this.fetchData(url, apiKey, retryCount);
-    }
-
-    // Add to pending requests
-    this.pendingRequests.add(requestId);
-
-    try {
-      // Calculate time since last request
-      const timeSinceLastRequest = Date.now() - this.lastRequestTime;
-
-      // Reset counter if window has passed
-      if (timeSinceLastRequest > this.rateLimitWindow) {
-        this.requestCount = 0;
-        this.lastRequestTime = Date.now();
-        this.waitingTime = 0;
-      }
-
-      // Calculate base waiting time for rate limiting
-      let baseWaitTime = 0;
-      if (this.requestCount >= this.maxRequestsPerMinute) {
-        baseWaitTime = Math.max(
-          this.rateLimitWindow - timeSinceLastRequest + this.waitingTime,
-          this.retryDelay * Math.pow(2, retryCount)
-        );
-      }
-
-      // Add additional delay between requests even if under rate limit
-      const minRequestInterval = 3000; // Minimum 3 seconds between requests
-      const requestInterval = Math.max(minRequestInterval, baseWaitTime);
-
-      if (requestInterval > 0) {
-        console.log(`Waiting ${requestInterval}ms before next request`);
-        await new Promise(resolve => setTimeout(resolve, requestInterval));
-      }
-
-      // Queue the request
-      return await new Promise((resolve, reject) => {
-        this.requestQueue = this.requestQueue
-          .then(async () => {
-            try {
-              // Clear any existing global timeout
-              if (this.globalTimeout) {
-                clearTimeout(this.globalTimeout);
-              }
-
-              // Increment before making request
-              this.requestCount++;
-              this.lastRequestTime = Date.now();
-
-              const response = await fetch(url);
-              
-              if (response.status === 429) {
-                const backoffTime = this.retryDelay * Math.pow(2, retryCount);
-                console.log(`Rate limit hit, attempt ${retryCount + 1} of ${this.maxRetries}, waiting ${backoffTime}ms`);
-                
-                if (retryCount < this.maxRetries) {
-                  this.waitingTime += backoffTime;
-                  
-                  // Set a global timeout to pause all requests
-                  await new Promise((resolve) => {
-                    this.globalTimeout = setTimeout(resolve, backoffTime);
-                  });
-                  
-                  this.pendingRequests.delete(requestId);
-                  return this.fetchData(url, apiKey, retryCount + 1);
-                } else {
-                  throw new Error('API rate limit reached. Please try again later.');
-                }
-              }
-
-              if (!response.ok) {
-                throw new Error(`API call failed: ${response.statusText}`);
-              }
-
-              const data = await response.json();
-              resolve(data);
-              return data;
-            } catch (error: any) {
-              console.error('Error in fetchData:', error);
-              reject(new Error(error.message || 'Failed to fetch data'));
-            } finally {
-              this.pendingRequests.delete(requestId);
-            }
-          })
-          .catch(error => {
-            this.pendingRequests.delete(requestId);
-            reject(error);
-          });
-      });
-    } catch (error) {
-      this.pendingRequests.delete(requestId);
-      throw error;
-    }
+  protected static async fetchData(url: string, apiKey: string): Promise<any> {
+    return this.apiClient.fetchData(url, apiKey);
   }
 
   protected static formatDate(date: string | Date): string {
@@ -190,7 +86,7 @@ export abstract class BaseAgent {
     return regionMap[country] || 'Other';
   }
 
-  protected static async analyzeWithDeepseek(prompt: string): Promise<string> {
+  protected static async analyzeWithDeepseek(prompt: string): Promise<any> {
     try {
       const savedKeys = localStorage.getItem('apiKeys');
       if (!savedKeys) {

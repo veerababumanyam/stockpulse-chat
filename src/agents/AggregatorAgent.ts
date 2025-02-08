@@ -30,11 +30,9 @@ export class AggregatorAgent extends BaseAgent {
       
       const existing = aggregated.get(data.symbol);
       if (existing) {
-        // Update existing recommendation with new data
         existing.sources.push(data.source);
         existing.confidence = (existing.confidence + data.confidence) / 2;
       } else {
-        // Create new recommendation
         aggregated.set(data.symbol, {
           symbol: data.symbol,
           companyName: data.companyName,
@@ -64,18 +62,22 @@ export class AggregatorAgent extends BaseAgent {
     
     for (const rec of recommendations) {
       try {
-        const analysis = await OrchestratorAgent.orchestrateAnalysis({
+        const analysisResult = await OrchestratorAgent.orchestrateAnalysis({
           quote: { symbol: rec.symbol },
           profile: { companyName: rec.companyName }
         });
-        
-        // Enrich the recommendation with AI analysis
+
+        if (typeof analysisResult === 'string') {
+          console.error('Unexpected string result from orchestrateAnalysis');
+          continue;
+        }
+
         rec.aiAnalysis = {
-          summary: analysis.fundamental?.analysis?.summary?.overview || '',
-          sentiment: analysis.sentiment?.analysis?.currentSentiment || '',
-          riskLevel: analysis.risk?.analysis?.riskLevel || '',
-          technicalSignals: analysis.technical?.analysis?.signals || [],
-          fundamentalFactors: analysis.fundamental?.analysis?.keyFactors || []
+          summary: analysisResult.fundamental?.analysis?.summary?.overview || '',
+          sentiment: analysisResult.sentiment?.analysis?.currentSentiment || '',
+          riskLevel: analysisResult.risk?.analysis?.riskLevel || '',
+          technicalSignals: analysisResult.technical?.analysis?.signals || [],
+          fundamentalFactors: analysisResult.fundamental?.analysis?.keyFactors || []
         };
         
         enrichedRecommendations.push(rec);
@@ -90,19 +92,14 @@ export class AggregatorAgent extends BaseAgent {
 
   static async analyze(): Promise<AnalysisResult> {
     try {
-      // Get recommendations from scraped data
       const scrapedData = await this.analyzeWithDeepseek(
         `Analyze recent stock recommendations from financial websites and extract key information. Include symbol, company name, recommendation type (buy/sell/hold), target price, current price, analyst name, and date.`
       );
       
-      // Parse and aggregate recommendations
       const parsedData = JSON.parse(scrapedData);
       const aggregatedRecommendations = await this.aggregateRecommendations(parsedData);
-      
-      // Enrich with AI analysis
       const enrichedRecommendations = await this.enrichWithAIAnalysis(aggregatedRecommendations);
       
-      // Sort by confidence and limit to top recommendations
       const sortedRecommendations = enrichedRecommendations
         .sort((a, b) => b.confidence - a.confidence)
         .slice(0, 10);
