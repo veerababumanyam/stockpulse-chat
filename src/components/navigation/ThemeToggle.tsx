@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 
 export const ThemeToggle = () => {
@@ -25,6 +25,14 @@ export const ThemeToggle = () => {
 
   const handleThemeChange = (newTheme: string) => {
     setTheme(newTheme);
+    document.documentElement.classList.remove('light', 'dark');
+    if (newTheme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.classList.add(systemTheme);
+    } else {
+      document.documentElement.classList.add(newTheme);
+    }
+    
     toast({
       title: "Theme Changed",
       description: `Theme set to ${newTheme} mode`,
@@ -69,3 +77,4 @@ export const ThemeToggle = () => {
     </DropdownMenu>
   );
 };
+
