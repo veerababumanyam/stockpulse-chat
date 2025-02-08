@@ -1,4 +1,3 @@
-
 export const fetchStockData = async (query: string, apiKey: string) => {
   try {
     if (!apiKey) {
@@ -99,3 +98,45 @@ export const fetchStockData = async (query: string, apiKey: string) => {
     throw error;
   }
 };
+
+export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]> {
+  try {
+    const savedKeys = localStorage.getItem('apiKeys');
+    if (!savedKeys) {
+      throw new Error('FMP API key not found');
+    }
+
+    const { fmp } = JSON.parse(savedKeys);
+    if (!fmp) {
+      throw new Error('FMP API key not found');
+    }
+
+    // Build URL with criteria
+    let url = `https://financialmodelingprep.com/api/v3/stock-screener?apikey=${fmp}`;
+    
+    criteria.forEach(({ metric, operator, value }) => {
+      if (operator === 'between' && Array.isArray(value)) {
+        url += `&${metric}MoreThan=${value[0]}&${metric}LessThan=${value[1]}`;
+      } else if (operator === 'greater') {
+        url += `&${metric}MoreThan=${value}`;
+      } else if (operator === 'less') {
+        url += `&${metric}LessThan=${value}`;
+      } else if (operator === 'equal') {
+        url += `&${metric}Equals=${value}`;
+      }
+    });
+
+    console.log('Fetching from URL:', url);
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to fetch screening results');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching stock screener results:', error);
+    throw error;
+  }
+}

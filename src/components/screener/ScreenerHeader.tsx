@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Info, Download, Upload, RefreshCw, Brain } from "lucide-react";
+import { Info, Download, Upload, RefreshCw, Brain, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import {
   Tooltip,
@@ -18,13 +18,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { generateScreeningCriteria } from "@/utils/aiScreener";
+import { fetchStockScreenerResults } from "@/utils/stockApi";
 
 const ScreenerHeader = () => {
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [aiQuery, setAiQuery] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  const handleAISearch = () => {
+  const handleAISearch = async () => {
     if (!aiQuery.trim()) {
       toast({
         title: "Please enter a query",
@@ -33,12 +36,33 @@ const ScreenerHeader = () => {
       return;
     }
 
-    // TODO: Implement AI search logic
-    toast({
-      title: "AI Search",
-      description: "This feature will be implemented soon",
-    });
-    setShowAIDialog(false);
+    setIsProcessing(true);
+    try {
+      // Generate screening criteria using LLM
+      const criteria = await generateScreeningCriteria(aiQuery);
+      console.log("Generated criteria:", criteria);
+
+      // Fetch matching stocks using FMP API
+      const results = await fetchStockScreenerResults(criteria);
+      console.log("Screening results:", results);
+
+      toast({
+        title: "Search completed",
+        description: `Found ${results.length} stocks matching your criteria`,
+      });
+      
+      // TODO: Update results in parent component
+      setShowAIDialog(false);
+    } catch (error: any) {
+      console.error("AI Screener error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to process your request",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -76,8 +100,19 @@ const ScreenerHeader = () => {
                   value={aiQuery}
                   onChange={(e) => setAiQuery(e.target.value)}
                 />
-                <Button onClick={handleAISearch} className="w-full">
-                  Search Stocks
+                <Button 
+                  onClick={handleAISearch} 
+                  className="w-full"
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Search Stocks"
+                  )}
                 </Button>
               </div>
             </DialogContent>
@@ -167,4 +202,3 @@ const ScreenerHeader = () => {
 };
 
 export default ScreenerHeader;
-
