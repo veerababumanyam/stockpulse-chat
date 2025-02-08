@@ -21,6 +21,12 @@ const ChatWindow = () => {
     const savedKeys = localStorage.getItem('apiKeys');
     if (savedKeys) {
       const parsedKeys = JSON.parse(savedKeys);
+      console.log('Loading API keys:', { 
+        hasFMP: !!parsedKeys.fmp,
+        hasOpenAI: !!parsedKeys.openai,
+        hasDeepseek: !!parsedKeys.deepseek 
+      });
+      
       if (!parsedKeys.fmp) {
         toast({
           title: "FMP API Key Required",
@@ -30,7 +36,6 @@ const ChatWindow = () => {
         navigate("/api-keys");
         return;
       }
-      console.log('API Keys loaded:', { hasFMP: !!parsedKeys.fmp });
       setApiKeys(parsedKeys);
     } else {
       toast({
@@ -79,26 +84,34 @@ const ChatWindow = () => {
     setIsLoading(true);
 
     try {
-      console.log('Starting analysis with FMP key:', !!apiKeys.fmp);
+      console.log('Starting analysis for symbol:', input);
+      console.log('API Keys status:', { 
+        fmp: !!apiKeys.fmp,
+        openai: !!apiKeys.openai,
+        deepseek: !!apiKeys.deepseek 
+      });
+
       if (!apiKeys.fmp) {
         throw new Error('FMP API key is required. Please set it in the API Keys page.');
       }
 
-      console.log('Starting analysis for:', input);
       const stockData = await fetchStockData(input, apiKeys.fmp);
+      console.log('Fetched stock data:', stockData);
       
-      if (!stockData) {
-        throw new Error('No stock data found for the given symbol');
+      if (!stockData || !stockData.quote) {
+        throw new Error('No stock data found for the given symbol. Please check if the symbol is correct.');
       }
 
-      console.log('Retrieved stock data:', stockData);
-      console.log('Starting orchestrator analysis...');
+      console.log('Starting orchestrator analysis with data:', {
+        symbol: stockData.quote.symbol,
+        companyName: stockData.profile?.companyName
+      });
       
       const analysis = await OrchestratorAgent.orchestrateAnalysis(stockData);
       console.log('Orchestrator analysis complete:', analysis);
 
       if (!analysis || !analysis.textOutput) {
-        throw new Error('Invalid analysis response');
+        throw new Error('Invalid analysis response from OrchestratorAgent');
       }
 
       const aiMessage: MessageType = {
@@ -109,10 +122,9 @@ const ChatWindow = () => {
 
       setMessages(prev => [...prev, aiMessage]);
       
-      // Success toast
       toast({
         title: "Analysis Complete",
-        description: "Stock analysis has been generated successfully",
+        description: `Successfully analyzed ${stockData.quote.symbol}`,
       });
 
     } catch (error) {
@@ -126,7 +138,7 @@ const ChatWindow = () => {
       });
 
       setMessages(prev => [...prev, {
-        content: errorMessage,
+        content: `Error: ${errorMessage}. Please try again with a valid stock symbol.`,
         isUser: false
       }]);
     } finally {
@@ -162,4 +174,3 @@ const ChatWindow = () => {
 };
 
 export default ChatWindow;
-
