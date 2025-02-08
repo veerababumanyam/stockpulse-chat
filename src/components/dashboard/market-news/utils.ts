@@ -1,4 +1,6 @@
 
+import { NewsItem } from "./types";
+
 export const getSentimentColor = (sentiment: number) => {
   if (sentiment > 0.3) return "bg-green-500/10 text-green-500";
   if (sentiment < -0.3) return "bg-red-500/10 text-red-500";
