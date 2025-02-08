@@ -121,7 +121,7 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
     // Add trading status filter for active stocks
     url += '&isActivelyTrading=true';
     
-    // Process criteria
+    // Process criteria and build query parameters
     criteria.forEach(({ metric, operator, value }) => {
       if (operator === 'between' && Array.isArray(value)) {
         url += `&${metric}MoreThan=${value[0]}&${metric}LessThan=${value[1]}`;
@@ -148,7 +148,7 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
       throw new Error('Invalid API response format');
     }
 
-    // Sort results by market cap and filter out any null/undefined values
+    // Filter and sort results
     return data
       .filter((stock: any) => 
         stock && 
