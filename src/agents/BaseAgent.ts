@@ -7,65 +7,88 @@ export interface AnalysisResult {
 
 export abstract class BaseAgent {
   private static retryDelay = 2000; // 2 seconds
-  private static maxRetries = 3;
+  private static maxRetries = 5; // Increased retries
   private static requestQueue: Promise<any> = Promise.resolve();
   private static rateLimitWindow = 60000; // 1 minute
   private static requestCount = 0;
   private static lastRequestTime = Date.now();
-  private static maxRequestsPerMinute = 5; // Conservative limit
+  private static maxRequestsPerMinute = 3; // More conservative limit
+  private static pendingRequests: Set<string> = new Set();
 
   protected static async fetchData(url: string, apiKey: string, retryCount = 0): Promise<any> {
-    // Reset counter if window has passed
-    if (Date.now() - this.lastRequestTime > this.rateLimitWindow) {
-      this.requestCount = 0;
-      this.lastRequestTime = Date.now();
+    const requestId = `${url}-${Date.now()}`;
+
+    // Check if this exact request is already pending
+    if (this.pendingRequests.has(url)) {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
+      return this.fetchData(url, apiKey, retryCount);
     }
 
-    // Check if we've hit the rate limit
-    if (this.requestCount >= this.maxRequestsPerMinute) {
-      const timeToWait = this.rateLimitWindow - (Date.now() - this.lastRequestTime);
-      await new Promise(resolve => setTimeout(resolve, timeToWait));
-      this.requestCount = 0;
-      this.lastRequestTime = Date.now();
-    }
+    // Add to pending requests
+    this.pendingRequests.add(url);
 
-    // Queue the request
-    return new Promise((resolve, reject) => {
-      this.requestQueue = this.requestQueue
-        .then(async () => {
-          try {
-            this.requestCount++;
-            const response = await fetch(url);
+    try {
+      // Reset counter if window has passed
+      if (Date.now() - this.lastRequestTime > this.rateLimitWindow) {
+        this.requestCount = 0;
+        this.lastRequestTime = Date.now();
+      }
 
-            // Handle rate limit
-            if (response.status === 429) {
-              console.log(`Rate limit hit, attempt ${retryCount + 1} of ${this.maxRetries}`);
-              
-              if (retryCount < this.maxRetries) {
-                await new Promise(resolve => setTimeout(resolve, this.retryDelay * (retryCount + 1)));
-                return this.fetchData(url, apiKey, retryCount + 1);
-              } else {
-                throw new Error('API rate limit reached. Please try again later.');
+      // Check if we've hit the rate limit
+      if (this.requestCount >= this.maxRequestsPerMinute) {
+        const timeToWait = this.rateLimitWindow - (Date.now() - this.lastRequestTime);
+        console.log(`Rate limit reached, waiting ${timeToWait}ms before next request`);
+        await new Promise(resolve => setTimeout(resolve, timeToWait));
+        this.requestCount = 0;
+        this.lastRequestTime = Date.now();
+      }
+
+      // Queue the request with exponential backoff
+      return await new Promise((resolve, reject) => {
+        this.requestQueue = this.requestQueue
+          .then(async () => {
+            try {
+              this.requestCount++;
+              const response = await fetch(url);
+
+              // Handle rate limit with exponential backoff
+              if (response.status === 429) {
+                const backoffTime = this.retryDelay * Math.pow(2, retryCount);
+                console.log(`Rate limit hit, attempt ${retryCount + 1} of ${this.maxRetries}, waiting ${backoffTime}ms`);
+                
+                if (retryCount < this.maxRetries) {
+                  await new Promise(resolve => setTimeout(resolve, backoffTime));
+                  this.pendingRequests.delete(url);
+                  return this.fetchData(url, apiKey, retryCount + 1);
+                } else {
+                  throw new Error('API rate limit reached. Please try again later.');
+                }
               }
-            }
 
-            // Handle other errors
-            if (!response.ok) {
-              throw new Error(`API call failed: ${response.statusText}`);
-            }
+              // Handle other errors
+              if (!response.ok) {
+                throw new Error(`API call failed: ${response.statusText}`);
+              }
 
-            const data = await response.json();
-            resolve(data);
-            return data;
-          } catch (error: any) {
-            console.error('Error in fetchData:', error);
-            reject(new Error(error.message || 'Failed to fetch data'));
-          }
-        })
-        .catch(error => {
-          reject(error);
-        });
-    });
+              const data = await response.json();
+              resolve(data);
+              return data;
+            } catch (error: any) {
+              console.error('Error in fetchData:', error);
+              reject(new Error(error.message || 'Failed to fetch data'));
+            } finally {
+              this.pendingRequests.delete(url);
+            }
+          })
+          .catch(error => {
+            this.pendingRequests.delete(url);
+            reject(error);
+          });
+      });
+    } catch (error) {
+      this.pendingRequests.delete(url);
+      throw error;
+    }
   }
 
   protected static formatDate(date: string | Date): string {
