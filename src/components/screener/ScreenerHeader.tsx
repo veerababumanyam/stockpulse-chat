@@ -90,49 +90,6 @@ const ScreenerHeader = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
-            <DialogTrigger asChild>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon">
-                      <Brain className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>AI Stock Screener</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>AI Stock Screener</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Input
-                  placeholder="Example: Show me high growth tech stocks with strong profitability"
-                  value={aiQuery}
-                  onChange={(e) => setAiQuery(e.target.value)}
-                />
-                <Button 
-                  onClick={handleAISearch} 
-                  className="w-full"
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    "Search Stocks"
-                  )}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -173,6 +130,53 @@ const ScreenerHeader = () => {
           </TooltipProvider>
         </div>
       </div>
+
+      <Card className="p-6 bg-background/50 backdrop-blur-sm border-border/50">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">AI Stock Screener</h3>
+              <p className="text-sm text-muted-foreground">
+                Describe the stocks you want to find in natural language
+              </p>
+            </div>
+            <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
+              <DialogTrigger asChild>
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Brain className="h-4 w-4 mr-2" />
+                  Start AI Search
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>AI Stock Screener</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <Input
+                    placeholder="Example: Show me high growth tech stocks with strong profitability"
+                    value={aiQuery}
+                    onChange={(e) => setAiQuery(e.target.value)}
+                  />
+                  <Button 
+                    onClick={handleAISearch}
+                    disabled={isProcessing}
+                    className="w-full"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      "Search Stocks"
+                    )}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4 bg-background/50 backdrop-blur-sm border-border/50">
@@ -217,3 +221,4 @@ const ScreenerHeader = () => {
 };
 
 export default ScreenerHeader;
+
