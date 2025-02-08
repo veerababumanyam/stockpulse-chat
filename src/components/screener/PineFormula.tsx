@@ -81,3 +81,4 @@ export const PineFormula: React.FC<PineFormulaProps> = ({ onCalculate }) => {
     </Card>
   );
 };
+
