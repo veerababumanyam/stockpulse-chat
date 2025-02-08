@@ -6,12 +6,16 @@ export const formatLargeNumber = (num: number) => {
   return num.toFixed(2);
 };
 
-export const formatPercentage = (value: number) => {
-  return `${(value * 100).toFixed(2)}%`;
+export const formatPercentage = (value: number | null | undefined) => {
+  if (value === null || value === undefined || isNaN(value)) {
+    return '0.00%';
+  }
+  return `${value.toFixed(2)}%`;
 };
 
 export const getPriceChangeColor = (change: number) => {
-  return change >= 0 ? 'text-green-500' : 'text-red-500';
+  if (isNaN(change) || change === 0) return 'text-muted-foreground';
+  return change > 0 ? 'text-green-500' : 'text-red-500';
 };
 
 export const getRecommendationColor = (rating: string) => {
@@ -27,17 +31,22 @@ export const getRecommendationColor = (rating: string) => {
   }
 };
 
-export const formatPrice = (price: number | string) => {
-  if (typeof price === 'string') return price;
+export const formatPrice = (price: number | string | null | undefined) => {
+  if (price === null || price === undefined || isNaN(Number(price))) {
+    return '$0.00';
+  }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  }).format(price);
+  }).format(Number(price));
 };
 
 export const formatVolume = (volume: number) => {
+  if (isNaN(volume) || volume === null || volume === undefined) {
+    return '0';
+  }
   return new Intl.NumberFormat('en-US', {
     notation: 'compact',
     compactDisplay: 'short'
