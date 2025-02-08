@@ -13,10 +13,13 @@ import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { generateScreeningCriteria } from "@/utils/aiScreener";
 import { fetchStockScreenerResults } from "@/utils/stockApi";
+import ScreenerResults from "./ScreenerResults";
+import { ScreenerResult } from "./types";
 
 const ScreenerHeader = () => {
   const [aiQuery, setAiQuery] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [results, setResults] = useState<ScreenerResult[]>([]);
   const { toast } = useToast();
 
   const handleAISearch = async () => {
@@ -43,10 +46,23 @@ const ScreenerHeader = () => {
         return;
       }
 
-      const results = await fetchStockScreenerResults(criteria);
-      console.log("Screening results:", results);
+      const screeningResults = await fetchStockScreenerResults(criteria);
+      console.log("Screening results:", screeningResults);
 
-      if (results.length === 0) {
+      // Transform API results to match ScreenerResult type
+      const formattedResults: ScreenerResult[] = screeningResults.map((stock: any) => ({
+        symbol: stock.symbol,
+        companyName: stock.companyName || stock.name,
+        price: stock.price,
+        change: stock.changesPercentage || 0,
+        sector: stock.sector || 'N/A',
+        marketCap: stock.marketCap || 0,
+        volume: stock.volume || 0
+      }));
+
+      setResults(formattedResults);
+
+      if (formattedResults.length === 0) {
         toast({
           title: "No matches found",
           description: "No stocks match your criteria. Try adjusting your requirements.",
@@ -55,7 +71,7 @@ const ScreenerHeader = () => {
       } else {
         toast({
           title: "Search completed",
-          description: `Found ${results.length} stocks matching your criteria`,
+          description: `Found ${formattedResults.length} stocks matching your criteria`,
         });
       }
     } catch (error: any) {
@@ -171,7 +187,7 @@ const ScreenerHeader = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Filtered Results</p>
-              <p className="text-2xl font-bold">245</p>
+              <p className="text-2xl font-bold">{results.length}</p>
             </div>
             <Info className="h-4 w-4 text-muted-foreground" />
           </div>
@@ -195,9 +211,11 @@ const ScreenerHeader = () => {
           </div>
         </Card>
       </div>
+
+      {/* Add the ScreenerResults component */}
+      <ScreenerResults results={results} />
     </div>
   );
 };
 
 export default ScreenerHeader;
-
