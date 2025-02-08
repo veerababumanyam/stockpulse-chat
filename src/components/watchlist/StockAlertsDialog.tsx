@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Dialog,
@@ -9,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BellPlus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
-import { Alert, WatchlistStock } from "@/hooks/useWatchlist";
+import { Alert, WatchlistStock } from "@/types/watchlist";
 import { formatPrice } from "@/utils/formatting";
 
 interface StockAlertsDialogProps {
@@ -105,4 +104,3 @@ export const StockAlertsDialog = ({
     </Dialog>
   );
 };
-
