@@ -22,14 +22,23 @@ export class BreakoutStocksAgent extends BaseAgent {
     try {
       const savedKeys = localStorage.getItem('apiKeys');
       if (!savedKeys) {
-        throw new Error('API keys not found');
+        throw new Error('API keys not found. Please set up your FMP API key in the API Keys section.');
       }
       const { fmp } = JSON.parse(savedKeys);
+      
+      if (!fmp) {
+        throw new Error('FMP API key not found. Please set up your FMP API key in the API Keys section.');
+      }
 
       // Get market hours data
       const marketHoursResponse = await fetch(
         `https://financialmodelingprep.com/api/v3/market-hours?apikey=${fmp}`
       );
+
+      if (!marketHoursResponse.ok) {
+        throw new Error('Failed to fetch market hours. Please check your API key.');
+      }
+
       const marketHours = await marketHoursResponse.json();
 
       // Check if it's been one hour since market opening
@@ -52,6 +61,11 @@ export class BreakoutStocksAgent extends BaseAgent {
       const stocksResponse = await fetch(
         `https://financialmodelingprep.com/api/v3/stock/list?apikey=${fmp}`
       );
+
+      if (!stocksResponse.ok) {
+        throw new Error('Failed to fetch stocks list. Please check your API key.');
+      }
+
       const stocks = await stocksResponse.json();
 
       const breakoutStocks: BreakoutStock[] = [];
@@ -95,13 +109,13 @@ export class BreakoutStocksAgent extends BaseAgent {
           lastUpdated: now.toISOString()
         }
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in breakout stocks analysis:', error);
       return {
         type: 'breakout-stocks',
         analysis: {
           stocks: [],
-          error: 'Failed to analyze breakout stocks',
+          error: error.message || 'Failed to analyze breakout stocks',
           lastUpdated: new Date().toISOString()
         }
       };
