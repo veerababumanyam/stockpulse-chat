@@ -75,7 +75,7 @@ const MarketMoverCard = ({
               <div className="font-medium text-lg">
                 {formatPrice(stock.price)}
               </div>
-              <div className={`text-sm ${getPriceChangeColor(stock.changePercent)} flex items-center justify-end gap-1`}>
+              <div className={`text-sm ${getPriceChangeColor(stock.change)} flex items-center justify-end gap-1`}>
                 {stock.change > 0 ? '+' : ''}
                 {formatPrice(stock.change)}
               </div>
