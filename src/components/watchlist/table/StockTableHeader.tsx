@@ -1,8 +1,7 @@
-
 import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
-import { WatchlistStock } from "@/hooks/useWatchlist";
+import { WatchlistStock } from "@/types/watchlist";
 
 interface StockTableHeaderProps {
   onSort: (key: keyof WatchlistStock) => void;

@@ -2,7 +2,7 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Bell, Trash2 } from "lucide-react";
-import { WatchlistStock } from "@/hooks/useWatchlist";
+import { WatchlistStock } from "@/types/watchlist";
 import { formatLargeNumber, formatPrice, getPriceChangeColor } from "@/utils/formatting";
 
 interface StockTableRowProps {

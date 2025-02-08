@@ -1,8 +1,10 @@
+
 import {
   Table,
   TableBody,
 } from "@/components/ui/table";
-import { useWatchlist, WatchlistStock } from "@/hooks/useWatchlist";
+import { useWatchlist } from "@/hooks/useWatchlist";
+import { WatchlistStock } from "@/types/watchlist";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo } from "react";
 import { StockAlertsDialog } from "./StockAlertsDialog";
