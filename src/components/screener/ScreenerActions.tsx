@@ -25,6 +25,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
+import { generateScreeningCriteria } from "@/utils/aiScreener";
+import { fetchStockScreenerResults } from "@/utils/stockApi";
 
 interface ScreenerActionsProps {
   isLoading: boolean;
@@ -43,47 +45,47 @@ const ScreenerActions: React.FC<ScreenerActionsProps> = ({ isLoading, onSearch }
       toast({
         title: "Please enter a query",
         description: "Describe what kind of stocks you're looking for",
+        variant: "destructive"
       });
       return;
     }
 
     setIsProcessing(true);
     try {
-      // For now, we'll use a simplified implementation
-      // TODO: Integrate with LLM for more advanced processing
-      const keywordMap: Record<string, string> = {
-        "high growth": "revenueGrowthQuarterlyYoy>20",
-        "dividend": "dividendYield>2",
-        "tech": "sector=Technology",
-        "profitable": "netIncomeGrowth>0",
-      };
+      const criteria = await generateScreeningCriteria(aiQuery);
+      console.log("Generated criteria:", criteria);
 
-      // Simple keyword matching
-      const matchedFilters = Object.entries(keywordMap)
-        .filter(([keyword]) => aiQuery.toLowerCase().includes(keyword))
-        .map(([_, filter]) => filter);
-
-      if (matchedFilters.length === 0) {
+      if (criteria.length === 0) {
         toast({
-          title: "No matching criteria found",
-          description: "Try being more specific about financial metrics or industry sectors",
+          title: "No criteria found",
+          description: "Please try rephrasing your query with more specific requirements",
+          variant: "destructive"
         });
         return;
       }
 
-      // Apply the filters
-      onSearch('all');
-      setShowAIDialog(false);
+      const results = await fetchStockScreenerResults(criteria);
+      console.log("Screening results:", results);
+
+      if (results.length === 0) {
+        toast({
+          title: "No matches found",
+          description: "No stocks match your criteria. Try adjusting your requirements.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Search completed",
+          description: `Found ${results.length} stocks matching your criteria`,
+        });
+      }
       
+      setShowAIDialog(false);
+    } catch (error: any) {
+      console.error("AI Screener error:", error);
       toast({
-        title: "AI Search Applied",
-        description: "Analyzing stocks based on your criteria...",
-      });
-    } catch (error) {
-      console.error('AI processing error:', error);
-      toast({
-        title: "Error processing request",
-        description: "Please try again with different criteria",
+        title: "Error",
+        description: error.message || "Failed to process your request",
         variant: "destructive",
       });
     } finally {
@@ -113,7 +115,7 @@ const ScreenerActions: React.FC<ScreenerActionsProps> = ({ isLoading, onSearch }
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" className="ml-2">
+                    <Button variant="outline">
                       <Brain className="h-4 w-4 mr-2" />
                       AI Screener
                     </Button>
@@ -215,4 +217,3 @@ const ScreenerActions: React.FC<ScreenerActionsProps> = ({ isLoading, onSearch }
 };
 
 export default ScreenerActions;
-

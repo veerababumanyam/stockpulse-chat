@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Info, Download, Upload, RefreshCw, Brain, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -89,7 +90,7 @@ const ScreenerHeader = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Dialog>
+          <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
             <DialogTrigger asChild>
               <TooltipProvider>
                 <Tooltip>
