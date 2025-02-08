@@ -8,17 +8,54 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ScreenerActionsProps {
   isLoading: boolean;
-  onSearch: () => void;
+  onSearch: (matchType: 'all' | 'any') => void;
 }
 
 const ScreenerActions = ({ isLoading, onSearch }: ScreenerActionsProps) => {
+  const [matchType, setMatchType] = React.useState<'all' | 'any'>('all');
+
   return (
-    <Card className="p-4 bg-background/50 backdrop-blur-sm border-border/50">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div className="flex gap-2 w-full sm:w-auto">
+    <Card className="p-4 bg-background/50 backdrop-blur-sm border-border/50 sticky top-0 z-10">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-4">
+          <Select
+            value={matchType}
+            onValueChange={(value: 'all' | 'any') => setMatchType(value)}
+          >
+            <SelectTrigger className="w-[200px] bg-background">
+              <SelectValue placeholder="Match Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Match All Filters (AND)</SelectItem>
+              <SelectItem value="any">Match Any Filter (OR)</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Button
+            onClick={() => onSearch(matchType)}
+            disabled={isLoading}
+            className="ml-auto w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Filter className="h-4 w-4 mr-2" />
+            )}
+            Find Stocks
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -61,19 +98,6 @@ const ScreenerActions = ({ isLoading, onSearch }: ScreenerActionsProps) => {
             </Tooltip>
           </TooltipProvider>
         </div>
-
-        <Button
-          onClick={onSearch}
-          disabled={isLoading}
-          className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Filter className="h-4 w-4 mr-2" />
-          )}
-          Find Stocks
-        </Button>
       </div>
     </Card>
   );

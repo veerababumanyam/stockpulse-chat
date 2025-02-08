@@ -164,7 +164,7 @@ const Screener = () => {
     });
   };
 
-  const handleSearch = async () => {
+  const handleSearch = async (matchType: 'all' | 'any') => {
     try {
       setIsLoading(true);
       const savedKeys = localStorage.getItem('apiKeys');
@@ -180,6 +180,7 @@ const Screener = () => {
       let baseUrl = 'https://financialmodelingprep.com/api/v3/stock-screener';
       const params = new URLSearchParams();
       params.append('apikey', fmp);
+      params.append('matchType', matchType); // Add match type parameter
 
       filters.forEach(filter => {
         if (filter.values) {
@@ -218,7 +219,7 @@ const Screener = () => {
       setResults(formattedResults);
       toast({
         title: "Search completed",
-        description: `Found ${formattedResults.length} stocks matching your criteria.`,
+        description: `Found ${formattedResults.length} stocks matching your criteria using ${matchType === 'all' ? 'ALL' : 'ANY'} filter match.`,
       });
     } catch (error: any) {
       toast({
@@ -237,6 +238,8 @@ const Screener = () => {
       <main className="container mx-auto pt-20 p-4">
         <ScreenerHeader />
         <div className="space-y-8">
+          <ScreenerActions isLoading={isLoading} onSearch={handleSearch} />
+          
           {screenerCategories.map((category) => (
             <FilterCategorySection
               key={category.id}
@@ -245,8 +248,6 @@ const Screener = () => {
               onFilterChange={handleFilterChange}
             />
           ))}
-          
-          <ScreenerActions isLoading={isLoading} onSearch={handleSearch} />
           
           <ScreenerResults results={results} />
           
