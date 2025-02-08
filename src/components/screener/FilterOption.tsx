@@ -62,7 +62,7 @@ export const FilterOptionComponent: React.FC<FilterOptionProps> = ({
       </label>
       <Select
         onValueChange={(value) => onSelect(option.id, { value })}
-        value={option.values?.value?.toString() || ''}
+        value={String(option.values?.value || '')}
       >
         <SelectTrigger className="w-full bg-background hover:bg-accent/10">
           <SelectValue placeholder={`Select ${option.label}`} />
@@ -82,3 +82,4 @@ export const FilterOptionComponent: React.FC<FilterOptionProps> = ({
     </div>
   );
 };
+
