@@ -1,5 +1,5 @@
+
 import { Navigation } from "@/components/Navigation";
-import { Card, CardContent } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -90,39 +90,37 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
       <Navigation />
       <div className="pt-[72px]">
-        <main className="p-8">
-          <div className="max-w-7xl mx-auto space-y-8">
+        <main className="p-4 md:p-8">
+          <div className="max-w-[1600px] mx-auto space-y-6 md:space-y-8">
             <div className="space-y-4">
-              <h1 className="text-4xl font-bold">
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
                 <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                   Market Overview
                 </span>
               </h1>
-              <p className="text-xl text-muted-foreground">
+              <p className="text-lg md:text-xl text-muted-foreground font-light">
                 Track market movements and get AI-powered insights
               </p>
             </div>
 
             {!hasApiKey ? (
-              <Card className="p-6">
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">
-                    To access real-time market data and AI-powered analysis, you'll need to set up your API key first.
-                  </p>
-                  <button
-                    onClick={handleSetupApiKey}
-                    className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
-                  >
-                    Set up API Key
-                  </button>
-                </CardContent>
-              </Card>
+              <div className="glass-panel rounded-lg p-6 backdrop-blur-xl border border-border/50">
+                <p className="text-muted-foreground mb-4">
+                  To access real-time market data and AI-powered analysis, you'll need to set up your API key first.
+                </p>
+                <button
+                  onClick={handleSetupApiKey}
+                  className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-all duration-200 hover:shadow-lg"
+                >
+                  Set up API Key
+                </button>
+              </div>
             ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6 md:space-y-8 animate-fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <MarketIndices />
                   <BreakoutStocks />
                 </div>
@@ -133,17 +131,17 @@ const Dashboard = () => {
                   isLoading={isLoading}
                 />
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <AnalystInsights />
                   <MarketNews />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                   <EconomicCalendar />
                   <EarningsCalendar />
                   <SECFilingsCalendar />
                 </div>
-              </>
+              </div>
             )}
           </div>
         </main>

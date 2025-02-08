@@ -72,10 +72,12 @@ export const BreakoutStocks = () => {
   }
 
   return (
-    <Card>
+    <Card className="backdrop-blur-sm bg-card/95 shadow-lg transition-all duration-200 hover:shadow-xl border-border/50">
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
-          <span>Breakout Stocks</span>
+          <span className="text-xl font-semibold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Breakout Stocks
+          </span>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
               Last updated: {new Date(lastUpdated).toLocaleTimeString()}
@@ -85,7 +87,7 @@ export const BreakoutStocks = () => {
               size="sm"
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="gap-2"
+              className="gap-2 hover:bg-primary hover:text-primary-foreground transition-colors duration-200"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               {isRefreshing ? 'Refreshing...' : 'Refresh'}
@@ -96,33 +98,42 @@ export const BreakoutStocks = () => {
       <CardContent>
         <ScrollArea className="h-[300px] pr-4">
           {stocks.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              No breakout stocks detected at this time
-            </p>
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+              <p className="text-muted-foreground">
+                No breakout stocks detected at this time
+              </p>
+            </div>
           ) : (
             <div className="space-y-4">
               {stocks.map((stock) => (
                 <div
                   key={stock.symbol}
-                  className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  className="p-4 backdrop-blur-sm bg-background/50 rounded-lg hover:bg-accent/30 transition-all duration-200 border border-border/50 hover:shadow-md"
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <h3 className="font-semibold">{stock.symbol}</h3>
+                      <h3 className="font-semibold text-lg">{stock.symbol}</h3>
                       <p className="text-sm text-muted-foreground">{stock.companyName}</p>
                     </div>
-                    <Badge variant={stock.confidence >= 75 ? "default" : "secondary"}>
+                    <Badge 
+                      variant={stock.confidence >= 75 ? "default" : "secondary"}
+                      className="animate-fade-in"
+                    >
                       {stock.confidence}% Confidence
                     </Badge>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {stock.breakoutSignals.map((signal, index) => (
-                      <Badge key={index} variant="outline">
+                      <Badge 
+                        key={index} 
+                        variant="outline"
+                        className="bg-background/50 backdrop-blur-sm"
+                      >
                         {signal}
                       </Badge>
                     ))}
                   </div>
-                  <p className="text-sm mt-2">
+                  <p className="text-sm mt-2 font-medium">
                     Current Price: ${stock.price.toFixed(2)}
                   </p>
                 </div>
