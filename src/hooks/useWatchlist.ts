@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { fetchStockData } from "@/utils/stockApi";
@@ -58,13 +59,20 @@ export const useWatchlist = () => {
   const runAIAnalysis = async (stockData: any) => {
     try {
       const analysisResults = await OrchestratorAgent.orchestrateAnalysis(stockData);
-      if (!analysisResults?.results?.fundamental?.analysis) {
+      
+      // Parse the results if they're returned as a string
+      const parsedResults = typeof analysisResults === 'string' 
+        ? JSON.parse(analysisResults) 
+        : analysisResults;
+
+      if (!parsedResults?.results?.fundamental?.analysis) {
+        console.log('No fundamental analysis results found:', parsedResults);
         return null;
       }
       
-      const signal = analysisResults.results.fundamental.analysis.summary?.recommendation || 'HOLD';
-      const targetPrice = analysisResults.results.fundamental.analysis.pricePredictions?.twelveMonths?.price || 0;
-      const target24Price = analysisResults.results.fundamental.analysis.pricePredictions?.twentyFourMonths?.price || 0;
+      const signal = parsedResults.results.fundamental.analysis.summary?.recommendation || 'HOLD';
+      const targetPrice = parsedResults.results.fundamental.analysis.pricePredictions?.twelveMonths?.price || 0;
+      const target24Price = parsedResults.results.fundamental.analysis.pricePredictions?.twentyFourMonths?.price || 0;
       
       return {
         signal,
