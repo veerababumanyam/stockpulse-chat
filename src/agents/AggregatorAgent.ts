@@ -62,12 +62,13 @@ export class AggregatorAgent extends BaseAgent {
     
     for (const rec of recommendations) {
       try {
-        const analysisResult = await OrchestratorAgent.orchestrateAnalysis({
+        const result = await OrchestratorAgent.orchestrateAnalysis({
           quote: { symbol: rec.symbol },
           profile: { companyName: rec.companyName }
         });
-
-        const analysis = analysisResult?.analysis || {};
+        
+        const analysisData = typeof result === 'string' ? JSON.parse(result) : result;
+        const analysis = analysisData?.analysis || {};
         
         rec.aiAnalysis = {
           summary: analysis.fundamental?.summary?.overview || '',
@@ -125,4 +126,3 @@ export class AggregatorAgent extends BaseAgent {
     }
   }
 }
-

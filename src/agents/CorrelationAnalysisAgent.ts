@@ -1,5 +1,6 @@
 
 import { BaseAgent, AnalysisResult } from './BaseAgent';
+import { calculateCorrelation } from '@/utils/mathUtils';
 
 export class CorrelationAnalysisAgent extends BaseAgent {
   static async analyze(data: any): Promise<AnalysisResult> {
@@ -51,7 +52,7 @@ export class CorrelationAnalysisAgent extends BaseAgent {
     const stockReturns = this.calculateReturns(stockData.historical.map((d: any) => d.close));
     const spyReturns = this.calculateReturns(spyData.historical.map((d: any) => d.close));
 
-    const correlation = this.calculateCorrelation(stockReturns, spyReturns);
+    const correlation = calculateCorrelation(stockReturns, spyReturns);
     const beta = this.calculateBeta(stockReturns, spyReturns);
 
     return {
@@ -95,12 +96,12 @@ export class CorrelationAnalysisAgent extends BaseAgent {
     const stockPrices = stockData.historical.map((d: any) => d.close);
     const spyPrices = spyData.historical.map((d: any) => d.close);
 
-    const shortTermCorr = this.calculateCorrelation(
+    const shortTermCorr = calculateCorrelation(
       this.calculateReturns(stockPrices.slice(0, 30)),
       this.calculateReturns(spyPrices.slice(0, 30))
     );
 
-    const longTermCorr = this.calculateCorrelation(
+    const longTermCorr = calculateCorrelation(
       this.calculateReturns(stockPrices),
       this.calculateReturns(spyPrices)
     );

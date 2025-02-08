@@ -1,4 +1,6 @@
+
 import { BaseAgent, AnalysisResult } from './BaseAgent';
+import { getGeographicBreakdown } from '@/utils/geographicUtils';
 
 export class CurrencyExchangeAgent extends BaseAgent {
   static async analyze(symbol: string): Promise<AnalysisResult> {
@@ -71,7 +73,7 @@ export class CurrencyExchangeAgent extends BaseAgent {
     return {
       primaryCurrencies: this.identifyPrimaryCurrencies(operatingCountries),
       exposureLevel: this.calculateExposureLevel(operatingCountries),
-      geographicBreakdown: this.getGeographicBreakdown(operatingCountries),
+      geographicBreakdown: getGeographicBreakdown(operatingCountries),
       volatilityMetrics: this.calculateVolatilityMetrics(forexData, mainCurrency)
     };
   }
