@@ -5,6 +5,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { BreakoutStocksAgent } from "@/agents/BreakoutStocksAgent";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 interface BreakoutStock {
   symbol: string;
@@ -17,29 +19,40 @@ interface BreakoutStock {
 export const BreakoutStocks = () => {
   const [stocks, setStocks] = useState<BreakoutStock[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchBreakoutStocks = async () => {
-      try {
-        const analysis = await BreakoutStocksAgent.analyze();
-        if (analysis.analysis?.stocks) {
-          setStocks(analysis.analysis.stocks);
-          setLastUpdated(analysis.analysis.lastUpdated);
-        }
-      } catch (error) {
-        console.error('Error fetching breakout stocks:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch breakout stocks data",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+  const fetchBreakoutStocks = async () => {
+    try {
+      const analysis = await BreakoutStocksAgent.analyze();
+      if (analysis.analysis?.stocks) {
+        setStocks(analysis.analysis.stocks);
+        setLastUpdated(analysis.analysis.lastUpdated);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching breakout stocks:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch breakout stocks data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    toast({
+      title: "Refreshing",
+      description: "Updating breakout stocks data...",
+    });
+    await fetchBreakoutStocks();
+  };
+
+  useEffect(() => {
     fetchBreakoutStocks();
     const interval = setInterval(fetchBreakoutStocks, 300000); // Refresh every 5 minutes
     return () => clearInterval(interval);
@@ -63,9 +76,21 @@ export const BreakoutStocks = () => {
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           <span>Breakout Stocks</span>
-          <span className="text-sm text-muted-foreground">
-            Last updated: {new Date(lastUpdated).toLocaleTimeString()}
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground">
+              Last updated: {new Date(lastUpdated).toLocaleTimeString()}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
