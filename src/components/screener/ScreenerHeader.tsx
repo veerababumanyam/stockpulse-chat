@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Info, Download, Upload, RefreshCw } from "lucide-react";
+import { Info, Download, Upload, RefreshCw, Brain } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import {
   Tooltip,
@@ -8,8 +8,39 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 const ScreenerHeader = () => {
+  const [showAIDialog, setShowAIDialog] = useState(false);
+  const [aiQuery, setAiQuery] = useState("");
+  const { toast } = useToast();
+
+  const handleAISearch = () => {
+    if (!aiQuery.trim()) {
+      toast({
+        title: "Please enter a query",
+        description: "Describe what kind of stocks you're looking for",
+      });
+      return;
+    }
+
+    // TODO: Implement AI search logic
+    toast({
+      title: "AI Search",
+      description: "This feature will be implemented soon",
+    });
+    setShowAIDialog(false);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -20,6 +51,38 @@ const ScreenerHeader = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
+            <DialogTrigger asChild>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Brain className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>AI Stock Screener</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>AI Stock Screener</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Input
+                  placeholder="Example: Show me high growth tech stocks with strong profitability"
+                  value={aiQuery}
+                  onChange={(e) => setAiQuery(e.target.value)}
+                />
+                <Button onClick={handleAISearch} className="w-full">
+                  Search Stocks
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -104,3 +167,4 @@ const ScreenerHeader = () => {
 };
 
 export default ScreenerHeader;
+
