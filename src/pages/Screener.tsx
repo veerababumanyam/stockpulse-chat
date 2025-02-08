@@ -1,21 +1,12 @@
-
 import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
-import { FilterOptionComponent } from "@/components/screener/FilterOption";
 import { PineFormula } from "@/components/screener/PineFormula";
-import { Plus, TrendingUp, LineChart, BarChart3, DollarSign, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { FilterOption, ADRCalculation, ScreenerCategory, ScreenerResult } from "@/components/screener/types";
 import { useToast } from "@/hooks/use-toast";
-import { Separator } from "@/components/ui/separator";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import ScreenerHeader from "@/components/screener/ScreenerHeader";
+import ScreenerResults from "@/components/screener/ScreenerResults";
+import FilterCategorySection from "@/components/screener/FilterCategorySection";
+import ScreenerActions from "@/components/screener/ScreenerActions";
 
 const screenerCategories: ScreenerCategory[] = [
   {
@@ -186,7 +177,6 @@ const Screener = () => {
         throw new Error('FMP API key not found. Please add your Financial Modeling Prep API key in settings.');
       }
 
-      // Build the screening criteria based on filters
       let baseUrl = 'https://financialmodelingprep.com/api/v3/stock-screener';
       const params = new URLSearchParams();
       params.append('apikey', fmp);
@@ -241,95 +231,24 @@ const Screener = () => {
     }
   };
 
-  const renderFiltersByCategory = (category: string) => {
-    return filters
-      .filter(filter => filter.category === category)
-      .map((filter) => (
-        <FilterOptionComponent
-          key={filter.id}
-          option={filter}
-          onSelect={handleFilterChange}
-        />
-      ));
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="container mx-auto pt-20 p-4">
-        <h1 className="text-4xl font-bold mb-6">Stock Screener</h1>
+        <ScreenerHeader />
         <div className="space-y-8">
           {screenerCategories.map((category) => (
-            <div key={category.id} className="space-y-4">
-              <div className="flex items-center gap-2">
-                {category.id === 'volatility' && <TrendingUp className="h-5 w-5" />}
-                {category.id === 'momentum' && <LineChart className="h-5 w-5" />}
-                {category.id === 'sentiment' && <BarChart3 className="h-5 w-5" />}
-                {category.id === 'liquidity' && <DollarSign className="h-5 w-5" />}
-                <h2 className="text-2xl font-semibold">{category.label}</h2>
-              </div>
-              <p className="text-muted-foreground">{category.description}</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {renderFiltersByCategory(category.id)}
-              </div>
-              <Separator className="my-6" />
-            </div>
+            <FilterCategorySection
+              key={category.id}
+              category={category}
+              filters={filters}
+              onFilterChange={handleFilterChange}
+            />
           ))}
           
-          <div className="flex justify-between items-center">
-            <Button
-              variant="outline"
-              className="bg-background/50 backdrop-blur-sm border-border/50"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Custom Filter
-            </Button>
-
-            <Button
-              onClick={handleSearch}
-              disabled={isLoading}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : null}
-              Search Stocks
-            </Button>
-          </div>
+          <ScreenerActions isLoading={isLoading} onSearch={handleSearch} />
           
-          {results.length > 0 && (
-            <div className="mt-8">
-              <h2 className="text-2xl font-semibold mb-4">Results</h2>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Symbol</TableHead>
-                      <TableHead>Company</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Change %</TableHead>
-                      <TableHead>Sector</TableHead>
-                      <TableHead>Market Cap</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {results.map((stock) => (
-                      <TableRow key={stock.symbol}>
-                        <TableCell className="font-medium">{stock.symbol}</TableCell>
-                        <TableCell>{stock.companyName}</TableCell>
-                        <TableCell>${stock.price.toFixed(2)}</TableCell>
-                        <TableCell className={stock.change > 0 ? "text-green-600" : "text-red-600"}>
-                          {stock.change.toFixed(2)}%
-                        </TableCell>
-                        <TableCell>{stock.sector}</TableCell>
-                        <TableCell>${(stock.marketCap / 1e9).toFixed(2)}B</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          )}
+          <ScreenerResults results={results} />
           
           <div className="mt-8">
             <PineFormula onCalculate={calculateADR} />
@@ -341,4 +260,3 @@ const Screener = () => {
 };
 
 export default Screener;
-
