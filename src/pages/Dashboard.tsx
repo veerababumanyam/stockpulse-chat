@@ -1,4 +1,3 @@
-
 import { Navigation } from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { useState, useEffect } from "react";
@@ -11,6 +10,8 @@ import { MarketNews } from "@/components/dashboard/MarketNews";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
 import { MarketIndices } from "@/components/dashboard/MarketIndices";
 import { EconomicCalendar } from "@/components/dashboard/EconomicCalendar";
+import { EarningsCalendar } from "@/components/dashboard/EarningsCalendar";
+import { SECFilingsCalendar } from "@/components/dashboard/SECFilingsCalendar";
 
 interface StockData {
   symbol: string;
@@ -137,7 +138,11 @@ const Dashboard = () => {
                   <MarketNews />
                 </div>
 
-                <EconomicCalendar />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <EconomicCalendar />
+                  <EarningsCalendar />
+                  <SECFilingsCalendar />
+                </div>
               </>
             )}
           </div>
@@ -148,4 +153,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
