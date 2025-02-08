@@ -1,15 +1,13 @@
 
+import { ApiKeys } from './llm';
+
 export interface Message {
   content: string;
   isUser: boolean;
   data?: any;
 }
 
-export interface ApiKeys {
-  openai: string;
-  fmp: string;
-  deepseek?: string;
-}
+export { ApiKeys };
 
 export interface AnalysisResult {
   textOutput: string;
@@ -27,4 +25,3 @@ export interface AnalysisResult {
     results: Record<string, any>;
   };
 }
-
