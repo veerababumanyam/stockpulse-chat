@@ -11,13 +11,6 @@ export const defaultFilters: FilterOption[] = [
     category: 'basics'
   },
   {
-    id: "watchlist",
-    label: "Watchlist",
-    type: "select",
-    options: [{ label: "My Watchlist", value: "my-watchlist" }],
-    category: 'basics'
-  },
-  {
     id: "index",
     label: "Index",
     type: "select",
@@ -135,4 +128,3 @@ export const defaultFilters: FilterOption[] = [
     category: 'earnings'
   }
 ];
-
