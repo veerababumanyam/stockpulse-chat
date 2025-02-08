@@ -1,11 +1,9 @@
 
 import { useState } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import HeaderSection from "./sections/HeaderSection";
 import AISearchSection from "./sections/AISearchSection";
-import StatsSection from "./sections/StatsSection";
-import ScreenerResults from "./ScreenerResults";
 import { ScreenerResult } from "./types";
+import ScreenerResults from "./ScreenerResults";
 
 const ScreenerHeader = () => {
   const [results, setResults] = useState<ScreenerResult[]>([]);
@@ -13,11 +11,7 @@ const ScreenerHeader = () => {
   return (
     <ErrorBoundary>
       <div className="space-y-6 animate-fade-in">
-        <HeaderSection />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <AISearchSection onResultsFound={setResults} />
-          <StatsSection resultsCount={results.length} />
-        </div>
+        <AISearchSection onResultsFound={setResults} />
         <ScreenerResults results={results} />
       </div>
     </ErrorBoundary>
@@ -25,4 +19,3 @@ const ScreenerHeader = () => {
 };
 
 export default ScreenerHeader;
-
