@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
@@ -33,7 +32,7 @@ const generateDescription = (name: string) => {
   return `${name} specializing in ${name.toLowerCase()} analysis and insights`;
 };
 
-// Extract agent names from OrchestratorAgent.ts imports
+// Extract agent names from all available agents
 const agentClassNames = [
   "FundamentalAnalysis",
   "TechnicalAnalysis",
@@ -90,14 +89,22 @@ const agentClassNames = [
   "LiquidityAnalysis",
   "OptionsMarketAnalysis",
   "RegulatoryCompliance",
-  "InsiderTrading"
+  "InsiderTrading",
+  "Aggregator",
+  "BreakoutStocks",
+  "CommodityPrice",
+  "CurrencyExchange",
+  "EconomicData",
+  "GeopoliticalEvent",
+  "SocialMediaScraper",
+  "SupplyChainData"
 ];
 
 const defaultAgents: AgentConfig[] = agentClassNames.map(className => ({
   id: generateAgentId(className),
   name: generateAgentName(className),
   description: generateDescription(generateAgentName(className)),
-  model: "gpt-4o-mini",
+  model: "gpt-4-turbo",
   temperature: 0.3 + (Math.random() * 0.2),
   systemPrompt: `You are a ${generateAgentName(className).toLowerCase()} expert. Analyze and provide insights in your domain.`,
   active: true,
