@@ -3,82 +3,139 @@ import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { FilterOptionComponent } from "@/components/screener/FilterOption";
 import { PineFormula } from "@/components/screener/PineFormula";
-import { Plus } from "lucide-react";
+import { Plus, TrendingUp, LineChart, BarChart3, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FilterOption, ADRCalculation } from "@/components/screener/types";
+import { FilterOption, ADRCalculation, ScreenerCategory } from "@/components/screener/types";
 import { useToast } from "@/hooks/use-toast";
+import { Separator } from "@/components/ui/separator";
+
+const screenerCategories: ScreenerCategory[] = [
+  {
+    id: 'volatility',
+    label: 'Volatility & Price Movement',
+    description: 'Filter stocks based on volatility metrics and price action',
+    icon: 'trending-up'
+  },
+  {
+    id: 'momentum',
+    label: 'Momentum & Growth',
+    description: 'Find stocks with strong growth and momentum indicators',
+    icon: 'line-chart'
+  },
+  {
+    id: 'sentiment',
+    label: 'Market Sentiment',
+    description: 'Analyze market sentiment and analyst opinions',
+    icon: 'bar-chart'
+  },
+  {
+    id: 'liquidity',
+    label: 'Liquidity & Stability',
+    description: 'Filter by market cap and sector stability',
+    icon: 'dollar-sign'
+  }
+];
 
 const defaultFilters: FilterOption[] = [
+  // Base filters
   {
     id: "market",
     label: "Market",
     type: "select",
     options: [{ label: "US", value: "us" }],
+    category: 'liquidity'
   },
   {
     id: "watchlist",
     label: "Watchlist",
     type: "select",
     options: [{ label: "My Watchlist", value: "my-watchlist" }],
+    category: 'liquidity'
   },
+  // Volatility & Price Movement
   {
-    id: "index",
-    label: "Index",
-    type: "select",
-    options: [
-      { label: "S&P 500", value: "sp500" },
-      { label: "NASDAQ", value: "nasdaq" },
-    ],
-  },
-  {
-    id: "price",
-    label: "Price",
+    id: "atr",
+    label: "ATR %",
     type: "range",
+    category: 'volatility'
   },
   {
-    id: "change",
-    label: "Change %",
+    id: "beta",
+    label: "Beta",
     type: "range",
+    category: 'volatility'
   },
   {
-    id: "marketCap",
-    label: "Market cap",
+    id: "priceChange",
+    label: "Price Change %",
     type: "range",
+    category: 'volatility'
   },
+  // Momentum & Growth
   {
-    id: "pe",
-    label: "P/E",
+    id: "revenueGrowth",
+    label: "Revenue Growth %",
     type: "range",
+    category: 'momentum'
   },
   {
     id: "eps",
-    label: "EPS dil growth",
+    label: "EPS Growth %",
     type: "range",
+    category: 'momentum'
   },
   {
-    id: "dividend",
-    label: "Div yield %",
+    id: "peg",
+    label: "PEG Ratio",
     type: "range",
+    category: 'momentum'
   },
   {
-    id: "sector",
-    label: "Sector",
-    type: "select",
-    options: [
-      { label: "Technology", value: "technology" },
-      { label: "Healthcare", value: "healthcare" },
-      { label: "Finance", value: "finance" },
-    ],
+    id: "roe",
+    label: "ROE %",
+    type: "range",
+    category: 'momentum'
   },
+  // Market Sentiment
   {
     id: "analystRating",
     label: "Analyst Rating",
     type: "select",
+    category: 'sentiment',
     options: [
       { label: "Strong Buy", value: "strong_buy" },
       { label: "Buy", value: "buy" },
       { label: "Hold", value: "hold" },
       { label: "Sell", value: "sell" },
+    ],
+  },
+  {
+    id: "performance",
+    label: "Performance",
+    type: "select",
+    category: 'sentiment',
+    options: [
+      { label: "Weekly", value: "weekly" },
+      { label: "Monthly", value: "monthly" },
+      { label: "Yearly", value: "yearly" },
+    ],
+  },
+  // Liquidity & Stability
+  {
+    id: "marketCap",
+    label: "Market Cap",
+    type: "range",
+    category: 'liquidity'
+  },
+  {
+    id: "sector",
+    label: "Sector",
+    type: "select",
+    category: 'liquidity',
+    options: [
+      { label: "Technology", value: "technology" },
+      { label: "Healthcare", value: "healthcare" },
+      { label: "Finance", value: "finance" },
     ],
   },
 ];
@@ -97,7 +154,6 @@ const Screener = () => {
 
   const calculateADR = (values: ADRCalculation) => {
     const { adrLen, high, low, close } = values;
-    // This is a simplified calculation since we don't have historical data
     const adr = (high - low) / adrLen;
     const adrPercentage = (adr / close) * 100;
 
@@ -107,26 +163,48 @@ const Screener = () => {
     });
   };
 
+  const renderFiltersByCategory = (category: string) => {
+    return filters
+      .filter(filter => filter.category === category)
+      .map((filter) => (
+        <FilterOptionComponent
+          key={filter.id}
+          option={filter}
+          onSelect={handleFilterChange}
+        />
+      ));
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="container mx-auto pt-20 p-4">
         <h1 className="text-4xl font-bold mb-6">Stock Screener</h1>
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-            {filters.map((filter) => (
-              <FilterOptionComponent
-                key={filter.id}
-                option={filter}
-                onSelect={handleFilterChange}
-              />
-            ))}
+        <div className="space-y-8">
+          {screenerCategories.map((category) => (
+            <div key={category.id} className="space-y-4">
+              <div className="flex items-center gap-2">
+                {category.id === 'volatility' && <TrendingUp className="h-5 w-5" />}
+                {category.id === 'momentum' && <LineChart className="h-5 w-5" />}
+                {category.id === 'sentiment' && <BarChart3 className="h-5 w-5" />}
+                {category.id === 'liquidity' && <DollarSign className="h-5 w-5" />}
+                <h2 className="text-2xl font-semibold">{category.label}</h2>
+              </div>
+              <p className="text-muted-foreground">{category.description}</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {renderFiltersByCategory(category.id)}
+              </div>
+              <Separator className="my-6" />
+            </div>
+          ))}
+          
+          <div className="flex justify-end">
             <Button
               variant="outline"
-              className="w-full h-10 bg-background/50 backdrop-blur-sm border-border/50"
+              className="bg-background/50 backdrop-blur-sm border-border/50"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Filter
+              Add Custom Filter
             </Button>
           </div>
           
