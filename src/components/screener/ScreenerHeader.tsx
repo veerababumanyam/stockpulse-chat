@@ -32,24 +32,42 @@ const ScreenerHeader = () => {
       toast({
         title: "Please enter a query",
         description: "Describe what kind of stocks you're looking for",
+        variant: "destructive"
       });
       return;
     }
 
     setIsProcessing(true);
     try {
-      // Generate screening criteria using LLM
+      // Generate screening criteria using enhanced logic
       const criteria = await generateScreeningCriteria(aiQuery);
       console.log("Generated criteria:", criteria);
+
+      if (criteria.length === 0) {
+        toast({
+          title: "No criteria found",
+          description: "Please try rephrasing your query with more specific requirements",
+          variant: "destructive"
+        });
+        return;
+      }
 
       // Fetch matching stocks using FMP API
       const results = await fetchStockScreenerResults(criteria);
       console.log("Screening results:", results);
 
-      toast({
-        title: "Search completed",
-        description: `Found ${results.length} stocks matching your criteria`,
-      });
+      if (results.length === 0) {
+        toast({
+          title: "No matches found",
+          description: "No stocks match your criteria. Try adjusting your requirements.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Search completed",
+          description: `Found ${results.length} stocks matching your criteria`,
+        });
+      }
       
       // TODO: Update results in parent component
       setShowAIDialog(false);

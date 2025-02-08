@@ -111,9 +111,16 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
       throw new Error('FMP API key not found');
     }
 
-    // Build URL with criteria
+    // Build base URL with common parameters
     let url = `https://financialmodelingprep.com/api/v3/stock-screener?apikey=${fmp}`;
     
+    // Add exchange filter for major exchanges
+    url += '&exchange=NYSE,NASDAQ';
+    
+    // Add trading status filter for active stocks
+    url += '&isActivelyTrading=true';
+    
+    // Add criteria filters
     criteria.forEach(({ metric, operator, value }) => {
       if (operator === 'between' && Array.isArray(value)) {
         url += `&${metric}MoreThan=${value[0]}&${metric}LessThan=${value[1]}`;
@@ -122,19 +129,21 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
       } else if (operator === 'less') {
         url += `&${metric}LessThan=${value}`;
       } else if (operator === 'equal') {
-        url += `&${metric}Equals=${value}`;
+        url += `&${metric}=${value}`;
       }
     });
 
-    console.log('Fetching from URL:', url);
+    console.log('Fetching screener results from:', url);
 
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error('Failed to fetch screening results');
+      throw new Error(`Failed to fetch screening results: ${response.statusText}`);
     }
 
     const data = await response.json();
-    return data;
+    
+    // Sort results by market cap by default
+    return data.sort((a: any, b: any) => b.marketCap - a.marketCap);
   } catch (error) {
     console.error('Error fetching stock screener results:', error);
     throw error;
