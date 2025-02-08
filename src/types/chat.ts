@@ -8,6 +8,7 @@ export interface Message {
 export interface ApiKeys {
   openai: string;
   fmp: string;
+  deepseek?: string;
 }
 
 export interface AnalysisResult {
@@ -26,3 +27,4 @@ export interface AnalysisResult {
     results: Record<string, any>;
   };
 }
+
