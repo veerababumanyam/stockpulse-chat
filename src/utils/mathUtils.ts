@@ -9,7 +9,7 @@ export const calculateMovingAverage = (data: number[], period: number): number =
   return sum / period;
 };
 
-export const calculateStandardDeviation = (data: number[]): number {
+export const calculateStandardDeviation = (data: number[]): number => {
   const mean = data.reduce((a, b) => a + b, 0) / data.length;
   const squareDiffs = data.map(value => Math.pow(value - mean, 2));
   const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / squareDiffs.length;
