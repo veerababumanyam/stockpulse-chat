@@ -63,14 +63,12 @@ const ChatWindow = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    // Add user message to chat
     const userMessage: MessageType = { content: input, isUser: true };
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
     try {
-      // Validate API keys
       if (!apiKeys.fmp) {
         throw new Error('FMP API key is required. Please set it in the API Keys page.');
       }
@@ -79,29 +77,23 @@ const ChatWindow = () => {
       const stockData = await fetchStockData(input, apiKeys.fmp);
       
       if (!stockData) {
-        throw new Error('No stock data found for the query');
+        throw new Error('No stock data found for the given symbol');
       }
 
       console.log('Retrieved stock data:', stockData);
-
-      // Run analysis through OrchestratorAgent
       console.log('Starting orchestrator analysis...');
-      const analysis = await OrchestratorAgent.orchestrateAnalysis(stockData);
-      console.log('Orchestrator analysis result:', analysis);
       
-      if (!analysis || typeof analysis === 'string') {
+      const analysis = await OrchestratorAgent.orchestrateAnalysis(stockData);
+      console.log('Orchestrator analysis complete:', analysis);
+
+      if (!analysis || !analysis.textOutput) {
         throw new Error('Invalid analysis response');
       }
 
-      // Format the analysis result
-      const analysisResult = analysis as unknown as AnalysisResult;
-      console.log('Formatted analysis result:', analysisResult);
-
-      // Add AI response to chat
       const aiMessage: MessageType = {
-        content: analysisResult.textOutput,
+        content: analysis.textOutput,
         isUser: false,
-        data: analysisResult.formattedData
+        data: analysis.formattedData
       };
 
       setMessages(prev => [...prev, aiMessage]);
@@ -124,7 +116,7 @@ const ChatWindow = () => {
   };
 
   return (
-    <div className="h-[90vh] glass-panel flex flex-col bg-[#F1F0FB]/80 border-[#E5DEFF]">
+    <div className="h-[90vh] glass-panel flex flex-col bg-[#F1F0FB]/80 dark:bg-gray-900/80 border-[#E5DEFF] dark:border-gray-700">
       <div className="flex-1 overflow-y-auto p-4 scrollbar-none">
         {messages.map((message, index) => (
           <Message 
@@ -134,7 +126,7 @@ const ChatWindow = () => {
           />
         ))}
         {isLoading && (
-          <div className="bg-[#E5DEFF]/50 mr-auto w-fit max-w-[95%] mb-4 p-3 rounded-lg">
+          <div className="bg-[#E5DEFF]/50 dark:bg-gray-800/50 mr-auto w-fit max-w-[95%] mb-4 p-3 rounded-lg text-gray-900 dark:text-gray-100">
             Analyzing stock data...
           </div>
         )}
