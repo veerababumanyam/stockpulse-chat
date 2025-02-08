@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { loadModels } from "@/utils/modelManagement";
 import { ModelSelector } from "./ModelSelector";
 import { TemperatureSlider } from "./TemperatureSlider";
+import { defaultConfig, RAGConfig } from "./rag/types";
 
 interface AgentConfig {
   id: string;
@@ -17,6 +19,7 @@ interface AgentConfig {
   temperature: number;
   systemPrompt: string;
   active: boolean;
+  rag?: RAGConfig;
 }
 
 interface AgentConfigDialogProps {
@@ -39,6 +42,7 @@ export const AgentConfigDialog = ({
     temperature: 0.7,
     systemPrompt: "",
     active: true,
+    rag: defaultConfig,
   });
 
   const [openCombobox, setOpenCombobox] = useState(false);
@@ -57,7 +61,10 @@ export const AgentConfigDialog = ({
 
   useEffect(() => {
     if (agent) {
-      setConfig(agent);
+      setConfig({
+        ...agent,
+        rag: agent.rag || defaultConfig,
+      });
     } else {
       setConfig({
         name: "",
@@ -66,9 +73,20 @@ export const AgentConfigDialog = ({
         temperature: 0.7,
         systemPrompt: "",
         active: true,
+        rag: defaultConfig,
       });
     }
   }, [agent, flatModels]);
+
+  const handleRAGToggle = (enabled: boolean) => {
+    setConfig(prev => ({
+      ...prev,
+      rag: {
+        ...(prev.rag || defaultConfig),
+        enabled,
+      },
+    }));
+  };
 
   const handleSave = () => {
     if (!config.name || !config.description || !config.systemPrompt || !config.model) {
@@ -82,6 +100,7 @@ export const AgentConfigDialog = ({
       temperature: config.temperature || 0.7,
       systemPrompt: config.systemPrompt,
       active: config.active || true,
+      rag: config.rag,
     });
   };
 
@@ -125,6 +144,19 @@ export const AgentConfigDialog = ({
             onTemperatureChange={(value) => setConfig({ ...config, temperature: value })}
           />
           <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="rag">Enable RAG</Label>
+              <Switch
+                id="rag"
+                checked={config.rag?.enabled || false}
+                onCheckedChange={handleRAGToggle}
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Enable Retrieval Augmented Generation for enhanced context-aware responses
+            </p>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="systemPrompt">System Prompt</Label>
             <Textarea
               id="systemPrompt"
@@ -145,4 +177,3 @@ export const AgentConfigDialog = ({
     </Dialog>
   );
 };
-

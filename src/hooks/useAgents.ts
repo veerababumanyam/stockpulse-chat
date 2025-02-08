@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
 import { BaseAnalysisAgent } from "@/agents/types/AgentTypes";
+import { RAGConfig, defaultConfig } from "@/components/agents/rag/types";
 
 interface AgentConfig {
   id: string;
@@ -11,6 +13,7 @@ interface AgentConfig {
   temperature: number;
   systemPrompt: string;
   active: boolean;
+  rag?: RAGConfig;
 }
 
 const STORAGE_KEY = 'ai-agents-config';
@@ -95,9 +98,10 @@ const defaultAgents: AgentConfig[] = agentClassNames.map(className => ({
   name: generateAgentName(className),
   description: generateDescription(generateAgentName(className)),
   model: "gpt-4o-mini",
-  temperature: 0.3 + (Math.random() * 0.2), // Random temperature between 0.3 and 0.5
+  temperature: 0.3 + (Math.random() * 0.2),
   systemPrompt: `You are a ${generateAgentName(className).toLowerCase()} expert. Analyze and provide insights in your domain.`,
-  active: true
+  active: true,
+  rag: defaultConfig,
 }));
 
 export const useAgents = () => {
@@ -110,10 +114,13 @@ export const useAgents = () => {
       const parsedAgents = JSON.parse(savedAgents);
       setAgents(parsedAgents);
       
-      // Register existing agents with orchestrator
       parsedAgents.forEach((agent: AgentConfig) => {
         if (agent.active) {
           const dynamicAgent = new BaseAnalysisAgent();
+          if (agent.rag?.enabled) {
+            // Configure RAG capabilities for the agent
+            dynamicAgent.configureRAG(agent.rag);
+          }
           OrchestratorAgent.registerAgent(agent.id, dynamicAgent);
         }
       });
@@ -121,10 +128,12 @@ export const useAgents = () => {
       setAgents(defaultAgents);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultAgents));
       
-      // Register default agents with orchestrator
       defaultAgents.forEach(agent => {
         if (agent.active) {
           const dynamicAgent = new BaseAnalysisAgent();
+          if (agent.rag?.enabled) {
+            dynamicAgent.configureRAG(agent.rag);
+          }
           OrchestratorAgent.registerAgent(agent.id, dynamicAgent);
         }
       });
@@ -139,9 +148,11 @@ export const useAgents = () => {
       
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newAgents));
 
-      // Register new/updated agent with orchestrator if active
       if (config.active) {
         const dynamicAgent = new BaseAnalysisAgent();
+        if (config.rag?.enabled) {
+          dynamicAgent.configureRAG(config.rag);
+        }
         OrchestratorAgent.registerAgent(config.id || crypto.randomUUID(), dynamicAgent);
       }
 
