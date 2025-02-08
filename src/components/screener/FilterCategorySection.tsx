@@ -1,7 +1,7 @@
 
 import { FilterOption, ScreenerCategory } from "./types";
 import { FilterOptionComponent } from "./FilterOption";
-import { Separator } from "@/components/ui/separator";
+import { Card } from "@/components/ui/card";
 import { TrendingUp, LineChart, BarChart3, DollarSign } from "lucide-react";
 
 interface FilterCategorySectionProps {
@@ -10,32 +10,42 @@ interface FilterCategorySectionProps {
   onFilterChange: (id: string, value: any) => void;
 }
 
-const FilterCategorySection = ({ category, filters, onFilterChange }: FilterCategorySectionProps) => {
+const FilterCategorySection = ({
+  category,
+  filters,
+  onFilterChange,
+}: FilterCategorySectionProps) => {
   const getCategoryIcon = (id: string) => {
     switch (id) {
-      case 'volatility':
+      case "volatility":
         return <TrendingUp className="h-5 w-5" />;
-      case 'momentum':
+      case "momentum":
         return <LineChart className="h-5 w-5" />;
-      case 'sentiment':
+      case "sentiment":
         return <BarChart3 className="h-5 w-5" />;
-      case 'liquidity':
+      case "liquidity":
         return <DollarSign className="h-5 w-5" />;
       default:
         return null;
     }
   };
 
-  const categoryFilters = filters.filter(filter => filter.category === category.id);
+  const categoryFilters = filters.filter(
+    (filter) => filter.category === category.id
+  );
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        {getCategoryIcon(category.id)}
-        <h2 className="text-2xl font-semibold">{category.label}</h2>
+    <Card className="p-6 bg-background/50 backdrop-blur-sm border-border/50">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 rounded-lg bg-primary/10">
+          {getCategoryIcon(category.id)}
+        </div>
+        <div>
+          <h2 className="text-2xl font-semibold">{category.label}</h2>
+          <p className="text-sm text-muted-foreground">{category.description}</p>
+        </div>
       </div>
-      <p className="text-muted-foreground">{category.description}</p>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {categoryFilters.map((filter) => (
           <FilterOptionComponent
             key={filter.id}
@@ -44,10 +54,8 @@ const FilterCategorySection = ({ category, filters, onFilterChange }: FilterCate
           />
         ))}
       </div>
-      <Separator className="my-6" />
-    </div>
+    </Card>
   );
 };
 
 export default FilterCategorySection;
-
