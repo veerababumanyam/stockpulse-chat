@@ -27,3 +27,20 @@ export type ScreenerCategory = {
   description: string;
   icon: string;
 };
+
+export type ScreenerResult = {
+  symbol: string;
+  companyName: string;
+  price: number;
+  change: number;
+  sector: string;
+  marketCap: number;
+  beta: number;
+  volume: number;
+  atr?: number;
+  revenueGrowth?: number;
+  eps?: number;
+  peg?: number;
+  roe?: number;
+};
+
