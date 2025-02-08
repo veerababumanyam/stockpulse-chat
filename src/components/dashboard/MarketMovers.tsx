@@ -42,7 +42,7 @@ const MarketMoverCard = ({ title, stocks, icon: Icon }: {
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-lg">{stock.symbol}</span>
                 <span className={`text-sm font-medium ${getPriceChangeColor(stock.changePercent)}`}>
-                  {formatPercentage(stock.changePercent / 100)}
+                  {formatPercentage(stock.changePercent)}
                 </span>
               </div>
               <div className="text-sm text-muted-foreground truncate max-w-[200px]">
