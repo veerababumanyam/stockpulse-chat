@@ -89,7 +89,7 @@ const AISearchSection = ({ onResultsFound }: AISearchSectionProps) => {
 
   return (
     <Card className="p-6 bg-background/50 backdrop-blur-sm border-border/50">
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 relative">
         <div>
           <h3 className="text-lg font-semibold">AI Stock Screener</h3>
           <p className="text-sm text-muted-foreground mb-4">
@@ -101,11 +101,12 @@ const AISearchSection = ({ onResultsFound }: AISearchSectionProps) => {
               value={aiQuery}
               onChange={(e) => setAiQuery(e.target.value)}
               className="flex-1"
+              disabled={isProcessing}
             />
             <Button 
               onClick={handleAISearch}
               disabled={isProcessing}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 whitespace-nowrap"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 whitespace-nowrap transition-all duration-300"
             >
               {isProcessing ? (
                 <>
@@ -127,3 +128,4 @@ const AISearchSection = ({ onResultsFound }: AISearchSectionProps) => {
 };
 
 export default AISearchSection;
+

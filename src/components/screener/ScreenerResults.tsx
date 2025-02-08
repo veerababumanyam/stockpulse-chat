@@ -8,15 +8,38 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
-import { ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import { ScreenerResult } from "./types";
 
 interface ScreenerResultsProps {
   results: ScreenerResult[];
+  isLoading?: boolean;
 }
 
-const ScreenerResults = ({ results }: ScreenerResultsProps) => {
-  if (results.length === 0) return null;
+const ScreenerResults = ({ results, isLoading = false }: ScreenerResultsProps) => {
+  if (isLoading) {
+    return (
+      <Card className="mt-8 p-8 bg-background/50 backdrop-blur-sm border-border/50 animate-fade-in">
+        <div className="flex flex-col items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="mt-4 text-muted-foreground">Loading results...</p>
+        </div>
+      </Card>
+    );
+  }
+
+  if (results.length === 0) {
+    return (
+      <Card className="mt-8 p-8 bg-background/50 backdrop-blur-sm border-border/50 animate-fade-in">
+        <div className="flex flex-col items-center justify-center text-center">
+          <p className="text-lg font-semibold">No results found</p>
+          <p className="text-muted-foreground mt-2">
+            Try adjusting your search criteria or entering a different query
+          </p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="mt-8 bg-background/50 backdrop-blur-sm border-border/50 animate-fade-in">

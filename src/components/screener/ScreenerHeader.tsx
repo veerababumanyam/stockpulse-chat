@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import HeaderSection from "./sections/HeaderSection";
 import AISearchSection from "./sections/AISearchSection";
 import StatsSection from "./sections/StatsSection";
@@ -10,12 +11,14 @@ const ScreenerHeader = () => {
   const [results, setResults] = useState<ScreenerResult[]>([]);
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <HeaderSection />
-      <AISearchSection onResultsFound={setResults} />
-      <StatsSection resultsCount={results.length} />
-      <ScreenerResults results={results} />
-    </div>
+    <ErrorBoundary>
+      <div className="space-y-4 animate-fade-in">
+        <HeaderSection />
+        <AISearchSection onResultsFound={setResults} />
+        <StatsSection resultsCount={results.length} />
+        <ScreenerResults results={results} />
+      </div>
+    </ErrorBoundary>
   );
 };
 
