@@ -140,7 +140,6 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
               <TableHead>{renderSortableHeader('Company', 'companyName')}</TableHead>
               <TableHead className="text-right">{renderSortableHeader('Price', 'price')}</TableHead>
               <TableHead className="text-right">{renderSortableHeader('Change', 'change')}</TableHead>
-              <TableHead className="text-right">{renderSortableHeader('Market Cap', 'marketCap')}</TableHead>
               <TableHead className="text-right">{renderSortableHeader('Volume', 'volume')}</TableHead>
               <TableHead>{renderSortableHeader('Sector', 'sector')}</TableHead>
               <TableHead className="text-right">{renderSortableHeader('AI Signal', 'aiAnalysis')}</TableHead>
@@ -158,7 +157,6 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
                 <TableCell className={`text-right ${getPriceChangeColor(stock.change)}`}>
                   {stock.change.toFixed(2)} ({stock.changePercent.toFixed(2)}%)
                 </TableCell>
-                <TableCell className="text-right">{formatLargeNumber(stock.marketCap)}</TableCell>
                 <TableCell className="text-right">{formatLargeNumber(stock.volume)}</TableCell>
                 <TableCell>{stock.sector}</TableCell>
                 <TableCell className={`text-right font-medium ${getSignalColor(stock.aiAnalysis?.signal || 'HOLD')}`}>
