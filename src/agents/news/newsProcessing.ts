@@ -21,3 +21,4 @@ export const processNewsData = (news: any[]): ScrapedNews[] => {
       recommendation: extractRecommendationFromText(item.title + ' ' + item.text)
     }));
 };
+
