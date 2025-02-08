@@ -10,7 +10,7 @@ const ScreenerHeader = () => {
   const [results, setResults] = useState<ScreenerResult[]>([]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <HeaderSection />
       <AISearchSection onResultsFound={setResults} />
       <StatsSection resultsCount={results.length} />
@@ -20,3 +20,4 @@ const ScreenerHeader = () => {
 };
 
 export default ScreenerHeader;
+

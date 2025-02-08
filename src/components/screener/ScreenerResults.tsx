@@ -19,7 +19,7 @@ const ScreenerResults = ({ results }: ScreenerResultsProps) => {
   if (results.length === 0) return null;
 
   return (
-    <Card className="mt-8 bg-background/50 backdrop-blur-sm border-border/50">
+    <Card className="mt-8 bg-background/50 backdrop-blur-sm border-border/50 animate-fade-in">
       <div className="p-4 border-b border-border/50">
         <h2 className="text-2xl font-semibold">Screener Results</h2>
         <p className="text-sm text-muted-foreground">
@@ -40,10 +40,15 @@ const ScreenerResults = ({ results }: ScreenerResultsProps) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {results.map((stock) => (
+            {results.map((stock, index) => (
               <TableRow
                 key={stock.symbol}
-                className="hover:bg-accent/50 cursor-pointer"
+                className="hover:bg-accent/50 cursor-pointer transition-colors duration-200"
+                style={{
+                  animation: `fade-in 0.3s ease-out ${index * 0.05}s`,
+                  opacity: 0,
+                  animationFillMode: "forwards"
+                }}
               >
                 <TableCell className="font-medium">{stock.symbol}</TableCell>
                 <TableCell>{stock.companyName}</TableCell>
@@ -57,9 +62,9 @@ const ScreenerResults = ({ results }: ScreenerResultsProps) => {
                 >
                   <span className="flex items-center justify-end gap-1">
                     {stock.change > 0 ? (
-                      <ArrowUp className="h-4 w-4" />
+                      <ArrowUp className="h-4 w-4 transition-transform hover:translate-y-[-2px]" />
                     ) : (
-                      <ArrowDown className="h-4 w-4" />
+                      <ArrowDown className="h-4 w-4 transition-transform hover:translate-y-[2px]" />
                     )}
                     {Math.abs(stock.change).toFixed(2)}%
                   </span>
@@ -81,3 +86,4 @@ const ScreenerResults = ({ results }: ScreenerResultsProps) => {
 };
 
 export default ScreenerResults;
+

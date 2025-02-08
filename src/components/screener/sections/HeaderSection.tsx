@@ -10,7 +10,7 @@ import {
 
 const HeaderSection = () => {
   return (
-    <div className="flex justify-between items-center">
+    <div className="flex justify-between items-center transition-all duration-300 hover:bg-accent/5 p-4 rounded-lg -mx-4">
       <div>
         <h1 className="text-4xl font-bold">Stock Screener</h1>
         <p className="text-muted-foreground mt-2">
@@ -21,8 +21,8 @@ const HeaderSection = () => {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="icon">
-                <RefreshCw className="h-4 w-4" />
+              <Button variant="outline" size="icon" className="transition-transform duration-200 hover:scale-105">
+                <RefreshCw className="h-4 w-4 transition-transform hover:rotate-180 duration-500" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -34,8 +34,8 @@ const HeaderSection = () => {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Download className="h-4 w-4" />
+              <Button variant="outline" size="icon" className="transition-transform duration-200 hover:scale-105">
+                <Download className="h-4 w-4 transition-transform hover:-translate-y-1 duration-200" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -47,8 +47,8 @@ const HeaderSection = () => {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Upload className="h-4 w-4" />
+              <Button variant="outline" size="icon" className="transition-transform duration-200 hover:scale-105">
+                <Upload className="h-4 w-4 transition-transform hover:translate-y-1 duration-200" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -62,3 +62,4 @@ const HeaderSection = () => {
 };
 
 export default HeaderSection;
+
