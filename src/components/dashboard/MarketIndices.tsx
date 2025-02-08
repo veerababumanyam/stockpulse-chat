@@ -32,7 +32,26 @@ export const MarketIndices = () => {
         if (!response.ok) throw new Error('Failed to fetch indices');
         
         const data = await response.json();
-        setIndices(data.slice(0, 5));
+        
+        // Filter out any malformed data
+        const validIndices = data
+          .slice(0, 5)
+          .filter((index: any) => 
+            index?.symbol && 
+            index?.name && 
+            typeof index?.price === 'number' && 
+            typeof index?.change === 'number' && 
+            typeof index?.changePercentage === 'number'
+          )
+          .map((index: any) => ({
+            symbol: index.symbol,
+            name: index.name,
+            price: index.price,
+            change: index.change,
+            changePercent: index.changePercentage
+          }));
+
+        setIndices(validIndices);
       } catch (error) {
         console.error('Error fetching indices:', error);
         toast({
@@ -82,7 +101,9 @@ export const MarketIndices = () => {
                 <div className="text-sm text-muted-foreground">{index.name}</div>
               </div>
               <div className="text-right">
-                <div className="font-medium">${index.price.toFixed(2)}</div>
+                <div className="font-medium">
+                  ${typeof index.price === 'number' ? index.price.toFixed(2) : 'N/A'}
+                </div>
                 <div className={`text-sm flex items-center gap-1 ${
                   index.change >= 0 ? 'text-green-500' : 'text-red-500'
                 }`}>
@@ -91,7 +112,9 @@ export const MarketIndices = () => {
                   ) : (
                     <TrendingDown className="w-4 h-4" />
                   )}
-                  {index.changePercent.toFixed(2)}%
+                  {typeof index.changePercent === 'number' ? 
+                    `${index.changePercent.toFixed(2)}%` : 
+                    'N/A'}
                 </div>
               </div>
             </div>
