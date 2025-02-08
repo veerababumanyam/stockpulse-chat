@@ -17,13 +17,13 @@ const FilterCategorySection = ({
 }: FilterCategorySectionProps) => {
   const getCategoryIcon = (id: string) => {
     switch (id) {
-      case "volatility":
-        return <TrendingUp className="h-5 w-5" />;
-      case "momentum":
+      case "basics":
         return <LineChart className="h-5 w-5" />;
-      case "sentiment":
+      case "fundamentals":
         return <BarChart3 className="h-5 w-5" />;
-      case "liquidity":
+      case "technicals":
+        return <TrendingUp className="h-5 w-5" />;
+      case "earnings":
         return <DollarSign className="h-5 w-5" />;
       default:
         return null;
