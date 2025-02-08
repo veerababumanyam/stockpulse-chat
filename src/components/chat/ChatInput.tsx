@@ -14,7 +14,7 @@ const ChatInput = ({ input, isLoading, onInputChange, onSubmit }: ChatInputProps
   return (
     <form
       onSubmit={onSubmit}
-      className="p-4 border-t border-[#E5DEFF]/50 bg-white/50 backdrop-blur-sm mt-auto"
+      className="p-4 border-t border-[#E5DEFF]/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm mt-auto"
     >
       <div className="flex gap-2">
         <Input
@@ -22,7 +22,7 @@ const ChatInput = ({ input, isLoading, onInputChange, onSubmit }: ChatInputProps
           onChange={(e) => onInputChange(e.target.value)}
           placeholder="Ask about stocks..."
           disabled={isLoading}
-          className="bg-white/70"
+          className="bg-white/70 dark:bg-gray-800/70 placeholder:text-gray-500 dark:placeholder:text-gray-400"
         />
         <Button type="submit" disabled={isLoading} className="bg-[#8B5CF6] hover:bg-[#7C3AED]">
           <Send className="w-5 h-5" />
