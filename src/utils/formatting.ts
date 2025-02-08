@@ -43,4 +43,3 @@ export const formatVolume = (volume: number) => {
     compactDisplay: 'short'
   }).format(volume);
 };
-
