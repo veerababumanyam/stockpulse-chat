@@ -21,46 +21,55 @@ export const MarketIndices = () => {
     const fetchIndices = async () => {
       try {
         const savedKeys = localStorage.getItem('apiKeys');
+        console.log('Saved API keys:', savedKeys);
+        
         if (!savedKeys) {
           console.error('API key not found in localStorage');
           throw new Error('API key not found');
         }
         
-        const { fmp } = JSON.parse(savedKeys);
+        const parsedKeys = JSON.parse(savedKeys);
+        console.log('Parsed API keys:', parsedKeys);
+        
+        const { fmp } = parsedKeys;
         if (!fmp) {
           console.error('FMP API key not found in parsed keys');
           throw new Error('FMP API key not found');
         }
 
-        console.log('Fetching market indices...');
-        const response = await fetch(
-          `https://financialmodelingprep.com/api/v3/quotes/index?apikey=${fmp}`
-        );
+        console.log('Using FMP API key:', fmp.slice(0, 4) + '...');
+        
+        const url = `https://financialmodelingprep.com/api/v3/quotes/index?apikey=${fmp}`;
+        console.log('Fetching from URL:', url);
+        
+        const response = await fetch(url);
+        console.log('Response status:', response.status);
 
         if (!response.ok) {
           console.error('API response not OK:', response.status);
-          throw new Error('Failed to fetch indices');
+          throw new Error(`Failed to fetch indices: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('Received data:', data);
+        console.log('Raw API response:', data);
         
         if (!Array.isArray(data)) {
           console.error('Received data is not an array:', data);
           throw new Error('Invalid data format');
         }
 
-        // Filter and map the most important indices
+        // Filter for specific major indices
         const importantSymbols = ['^GSPC', '^DJI', '^IXIC', '^RUT', '^VIX'];
-        const validIndices = data
-          .filter((index: any) => importantSymbols.includes(index?.symbol))
-          .map((index: any) => ({
-            symbol: index.symbol,
-            name: index.name || 'Unknown',
-            price: Number(index.price) || 0,
-            change: Number(index.change) || 0,
-            changePercent: Number(index.changesPercentage) || 0
-          }));
+        const filteredData = data.filter((index: any) => importantSymbols.includes(index?.symbol));
+        console.log('Filtered indices:', filteredData);
+
+        const validIndices = filteredData.map((index: any) => ({
+          symbol: index.symbol,
+          name: index.name || 'Unknown',
+          price: Number(index.price) || 0,
+          change: Number(index.change) || 0,
+          changePercent: Number(index.changesPercentage) || 0
+        }));
 
         console.log('Processed indices:', validIndices);
         setIndices(validIndices);
