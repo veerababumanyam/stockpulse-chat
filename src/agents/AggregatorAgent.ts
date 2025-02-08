@@ -67,17 +67,14 @@ export class AggregatorAgent extends BaseAgent {
           profile: { companyName: rec.companyName }
         });
 
-        if (typeof analysisResult === 'string') {
-          console.error('Unexpected string result from orchestrateAnalysis');
-          continue;
-        }
-
+        const analysis = analysisResult?.analysis || {};
+        
         rec.aiAnalysis = {
-          summary: analysisResult.fundamental?.analysis?.summary?.overview || '',
-          sentiment: analysisResult.sentiment?.analysis?.currentSentiment || '',
-          riskLevel: analysisResult.risk?.analysis?.riskLevel || '',
-          technicalSignals: analysisResult.technical?.analysis?.signals || [],
-          fundamentalFactors: analysisResult.fundamental?.analysis?.keyFactors || []
+          summary: analysis.fundamental?.summary?.overview || '',
+          sentiment: analysis.sentiment?.currentSentiment || '',
+          riskLevel: analysis.risk?.riskLevel || '',
+          technicalSignals: analysis.technical?.signals || [],
+          fundamentalFactors: analysis.fundamental?.keyFactors || []
         };
         
         enrichedRecommendations.push(rec);
@@ -128,3 +125,4 @@ export class AggregatorAgent extends BaseAgent {
     }
   }
 }
+
