@@ -1,4 +1,3 @@
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { AnalystRecommendationsAgent } from "@/agents/AnalystRecommendationsAgent";
 import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
@@ -10,6 +9,14 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+interface AnalystRecommendation {
+  analyst: string;
+  source: string;
+  recommendation: string;
+  targetPrice?: number;
+  date: string;
+}
 
 interface AnalystData {
   signals: {
@@ -23,6 +30,7 @@ interface AnalystData {
     strongSell: number;
   };
   consensus: string;
+  analystRecommendations?: AnalystRecommendation[];
 }
 
 interface AIRecommendation {
@@ -57,7 +65,6 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
 
   const scrapeAnalystRecommendations = async () => {
     try {
-      // Get latest analyst recommendations from NewsScraperAgent
       const scrapedNews = await NewsScraperAgent.analyze(symbol);
       return scrapedNews;
     } catch (error) {
@@ -68,22 +75,25 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
 
   const fetchAIAnalysis = async () => {
     try {
-      // First, get recommended stocks from scraped data
       const scrapedData = await scrapeAnalystRecommendations();
       if (!scrapedData || !scrapedData.success) {
         throw new Error('Failed to scrape recommendations');
       }
 
       const recommendations: AIRecommendation[] = [];
-      
-      // Process each recommended stock
-      const stocksToAnalyze = new Set([symbol]); // Start with the main symbol
-      
+      const stocksToAnalyze = new Set([symbol]);
+
       if (scrapedData.analysis?.recommendedStocks) {
         scrapedData.analysis.recommendedStocks.forEach(sym => stocksToAnalyze.add(sym));
       }
 
-      // Analyze each stock with OrchestratorAgent
+      if (scrapedData.analysis?.analystRecommendations?.[0]) {
+        setAnalysisData(prevData => ({
+          ...prevData,
+          analystRecommendations: scrapedData.analysis?.analystRecommendations[0].recommendations
+        }));
+      }
+
       for (const stockSymbol of stocksToAnalyze) {
         const aiAnalysis = await OrchestratorAgent.orchestrateAnalysis({
           quote: { symbol: stockSymbol },
@@ -126,7 +136,6 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
   };
 
   const calculateScore = (data: any): number => {
-    // Convert analysis data into a normalized score (0-100)
     if (!data) return 50;
     let score = 50;
     
@@ -147,11 +156,9 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
   };
 
   const extractSymbolsFromNews = (news: any): string[] => {
-    // Basic symbol extraction (can be enhanced with regex patterns)
     const symbols: string[] = [];
     const content = (news.title + ' ' + news.summary).toUpperCase();
     
-    // Look for common patterns like "TICKER:" or "$TICKER"
     const matches = content.match(/\$[A-Z]{1,5}|[A-Z]{1,5}:/g) || [];
     matches.forEach(match => {
       const symbol = match.replace(/[$:]/g, '');
@@ -160,7 +167,7 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
       }
     });
     
-    return [...new Set(symbols)]; // Remove duplicates
+    return [...new Set(symbols)];
   };
 
   const fetchAnalysis = async () => {
@@ -278,15 +285,37 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
         
         <div>
           <h4 className="font-semibold mb-3">Professional Recommendations</h4>
-          <div className="space-y-2">
-            {Object.entries(analysisData.recommendations).map(([key, value]) => (
-              <div key={key} className="flex justify-between items-center">
-                <span className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                <Badge variant="secondary">
-                  {value}
-                </Badge>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {Object.entries(analysisData.recommendations).map(([key, value]) => (
+                <div key={key} className="flex justify-between items-center">
+                  <span className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                  <Badge variant="secondary">{value}</Badge>
+                </div>
+              ))}
+            </div>
+            
+            {analysisData.analystRecommendations && (
+              <div className="mt-4">
+                <h5 className="text-sm font-medium mb-2">Recent Analyst Updates</h5>
+                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                  {analysisData.analystRecommendations.map((rec, index) => (
+                    <div key={index} className="flex flex-col space-y-1 pb-3 last:pb-0 last:border-b-0 border-b">
+                      <div className="flex justify-between">
+                        <span className="font-medium">{rec.analyst}</span>
+                        <Badge variant="outline" className={getRecommendationColor(rec.recommendation)}>
+                          {rec.recommendation}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {rec.targetPrice && <span>Target: ${rec.targetPrice} | </span>}
+                        <span>{rec.source} | {rec.date}</span>
+                      </div>
+                    </div>
+                  ))}
+                </ScrollArea>
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -328,4 +357,3 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
     </Card>
   );
 };
-
