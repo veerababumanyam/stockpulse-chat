@@ -20,7 +20,37 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
     const query_lower = query.toLowerCase();
     const criteria: ScreeningCriteria[] = [];
 
-    // Market Cap Criteria
+    // Map query terms to specific sectors
+    const sectorMapping: { [key: string]: string } = {
+      'tech': 'Technology',
+      'technology': 'Technology',
+      'healthcare': 'Healthcare',
+      'health': 'Healthcare',
+      'finance': 'Financial',
+      'financial': 'Financial',
+      'consumer': 'Consumer Defensive',
+      'retail': 'Consumer Cyclical',
+      'energy': 'Energy',
+      'industrial': 'Industrial',
+      'materials': 'Basic Materials',
+      'utilities': 'Utilities',
+      'communication': 'Communication Services',
+      'real estate': 'Real Estate'
+    };
+
+    // Sector Analysis
+    for (const [key, value] of Object.entries(sectorMapping)) {
+      if (query_lower.includes(key)) {
+        criteria.push({
+          metric: 'sector',
+          operator: 'equal',
+          value: value as any
+        });
+        break;
+      }
+    }
+
+    // Market Cap Criteria - More granular ranges
     if (query_lower.includes('mega cap')) {
       criteria.push({
         metric: 'marketCap',
@@ -47,12 +77,17 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       });
     }
 
-    // Growth Metrics
+    // Growth and Performance Metrics
     if (query_lower.includes('explosive growth') || query_lower.includes('hyper growth')) {
       criteria.push({
         metric: 'revenueGrowthQuarterlyYoy',
         operator: 'greater',
         value: 50
+      });
+      criteria.push({
+        metric: 'earningsGrowth',
+        operator: 'greater',
+        value: 30
       });
     } else if (query_lower.includes('high growth')) {
       criteria.push({
@@ -68,7 +103,7 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       });
     }
 
-    // Profitability
+    // Profitability Metrics
     if (query_lower.includes('highly profitable')) {
       criteria.push({
         metric: 'netProfitMargin',
@@ -88,7 +123,7 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       });
     }
 
-    // Dividends
+    // Dividend Metrics
     if (query_lower.includes('high dividend')) {
       criteria.push({
         metric: 'dividendYield',
@@ -103,7 +138,7 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       });
     }
 
-    // Valuation
+    // Valuation Metrics
     if (query_lower.includes('undervalued')) {
       criteria.push({
         metric: 'priceToEarningsRatio',
@@ -115,7 +150,7 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
         operator: 'less',
         value: 3
       });
-    } else if (query_lower.includes('value stock')) {
+    } else if (query_lower.includes('value')) {
       criteria.push({
         metric: 'priceToEarningsRatio',
         operator: 'less',
@@ -123,37 +158,7 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       });
     }
 
-    // Sectors
-    if (query_lower.includes('tech') || query_lower.includes('technology')) {
-      criteria.push({
-        metric: 'sector',
-        operator: 'equal',
-        value: 'Technology' as any
-      });
-    } else if (query_lower.includes('healthcare') || query_lower.includes('health')) {
-      criteria.push({
-        metric: 'sector',
-        operator: 'equal',
-        value: 'Healthcare' as any
-      });
-    } else if (query_lower.includes('finance') || query_lower.includes('financial')) {
-      criteria.push({
-        metric: 'sector',
-        operator: 'equal',
-        value: 'Financial' as any
-      });
-    }
-
-    // Performance & Momentum
-    if (query_lower.includes('outperforming') || query_lower.includes('top performing')) {
-      criteria.push({
-        metric: 'performanceHalfYear',
-        operator: 'greater',
-        value: 15
-      });
-    }
-    
-    // Volume & Liquidity
+    // Volume and Liquidity
     if (query_lower.includes('high volume') || query_lower.includes('liquid')) {
       criteria.push({
         metric: 'volume',
@@ -162,14 +167,29 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       });
     }
 
-    // Volatility & Beta
-    if (query_lower.includes('low volatility') || query_lower.includes('stable')) {
+    // Technical Indicators
+    if (query_lower.includes('uptrend') || query_lower.includes('bullish')) {
+      criteria.push({
+        metric: 'pricePercentageChange',
+        operator: 'greater',
+        value: 5
+      });
+    } else if (query_lower.includes('downtrend') || query_lower.includes('bearish')) {
+      criteria.push({
+        metric: 'pricePercentageChange',
+        operator: 'less',
+        value: -5
+      });
+    }
+
+    // Risk Metrics
+    if (query_lower.includes('low risk') || query_lower.includes('stable')) {
       criteria.push({
         metric: 'beta',
         operator: 'less',
         value: 1
       });
-    } else if (query_lower.includes('high volatility')) {
+    } else if (query_lower.includes('high risk') || query_lower.includes('volatile')) {
       criteria.push({
         metric: 'beta',
         operator: 'greater',
@@ -177,18 +197,18 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       });
     }
 
-    // If no criteria matched, add some basic filters
+    // Add default criteria if none are specified
     if (criteria.length === 0) {
       criteria.push(
         {
           metric: 'marketCap',
           operator: 'greater',
-          value: 100000000 // Min $100M market cap
+          value: 100000000 // Minimum $100M market cap
         },
         {
           metric: 'volume',
           operator: 'greater',
-          value: 50000 // Min 50k daily volume
+          value: 50000 // Minimum 50k daily volume
         }
       );
     }

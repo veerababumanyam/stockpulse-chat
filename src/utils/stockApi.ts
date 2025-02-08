@@ -1,3 +1,4 @@
+
 export const fetchStockData = async (query: string, apiKey: string) => {
   try {
     if (!apiKey) {
@@ -120,7 +121,7 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
     // Add trading status filter for active stocks
     url += '&isActivelyTrading=true';
     
-    // Add criteria filters
+    // Process criteria
     criteria.forEach(({ metric, operator, value }) => {
       if (operator === 'between' && Array.isArray(value)) {
         url += `&${metric}MoreThan=${value[0]}&${metric}LessThan=${value[1]}`;
@@ -146,9 +147,16 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
       console.error('Unexpected API response format:', data);
       throw new Error('Invalid API response format');
     }
-    
-    // Sort results by market cap by default
-    return data.sort((a: any, b: any) => b.marketCap - a.marketCap);
+
+    // Sort results by market cap and filter out any null/undefined values
+    return data
+      .filter((stock: any) => 
+        stock && 
+        stock.symbol && 
+        stock.companyName && 
+        stock.marketCap > 0
+      )
+      .sort((a: any, b: any) => b.marketCap - a.marketCap);
   } catch (error) {
     console.error('Error fetching stock screener results:', error);
     throw error;
