@@ -27,7 +27,23 @@ export const AnalystInsights = ({ symbol }: { symbol: string }) => {
     const fetchAnalysis = async () => {
       try {
         const analysis = await AnalystRecommendationsAgent.analyze(symbol);
-        setAnalysisData(analysis.analysis);
+        const initialData: AnalystData = {
+          signals: {
+            overallSignal: 'HOLD'
+          },
+          recommendations: {
+            strongBuy: 0,
+            buy: 0,
+            hold: 0,
+            sell: 0,
+            strongSell: 0
+          },
+          consensus: 'HOLD'
+        };
+        setAnalysisData({
+          ...initialData,
+          ...analysis.analysis
+        });
       } catch (error) {
         console.error('Error fetching analyst insights:', error);
         toast({
