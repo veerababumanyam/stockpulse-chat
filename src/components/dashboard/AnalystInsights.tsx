@@ -1,5 +1,5 @@
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { AnalystRecommendationsAgent } from "@/agents/AnalystRecommendationsAgent";
 import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
 import { NewsScraperAgent } from "@/agents/NewsScraperAgent";
 import { useEffect, useState } from "react";
@@ -10,30 +10,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface AnalystRecommendation {
-  analyst: string;
+interface StockRecommendation {
+  symbol: string;
+  companyName?: string;
+  recommendationType: string;
+  analystName: string;
   source: string;
-  recommendation: string;
   targetPrice?: number;
   date: string;
 }
 
-interface AnalystData {
-  signals: {
-    overallSignal: string;
-  };
-  recommendations: {
-    strongBuy: number;
-    buy: number;
-    hold: number;
-    sell: number;
-    strongSell: number;
-  };
-  consensus: string;
-  analystRecommendations?: AnalystRecommendation[];
-}
-
-interface AIRecommendation {
+interface AIAnalysis {
   symbol: string;
   confidence: number;
   sentiment: number;
@@ -44,60 +31,67 @@ interface AIRecommendation {
   growthScore?: number;
 }
 
-export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
-  const [analysisData, setAnalysisData] = useState<AnalystData>({
-    signals: {
-      overallSignal: 'HOLD'
-    },
-    recommendations: {
-      strongBuy: 0,
-      buy: 0,
-      hold: 0,
-      sell: 0,
-      strongSell: 0
-    },
-    consensus: 'HOLD'
-  });
-  const [aiRecommendations, setAiRecommendations] = useState<AIRecommendation[]>([]);
+export const AnalystInsights = () => {
+  const [recommendations, setRecommendations] = useState<StockRecommendation[]>([]);
+  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
-  const scrapeAnalystRecommendations = async () => {
+  const fetchRecommendations = async () => {
     try {
-      const scrapedNews = await NewsScraperAgent.analyze(symbol);
-      return scrapedNews;
+      // Get recommendations from multiple sources using NewsScraperAgent
+      const recommendedStocks = new Set<string>();
+      const allRecommendations: StockRecommendation[] = [];
+
+      // Fetch data for major market indices to get top stocks
+      const indices = ['SPY', 'QQQ', 'DIA', 'IWM'];
+      
+      for (const index of indices) {
+        const scrapedNews = await NewsScraperAgent.analyze(index);
+        if (scrapedNews.success && scrapedNews.analysis) {
+          // Add recommended stocks to the set
+          scrapedNews.analysis.recommendedStocks.forEach(stock => recommendedStocks.add(stock));
+          
+          // Add analyst recommendations
+          if (scrapedNews.analysis.analystRecommendations) {
+            scrapedNews.analysis.analystRecommendations.forEach(rec => {
+              rec.recommendations.forEach(r => {
+                allRecommendations.push({
+                  symbol: rec.symbol,
+                  recommendationType: r.recommendation,
+                  analystName: r.analyst,
+                  source: r.source,
+                  targetPrice: r.targetPrice,
+                  date: r.date
+                });
+              });
+            });
+          }
+        }
+      }
+
+      setRecommendations(allRecommendations);
+      return Array.from(recommendedStocks);
     } catch (error) {
-      console.error('Error scraping recommendations:', error);
-      return null;
+      console.error('Error fetching recommendations:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch analyst recommendations",
+        variant: "destructive",
+      });
+      return [];
     }
   };
 
-  const fetchAIAnalysis = async () => {
-    try {
-      const scrapedData = await scrapeAnalystRecommendations();
-      if (!scrapedData || !scrapedData.success) {
-        throw new Error('Failed to scrape recommendations');
-      }
+  const analyzeStocks = async (stocks: string[]) => {
+    const analysisResults: AIAnalysis[] = [];
 
-      const recommendations: AIRecommendation[] = [];
-      const stocksToAnalyze = new Set([symbol]);
-
-      if (scrapedData.analysis?.recommendedStocks) {
-        scrapedData.analysis.recommendedStocks.forEach(sym => stocksToAnalyze.add(sym));
-      }
-
-      if (scrapedData.analysis?.analystRecommendations?.[0]) {
-        setAnalysisData(prevData => ({
-          ...prevData,
-          analystRecommendations: scrapedData.analysis?.analystRecommendations[0].recommendations
-        }));
-      }
-
-      for (const stockSymbol of stocksToAnalyze) {
+    for (const symbol of stocks) {
+      try {
         const aiAnalysis = await OrchestratorAgent.orchestrateAnalysis({
-          quote: { symbol: stockSymbol },
-          profile: { companyName: stockSymbol }
+          quote: { symbol },
+          profile: { companyName: symbol }
         });
 
         if (aiAnalysis && typeof aiAnalysis === 'object') {
@@ -107,10 +101,10 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
             const fundamental = results.get('fundamental')?.data;
             const technical = results.get('technical')?.data;
             const growth = results.get('growthTrends')?.data;
-            
+
             if (sentiment && fundamental && technical) {
-              recommendations.push({
-                symbol: stockSymbol,
+              analysisResults.push({
+                symbol,
                 confidence: (sentiment.confidence || 0.5) * 100,
                 sentiment: sentiment.score || 0,
                 sources: sentiment.sourceCount || 1,
@@ -122,17 +116,12 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
             }
           }
         }
+      } catch (error) {
+        console.error(`Error analyzing ${symbol}:`, error);
       }
-
-      setAiRecommendations(recommendations.sort((a, b) => b.confidence - a.confidence));
-    } catch (error) {
-      console.error('Error in AI analysis:', error);
-      toast({
-        title: "AI Analysis Error",
-        description: "Failed to get AI-powered insights",
-        variant: "destructive",
-      });
     }
+
+    setAiAnalysis(analysisResults.sort((a, b) => b.confidence - a.confidence));
   };
 
   const calculateScore = (data: any): number => {
@@ -155,47 +144,10 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
     return Math.min(100, Math.max(0, score));
   };
 
-  const extractSymbolsFromNews = (news: any): string[] => {
-    const symbols: string[] = [];
-    const content = (news.title + ' ' + news.summary).toUpperCase();
-    
-    const matches = content.match(/\$[A-Z]{1,5}|[A-Z]{1,5}:/g) || [];
-    matches.forEach(match => {
-      const symbol = match.replace(/[$:]/g, '');
-      if (symbol.length >= 2 && symbol.length <= 5) {
-        symbols.push(symbol);
-      }
-    });
-    
-    return [...new Set(symbols)];
-  };
-
-  const fetchAnalysis = async () => {
-    try {
-      const analysis = await AnalystRecommendationsAgent.analyze(symbol);
-      if (analysis.analysis) {
-        setAnalysisData(prevData => ({
-          ...prevData,
-          ...analysis.analysis,
-          recommendations: {
-            ...prevData.recommendations,
-            ...(analysis.analysis.recommendations || {})
-          }
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching analyst insights:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch analyst insights",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await Promise.all([fetchAnalysis(), fetchAIAnalysis()]);
+    const recommendedStocks = await fetchRecommendations();
+    await analyzeStocks(recommendedStocks);
     setIsRefreshing(false);
     toast({
       title: "Updated",
@@ -206,14 +158,15 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
   useEffect(() => {
     const initialize = async () => {
       try {
-        await Promise.all([fetchAnalysis(), fetchAIAnalysis()]);
+        const recommendedStocks = await fetchRecommendations();
+        await analyzeStocks(recommendedStocks);
       } finally {
         setIsLoading(false);
       }
     };
 
     initialize();
-  }, [symbol]);
+  }, []);
 
   const getRecommendationColor = (recommendation: string) => {
     if (recommendation.includes('BUY')) return 'text-green-500';
@@ -254,7 +207,7 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle className="text-xl font-bold">AI-Enhanced Market Analysis</CardTitle>
+        <CardTitle className="text-xl font-bold">Top Analyst Recommendations & AI Insights</CardTitle>
         <Button 
           variant="outline" 
           size="sm" 
@@ -266,87 +219,59 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <h4 className="font-semibold mb-2">Market Consensus</h4>
-            <div className={`text-lg font-bold ${getRecommendationColor(analysisData.consensus)}`}>
-              {analysisData.consensus}
-            </div>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-2">AI Signal</h4>
-            <div className={`text-lg font-bold ${getRecommendationColor(analysisData.signals.overallSignal)}`}>
-              {analysisData.signals.overallSignal}
-            </div>
-          </div>
-        </div>
-        
-        <Separator />
-        
         <div>
-          <h4 className="font-semibold mb-3">Professional Recommendations</h4>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              {Object.entries(analysisData.recommendations).map(([key, value]) => (
-                <div key={key} className="flex justify-between items-center">
-                  <span className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                  <Badge variant="secondary">{value}</Badge>
-                </div>
-              ))}
-            </div>
-            
-            {analysisData.analystRecommendations && (
-              <div className="mt-4">
-                <h5 className="text-sm font-medium mb-2">Recent Analyst Updates</h5>
-                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                  {analysisData.analystRecommendations.map((rec, index) => (
-                    <div key={index} className="flex flex-col space-y-1 pb-3 last:pb-0 last:border-b-0 border-b">
-                      <div className="flex justify-between">
-                        <span className="font-medium">{rec.analyst}</span>
-                        <Badge variant="outline" className={getRecommendationColor(rec.recommendation)}>
-                          {rec.recommendation}
-                        </Badge>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {rec.targetPrice && <span>Target: ${rec.targetPrice} | </span>}
-                        <span>{rec.source} | {rec.date}</span>
-                      </div>
-                    </div>
-                  ))}
-                </ScrollArea>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <Separator />
-
-        <div>
-          <h4 className="font-semibold mb-3">AI-Analyzed Stock Recommendations</h4>
+          <h4 className="font-semibold mb-3">Analyst Recommendations</h4>
           <ScrollArea className="h-[300px] w-full rounded-md border p-4">
             <div className="space-y-4">
-              {aiRecommendations.map((rec, index) => (
+              {recommendations.map((rec, index) => (
                 <div key={index} className="flex flex-col space-y-2 pb-3 last:pb-0 last:border-b-0 border-b">
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{rec.symbol}</span>
-                    <Badge variant="outline" className={getSentimentBadge(rec.sentiment)}>
-                      {rec.recommendation}
+                    <Badge variant="outline" className={getRecommendationColor(rec.recommendationType)}>
+                      {rec.recommendationType}
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    <div>Analyst: {rec.analystName}</div>
+                    <div>
+                      {rec.targetPrice && <span>Target: ${rec.targetPrice} | </span>}
+                      <span>{rec.source} | {rec.date}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+
+        <Separator />
+
+        <div>
+          <h4 className="font-semibold mb-3">AI Analysis of Recommended Stocks</h4>
+          <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+            <div className="space-y-4">
+              {aiAnalysis.map((analysis, index) => (
+                <div key={index} className="flex flex-col space-y-2 pb-3 last:pb-0 last:border-b-0 border-b">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{analysis.symbol}</span>
+                    <Badge variant="outline" className={getSentimentBadge(analysis.sentiment)}>
+                      {analysis.recommendation}
                     </Badge>
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-sm">
-                    <div className={getScoreColor(rec.fundamentalScore ?? 0)}>
-                      Fund: {rec.fundamentalScore?.toFixed(1) ?? 'N/A'}
+                    <div className={getScoreColor(analysis.fundamentalScore ?? 0)}>
+                      Fund: {analysis.fundamentalScore?.toFixed(1) ?? 'N/A'}
                     </div>
-                    <div className={getScoreColor(rec.technicalScore ?? 0)}>
-                      Tech: {rec.technicalScore?.toFixed(1) ?? 'N/A'}
+                    <div className={getScoreColor(analysis.technicalScore ?? 0)}>
+                      Tech: {analysis.technicalScore?.toFixed(1) ?? 'N/A'}
                     </div>
-                    <div className={getScoreColor(rec.growthScore ?? 0)}>
-                      Growth: {rec.growthScore?.toFixed(1) ?? 'N/A'}
+                    <div className={getScoreColor(analysis.growthScore ?? 0)}>
+                      Growth: {analysis.growthScore?.toFixed(1) ?? 'N/A'}
                     </div>
                   </div>
                   <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Confidence: {rec.confidence.toFixed(1)}%</span>
-                    <span>Sources: {rec.sources}</span>
+                    <span>Confidence: {analysis.confidence.toFixed(1)}%</span>
+                    <span>Sources: {analysis.sources}</span>
                   </div>
                 </div>
               ))}
@@ -357,3 +282,4 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
     </Card>
   );
 };
+
