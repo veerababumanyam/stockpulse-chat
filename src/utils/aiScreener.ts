@@ -22,7 +22,7 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       analyze: async (data: any) => {
         const result = await FundamentalAnalysisAgent.analyze(data);
         return {
-          screening: result.criteria || []
+          screening: result.analysis.screening || []
         } as AgentScreeningResponse;
       }
     };
@@ -31,7 +31,7 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       analyze: async (data: any) => {
         const result = await TechnicalAnalysisAgent.analyze(data);
         return {
-          screening: result.criteria || []
+          screening: result.analysis.screening || []
         } as AgentScreeningResponse;
       }
     };
@@ -40,7 +40,7 @@ export async function generateScreeningCriteria(query: string): Promise<Screenin
       analyze: async (data: any) => {
         const result = await MarketSentimentAgent.analyze(data);
         return {
-          screening: result.criteria || []
+          screening: result.analysis.screening || []
         } as AgentScreeningResponse;
       }
     };
