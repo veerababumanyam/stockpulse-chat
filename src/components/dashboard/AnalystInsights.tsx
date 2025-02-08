@@ -90,8 +90,8 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
           profile: { companyName: stockSymbol }
         });
 
-        if (typeof aiAnalysis === 'object') {
-          const results = aiAnalysis.results;
+        if (aiAnalysis && typeof aiAnalysis === 'object') {
+          const results = (aiAnalysis as any).results;
           if (results) {
             const sentiment = results.get('sentiment')?.data;
             const fundamental = results.get('fundamental')?.data;
@@ -305,14 +305,14 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
                     </Badge>
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-sm">
-                    <div className={getScoreColor(rec.fundamentalScore || 0)}>
-                      Fund: {rec.fundamentalScore?.toFixed(1)}
+                    <div className={getScoreColor(rec.fundamentalScore ?? 0)}>
+                      Fund: {rec.fundamentalScore?.toFixed(1) ?? 'N/A'}
                     </div>
-                    <div className={getScoreColor(rec.technicalScore || 0)}>
-                      Tech: {rec.technicalScore?.toFixed(1)}
+                    <div className={getScoreColor(rec.technicalScore ?? 0)}>
+                      Tech: {rec.technicalScore?.toFixed(1) ?? 'N/A'}
                     </div>
-                    <div className={getScoreColor(rec.growthScore || 0)}>
-                      Growth: {rec.growthScore?.toFixed(1)}
+                    <div className={getScoreColor(rec.growthScore ?? 0)}>
+                      Growth: {rec.growthScore?.toFixed(1) ?? 'N/A'}
                     </div>
                   </div>
                   <div className="flex justify-between text-sm text-muted-foreground">
@@ -328,3 +328,4 @@ export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
     </Card>
   );
 };
+
