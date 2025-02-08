@@ -10,6 +10,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MarketMovers } from "@/components/dashboard/MarketMovers";
 import { AnalystInsights } from "@/components/dashboard/AnalystInsights";
 import { MarketNews } from "@/components/dashboard/MarketNews";
+import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
+import { MarketIndices } from "@/components/dashboard/MarketIndices";
+import { EconomicCalendar } from "@/components/dashboard/EconomicCalendar";
 
 interface StockData {
   symbol: string;
@@ -122,6 +125,11 @@ const Dashboard = () => {
                   </Card>
                 ) : (
                   <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <MarketIndices />
+                      <PerformanceChart symbol="SPY" />
+                    </div>
+                    
                     <MarketMovers 
                       gainers={topGainers}
                       losers={topLosers}
@@ -132,6 +140,8 @@ const Dashboard = () => {
                       <AnalystInsights symbol="SPY" />
                       <MarketNews />
                     </div>
+
+                    <EconomicCalendar />
                   </>
                 )}
               </div>

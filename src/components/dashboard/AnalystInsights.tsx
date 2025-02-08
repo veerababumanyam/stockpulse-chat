@@ -19,7 +19,19 @@ interface AnalystData {
 }
 
 export const AnalystInsights = ({ symbol }: { symbol: string }) => {
-  const [analysisData, setAnalysisData] = useState<AnalystData | null>(null);
+  const [analysisData, setAnalysisData] = useState<AnalystData>({
+    signals: {
+      overallSignal: 'HOLD'
+    },
+    recommendations: {
+      strongBuy: 0,
+      buy: 0,
+      hold: 0,
+      sell: 0,
+      strongSell: 0
+    },
+    consensus: 'HOLD'
+  });
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -27,23 +39,16 @@ export const AnalystInsights = ({ symbol }: { symbol: string }) => {
     const fetchAnalysis = async () => {
       try {
         const analysis = await AnalystRecommendationsAgent.analyze(symbol);
-        const initialData: AnalystData = {
-          signals: {
-            overallSignal: 'HOLD'
-          },
-          recommendations: {
-            strongBuy: 0,
-            buy: 0,
-            hold: 0,
-            sell: 0,
-            strongSell: 0
-          },
-          consensus: 'HOLD'
-        };
-        setAnalysisData({
-          ...initialData,
-          ...analysis.analysis
-        });
+        if (analysis.analysis) {
+          setAnalysisData(prevData => ({
+            ...prevData,
+            ...analysis.analysis,
+            recommendations: {
+              ...prevData.recommendations,
+              ...(analysis.analysis.recommendations || {})
+            }
+          }));
+        }
       } catch (error) {
         console.error('Error fetching analyst insights:', error);
         toast({
