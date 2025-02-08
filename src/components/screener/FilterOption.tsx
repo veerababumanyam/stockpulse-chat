@@ -1,6 +1,5 @@
 
 import React from "react";
-import { ChevronDown } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -23,12 +22,14 @@ export const FilterOptionComponent: React.FC<FilterOptionProps> = ({
   if (option.type === 'range') {
     return (
       <div className="space-y-2">
-        <label className="text-sm font-medium">{option.label}</label>
+        <label className="text-sm font-medium text-muted-foreground">
+          {option.label}
+        </label>
         <div className="flex gap-2">
           <Input
             type="number"
             placeholder="Min"
-            className="w-full bg-background/50"
+            className="w-full bg-background"
             onChange={(e) =>
               onSelect(option.id, {
                 ...option.values,
@@ -40,7 +41,7 @@ export const FilterOptionComponent: React.FC<FilterOptionProps> = ({
           <Input
             type="number"
             placeholder="Max"
-            className="w-full bg-background/50"
+            className="w-full bg-background"
             onChange={(e) =>
               onSelect(option.id, {
                 ...option.values,
@@ -54,19 +55,26 @@ export const FilterOptionComponent: React.FC<FilterOptionProps> = ({
     );
   }
 
+  // Single select dropdown for non-range filters
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">{option.label}</label>
+      <label className="text-sm font-medium text-muted-foreground">
+        {option.label}
+      </label>
       <Select
         onValueChange={(value) => onSelect(option.id, { value })}
+        value={option.values?.value}
       >
-        <SelectTrigger className="w-full bg-background/50 backdrop-blur-sm border-border/50 hover:bg-accent/10">
-          <SelectValue placeholder={option.label} />
-          <ChevronDown className="h-4 w-4 opacity-50" />
+        <SelectTrigger className="w-full bg-background hover:bg-accent/10">
+          <SelectValue placeholder={`Select ${option.label}`} />
         </SelectTrigger>
-        <SelectContent className="bg-background/95 backdrop-blur-sm border-border/50">
+        <SelectContent className="bg-background border-border/50">
           {option.options?.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
+            <SelectItem 
+              key={opt.value} 
+              value={opt.value}
+              className="hover:bg-accent/10"
+            >
               {opt.label}
             </SelectItem>
           ))}
