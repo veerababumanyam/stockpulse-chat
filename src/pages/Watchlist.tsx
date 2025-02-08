@@ -4,7 +4,7 @@ import { WatchlistTable } from "@/components/watchlist/WatchlistTable";
 import { WatchlistHeader } from "@/components/watchlist/WatchlistHeader";
 import { AlertsDialog } from "@/components/watchlist/AlertsDialog";
 import { Button } from "@/components/ui/button";
-import { Export } from "lucide-react";
+import { Download } from "lucide-react";
 import { useState } from "react";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useTheme } from "next-themes";
@@ -53,3 +53,4 @@ const Watchlist = () => {
 };
 
 export default Watchlist;
+
