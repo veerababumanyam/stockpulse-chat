@@ -6,31 +6,66 @@ export interface AnalysisResult {
 }
 
 export abstract class BaseAgent {
-  private static retryDelay = 1000; // 1 second
+  private static retryDelay = 2000; // 2 seconds
   private static maxRetries = 3;
+  private static requestQueue: Promise<any> = Promise.resolve();
+  private static rateLimitWindow = 60000; // 1 minute
+  private static requestCount = 0;
+  private static lastRequestTime = Date.now();
+  private static maxRequestsPerMinute = 5; // Conservative limit
 
   protected static async fetchData(url: string, apiKey: string, retryCount = 0): Promise<any> {
-    try {
-      const response = await fetch(url);
-      
-      if (response.status === 429 && retryCount < this.maxRetries) {
-        console.log(`Rate limit hit, retrying in ${this.retryDelay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, this.retryDelay));
-        return this.fetchData(url, apiKey, retryCount + 1);
-      }
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          throw new Error('API rate limit reached. Please try again later or upgrade your plan.');
-        }
-        throw new Error(`API call failed: ${response.statusText}`);
-      }
-
-      return response.json();
-    } catch (error: any) {
-      console.error('Error in fetchData:', error);
-      throw new Error(error.message || 'Failed to fetch data');
+    // Reset counter if window has passed
+    if (Date.now() - this.lastRequestTime > this.rateLimitWindow) {
+      this.requestCount = 0;
+      this.lastRequestTime = Date.now();
     }
+
+    // Check if we've hit the rate limit
+    if (this.requestCount >= this.maxRequestsPerMinute) {
+      const timeToWait = this.rateLimitWindow - (Date.now() - this.lastRequestTime);
+      await new Promise(resolve => setTimeout(resolve, timeToWait));
+      this.requestCount = 0;
+      this.lastRequestTime = Date.now();
+    }
+
+    // Queue the request
+    return new Promise((resolve, reject) => {
+      this.requestQueue = this.requestQueue
+        .then(async () => {
+          try {
+            this.requestCount++;
+            const response = await fetch(url);
+
+            // Handle rate limit
+            if (response.status === 429) {
+              console.log(`Rate limit hit, attempt ${retryCount + 1} of ${this.maxRetries}`);
+              
+              if (retryCount < this.maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, this.retryDelay * (retryCount + 1)));
+                return this.fetchData(url, apiKey, retryCount + 1);
+              } else {
+                throw new Error('API rate limit reached. Please try again later.');
+              }
+            }
+
+            // Handle other errors
+            if (!response.ok) {
+              throw new Error(`API call failed: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            resolve(data);
+            return data;
+          } catch (error: any) {
+            console.error('Error in fetchData:', error);
+            reject(new Error(error.message || 'Failed to fetch data'));
+          }
+        })
+        .catch(error => {
+          reject(error);
+        });
+    });
   }
 
   protected static formatDate(date: string | Date): string {
