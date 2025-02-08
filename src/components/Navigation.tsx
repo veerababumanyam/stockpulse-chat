@@ -31,9 +31,24 @@ export const Navigation = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
+  // Prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
+    // Set initial theme based on system preference
+    if (!theme) {
+      setTheme('system');
+    }
   }, []);
+
+  // Handle theme change with toast notification
+  const handleThemeChange = (newTheme: string) => {
+    setTheme(newTheme);
+    toast({
+      title: "Theme Changed",
+      description: `Theme set to ${newTheme} mode`,
+      duration: 2000,
+    });
+  };
 
   const handleChat = () => {
     try {
@@ -84,7 +99,7 @@ export const Navigation = () => {
   );
 
   return (
-    <nav className="fixed top-0 left-0 w-full p-4 glass-panel z-50" role="navigation" aria-label="Main navigation">
+    <nav className="fixed top-0 left-0 w-full p-4 glass-panel z-50 dark:bg-gray-900 transition-colors duration-300" role="navigation" aria-label="Main navigation">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         {isMobile ? (
           <>
@@ -127,25 +142,26 @@ export const Navigation = () => {
                 className="relative p-2 hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
               >
                 {theme === "light" ? (
-                  <Sun className="h-5 w-5" />
+                  <Sun className="h-5 w-5 text-yellow-500" />
                 ) : theme === "dark" ? (
-                  <Moon className="h-5 w-5" />
+                  <Moon className="h-5 w-5 text-blue-400" />
                 ) : (
-                  <Monitor className="h-5 w-5" />
+                  <Monitor className="h-5 w-5 text-gray-400" />
                 )}
+                <span className="sr-only">Toggle theme</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setTheme("light")}>
-                <Sun className="mr-2 h-4 w-4" />
+              <DropdownMenuItem onClick={() => handleThemeChange("light")}>
+                <Sun className="mr-2 h-4 w-4 text-yellow-500" />
                 <span>Light</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme("dark")}>
-                <Moon className="mr-2 h-4 w-4" />
+              <DropdownMenuItem onClick={() => handleThemeChange("dark")}>
+                <Moon className="mr-2 h-4 w-4 text-blue-400" />
                 <span>Dark</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme("system")}>
-                <Monitor className="mr-2 h-4 w-4" />
+              <DropdownMenuItem onClick={() => handleThemeChange("system")}>
+                <Monitor className="mr-2 h-4 w-4 text-gray-400" />
                 <span>System</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -197,4 +213,3 @@ export const Navigation = () => {
     </nav>
   );
 };
-
