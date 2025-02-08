@@ -1,8 +1,14 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { AnalystRecommendationsAgent } from "@/agents/AnalystRecommendationsAgent";
+import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface AnalystData {
   signals: {
@@ -18,7 +24,15 @@ interface AnalystData {
   consensus: string;
 }
 
-export const AnalystInsights = ({ symbol }: { symbol: string }) => {
+interface AIRecommendation {
+  symbol: string;
+  confidence: number;
+  sentiment: number;
+  sources: number;
+  recommendation: string;
+}
+
+export const AnalystInsights = ({ symbol = 'SPY' }: { symbol?: string }) => {
   const [analysisData, setAnalysisData] = useState<AnalystData>({
     signals: {
       overallSignal: 'HOLD'
@@ -32,37 +46,122 @@ export const AnalystInsights = ({ symbol }: { symbol: string }) => {
     },
     consensus: 'HOLD'
   });
+  const [aiRecommendations, setAiRecommendations] = useState<AIRecommendation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchAnalysis = async () => {
-      try {
-        const analysis = await AnalystRecommendationsAgent.analyze(symbol);
-        if (analysis.analysis) {
-          setAnalysisData(prevData => ({
-            ...prevData,
-            ...analysis.analysis,
-            recommendations: {
-              ...prevData.recommendations,
-              ...(analysis.analysis.recommendations || {})
-            }
-          }));
+  const fetchAIAnalysis = async () => {
+    try {
+      // Get orchestrated analysis from multiple agents
+      const aiAnalysis = await OrchestratorAgent.orchestrateAnalysis({
+        quote: { symbol },
+        profile: { companyName: symbol }
+      });
+
+      // Extract relevant insights from different agents
+      const recommendations: AIRecommendation[] = [];
+      
+      if (aiAnalysis) {
+        const sentiment = aiAnalysis.results.get('sentiment')?.data;
+        const fundamental = aiAnalysis.results.get('fundamental')?.data;
+        const technical = aiAnalysis.results.get('technical')?.data;
+        const news = aiAnalysis.results.get('news')?.data;
+        
+        // Combine insights to form recommendations
+        if (sentiment && fundamental && technical) {
+          recommendations.push({
+            symbol,
+            confidence: (sentiment.confidence || 0.5) * 100,
+            sentiment: sentiment.score || 0,
+            sources: sentiment.sourceCount || 1,
+            recommendation: technical.signal || 'HOLD'
+          });
         }
-      } catch (error) {
-        console.error('Error fetching analyst insights:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch analyst insights",
-          variant: "destructive",
-        });
+
+        // Add additional stocks mentioned in news and analysis
+        if (news?.relatedStocks) {
+          news.relatedStocks.forEach((stock: any) => {
+            if (stock.symbol !== symbol) {
+              recommendations.push({
+                symbol: stock.symbol,
+                confidence: stock.confidence * 100,
+                sentiment: stock.sentiment,
+                sources: stock.mentions,
+                recommendation: stock.signal
+              });
+            }
+          });
+        }
+      }
+
+      setAiRecommendations(recommendations);
+    } catch (error) {
+      console.error('Error in AI analysis:', error);
+      toast({
+        title: "AI Analysis Error",
+        description: "Failed to get AI-powered insights",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchAnalysis = async () => {
+    try {
+      const analysis = await AnalystRecommendationsAgent.analyze(symbol);
+      if (analysis.analysis) {
+        setAnalysisData(prevData => ({
+          ...prevData,
+          ...analysis.analysis,
+          recommendations: {
+            ...prevData.recommendations,
+            ...(analysis.analysis.recommendations || {})
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching analyst insights:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch analyst insights",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([fetchAnalysis(), fetchAIAnalysis()]);
+    setIsRefreshing(false);
+    toast({
+      title: "Updated",
+      description: "Analysis has been refreshed",
+    });
+  };
+
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        await Promise.all([fetchAnalysis(), fetchAIAnalysis()]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAnalysis();
+    initialize();
   }, [symbol, toast]);
+
+  const getRecommendationColor = (recommendation: string) => {
+    if (recommendation.includes('BUY')) return 'text-green-500';
+    if (recommendation.includes('SELL')) return 'text-red-500';
+    return 'text-yellow-500';
+  };
+
+  const getSentimentBadge = (sentiment: number) => {
+    if (sentiment > 0.3) return 'bg-green-500/10 text-green-500';
+    if (sentiment < -0.3) return 'bg-red-500/10 text-red-500';
+    return 'bg-yellow-500/10 text-yellow-500';
+  };
 
   if (isLoading) {
     return (
@@ -82,45 +181,74 @@ export const AnalystInsights = ({ symbol }: { symbol: string }) => {
     );
   }
 
-  if (!analysisData) return null;
-
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Analyst Insights
-        </CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardTitle className="text-xl font-bold">AI-Enhanced Analyst Insights</CardTitle>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <h4 className="font-semibold mb-2">Consensus</h4>
-            <div className={`text-lg font-bold ${
-              analysisData.consensus.includes('BUY') ? 'text-green-500' :
-              analysisData.consensus.includes('SELL') ? 'text-red-500' :
-              'text-yellow-500'
-            }`}>
+            <h4 className="font-semibold mb-2">Market Consensus</h4>
+            <div className={`text-lg font-bold ${getRecommendationColor(analysisData.consensus)}`}>
               {analysisData.consensus}
             </div>
           </div>
           <div>
-            <h4 className="font-semibold mb-2">Signal</h4>
-            <div className="text-lg font-bold">
+            <h4 className="font-semibold mb-2">AI Signal</h4>
+            <div className={`text-lg font-bold ${getRecommendationColor(analysisData.signals.overallSignal)}`}>
               {analysisData.signals.overallSignal}
             </div>
           </div>
         </div>
         
+        <Separator />
+        
         <div>
-          <h4 className="font-semibold mb-2">Recommendations</h4>
+          <h4 className="font-semibold mb-3">Professional Recommendations</h4>
           <div className="space-y-2">
             {Object.entries(analysisData.recommendations).map(([key, value]) => (
               <div key={key} className="flex justify-between items-center">
                 <span className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                <span className="font-semibold">{value}</span>
+                <Badge variant="secondary">
+                  {value}
+                </Badge>
               </div>
             ))}
           </div>
+        </div>
+
+        <Separator />
+
+        <div>
+          <h4 className="font-semibold mb-3">AI-Powered Stock Recommendations</h4>
+          <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+            <div className="space-y-4">
+              {aiRecommendations.map((rec, index) => (
+                <div key={index} className="flex flex-col space-y-2 pb-3 last:pb-0 last:border-b-0 border-b">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{rec.symbol}</span>
+                    <Badge variant="outline" className={getSentimentBadge(rec.sentiment)}>
+                      {rec.recommendation}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Confidence: {rec.confidence.toFixed(1)}%</span>
+                    <span>Sources: {rec.sources}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
       </CardContent>
     </Card>
