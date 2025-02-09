@@ -29,6 +29,13 @@ export const useWatchlist = () => {
       }
 
       const savedSymbols = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      
+      if (savedSymbols.length === 0) {
+        setStocks([]);
+        setIsLoading(false);
+        return;
+      }
+
       const stocksData = await Promise.all(
         savedSymbols.map((symbol: string) => fetchStockData(symbol, fmp))
       );
@@ -40,26 +47,32 @@ export const useWatchlist = () => {
       // Run AI analysis if needed
       if (shouldRunAnalysis()) {
         for (const data of stocksData) {
-          const analysis = await runAIAnalysis(data);
-          if (analysis) {
-            updatedAnalysis[data.quote.symbol] = analysis;
+          if (data && data.quote) {
+            const analysis = await runAIAnalysis(data);
+            if (analysis) {
+              updatedAnalysis[data.quote.symbol] = analysis;
+            }
           }
         }
         saveAIAnalysis(updatedAnalysis);
       }
 
-      setStocks(stocksData.map(data => ({
-        symbol: data.quote.symbol,
-        companyName: data.profile.companyName,
-        price: data.quote.price,
-        change: data.quote.change,
-        changePercent: data.quote.changesPercentage,
-        marketCap: data.quote.marketCap,
-        volume: data.quote.volume,
-        sector: data.profile.sector,
-        aiAnalysis: updatedAnalysis[data.quote.symbol],
-        alerts: savedAlerts[data.quote.symbol] || []
-      })));
+      const validStocks = stocksData
+        .filter(data => data && data.quote && data.profile)
+        .map(data => ({
+          symbol: data.quote.symbol,
+          companyName: data.profile.companyName || data.quote.symbol,
+          price: data.quote.price || 0,
+          change: data.quote.change || 0,
+          changePercent: data.quote.changesPercentage || 0,
+          marketCap: data.quote.marketCap || 0,
+          volume: data.quote.volume || 0,
+          sector: data.profile.sector || 'N/A',
+          aiAnalysis: updatedAnalysis[data.quote.symbol],
+          alerts: savedAlerts[data.quote.symbol] || []
+        }));
+
+      setStocks(validStocks);
       setError(null);
     } catch (err) {
       setError(err as Error);

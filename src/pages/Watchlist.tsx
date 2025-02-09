@@ -3,15 +3,12 @@ import { Navigation } from "@/components/Navigation";
 import { WatchlistTable } from "@/components/watchlist/WatchlistTable";
 import { WatchlistHeader } from "@/components/watchlist/WatchlistHeader";
 import { AlertsDialog } from "@/components/watchlist/AlertsDialog";
-import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
-import { useState } from "react";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useTheme } from "next-themes";
 
 const Watchlist = () => {
   const [showAlertsDialog, setShowAlertsDialog] = useState(false);
-  const { stocks, isLoading, error, exportData } = useWatchlist();
+  const { stocks = [], isLoading, error, exportData } = useWatchlist();
   const { theme } = useTheme();
 
   if (error) {
@@ -53,4 +50,3 @@ const Watchlist = () => {
 };
 
 export default Watchlist;
-
