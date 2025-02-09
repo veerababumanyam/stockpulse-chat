@@ -10,6 +10,7 @@ import { AgentListFilters } from "@/components/agents/AgentListFilters";
 import { AgentList } from "@/components/agents/AgentList";
 import { useAgents, type AgentConfig } from "@/hooks/useAgents";
 import { AgentTestDialog } from "@/components/agents/AgentTestDialog";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   Tabs,
   TabsContent,
@@ -17,7 +18,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 
-const Agents = () => {
+const AgentsContent = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<AgentConfig | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -121,6 +122,14 @@ const Agents = () => {
         )}
       </main>
     </div>
+  );
+};
+
+const Agents = () => {
+  return (
+    <ErrorBoundary>
+      <AgentsContent />
+    </ErrorBoundary>
   );
 };
 
