@@ -30,7 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
-          <Alert variant="destructive" className="max-w-lg">
+          <Alert variant="destructive">
             <AlertTitle>Something went wrong</AlertTitle>
             <AlertDescription>
               {this.state.error?.message || 'An unexpected error occurred'}
@@ -52,3 +52,4 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
+
