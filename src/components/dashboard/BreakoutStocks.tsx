@@ -87,7 +87,7 @@ export const BreakoutStocks = () => {
               size="sm"
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="gap-2 hover:bg-primary hover:text-primary-foreground transition-colors duration-200"
+              className="gap-2 bg-background text-foreground hover:bg-primary hover:text-primary-foreground transition-colors duration-200"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               {isRefreshing ? 'Refreshing...' : 'Refresh'}
