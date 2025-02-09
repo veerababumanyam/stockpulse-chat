@@ -10,8 +10,8 @@ export const formatPercentage = (value: number | null | undefined) => {
   if (value === null || value === undefined || isNaN(value)) {
     return '0.00%';
   }
-  // Convert decimal to percentage and format with 2 decimal places
-  return `${(value * 100).toFixed(2)}%`;
+  // Format the value directly since it's already in percentage form
+  return `${value.toFixed(2)}%`;
 };
 
 export const getPriceChangeColor = (change: number) => {
@@ -55,3 +55,4 @@ export const formatVolume = (volume: number) => {
     compactDisplay: 'short'
   }).format(volume);
 };
+

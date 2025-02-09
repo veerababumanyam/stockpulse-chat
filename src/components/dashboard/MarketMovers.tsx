@@ -63,7 +63,6 @@ const MarketMoverCard = ({
                   ) : (
                     <TrendingDown className="h-4 w-4" />
                   )}
-                  {stock.changePercent > 0 ? '+' : ''}
                   {formatPercentage(stock.changePercent)}
                 </span>
               </div>
