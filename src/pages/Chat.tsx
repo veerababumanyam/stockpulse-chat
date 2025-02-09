@@ -6,7 +6,9 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 const Chat = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
+      <ErrorBoundary>
+        <Navigation />
+      </ErrorBoundary>
       <div className="pt-[72px] px-4">
         <ErrorBoundary>
           <ChatWindow />
@@ -17,3 +19,4 @@ const Chat = () => {
 };
 
 export default Chat;
+
