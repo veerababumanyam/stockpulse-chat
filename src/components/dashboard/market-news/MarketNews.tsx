@@ -22,15 +22,30 @@ export const MarketNews = () => {
 
   const fetchNews = async (showToast = false) => {
     try {
+      setIsLoading(true);
       const analysis = await NewsAnalysisAgent.analyze('SPY');
-      const newsData = analysis.analysis.keyHighlights || [];
-      setNews(newsData);
-      setTopTopics(analyzeTopics(newsData));
-      if (showToast) {
-        toast({
-          title: "News Updated",
-          description: "Latest market news has been loaded",
-        });
+      if (analysis.type === 'news-analysis' && analysis.analysis?.keyHighlights) {
+        const newsData = analysis.analysis.keyHighlights.map(item => ({
+          title: item.title,
+          text: item.text || '',
+          date: new Date(item.date).toLocaleDateString(),
+          source: item.source || 'Financial News',
+          url: item.url || '#',
+          sentiment: {
+            score: item.sentiment || 0,
+            magnitude: Math.abs(item.sentiment || 0)
+          }
+        }));
+        
+        setNews(newsData);
+        setTopTopics(analyzeTopics(newsData));
+        
+        if (showToast) {
+          toast({
+            title: "News Updated",
+            description: "Latest market news has been loaded",
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching news:', error);
@@ -47,7 +62,7 @@ export const MarketNews = () => {
 
   useEffect(() => {
     fetchNews();
-  }, [toast]);
+  }, []);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -84,7 +99,7 @@ export const MarketNews = () => {
             size="sm"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="h-8"
+            className="h-8 relative z-50"
           >
             <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -105,36 +120,51 @@ export const MarketNews = () => {
           </TabsList>
 
           <TabsContent value="news" className="space-y-4">
-            {news.slice(0, displayCount).map((item, index) => (
-              <NewsItemComponent key={index} item={item} />
-            ))}
-            {news.length > 5 && displayCount === 5 && (
-              <Button
-                variant="link"
-                className="w-full mt-2"
-                onClick={() => setDisplayCount(news.length)}
-              >
-                View All News
-              </Button>
-            )}
-            {displayCount > 5 && (
-              <Button
-                variant="link"
-                className="w-full mt-2"
-                onClick={() => setDisplayCount(5)}
-              >
-                Show Less
-              </Button>
+            {news.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No news articles available at the moment
+              </div>
+            ) : (
+              <>
+                {news.slice(0, displayCount).map((item, index) => (
+                  <NewsItemComponent key={index} item={item} />
+                ))}
+                {news.length > 5 && displayCount === 5 && (
+                  <Button
+                    variant="link"
+                    className="w-full mt-2"
+                    onClick={() => setDisplayCount(news.length)}
+                  >
+                    View All News
+                  </Button>
+                )}
+                {displayCount > 5 && (
+                  <Button
+                    variant="link"
+                    className="w-full mt-2"
+                    onClick={() => setDisplayCount(5)}
+                  >
+                    Show Less
+                  </Button>
+                )}
+              </>
             )}
           </TabsContent>
 
           <TabsContent value="topics" className="space-y-4">
-            {topTopics.map((topic, index) => (
-              <TopicItem key={index} topic={topic} />
-            ))}
+            {topTopics.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No trending topics available
+              </div>
+            ) : (
+              topTopics.map((topic, index) => (
+                <TopicItem key={index} topic={topic} />
+              ))
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>
     </Card>
   );
 };
+
