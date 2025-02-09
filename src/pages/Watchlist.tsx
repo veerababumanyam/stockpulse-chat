@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { WatchlistTable } from "@/components/watchlist/WatchlistTable";
 import { WatchlistHeader } from "@/components/watchlist/WatchlistHeader";
