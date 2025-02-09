@@ -18,6 +18,7 @@ export const useWatchlist = () => {
 
   const loadStocks = async () => {
     try {
+      setError(null);
       const savedKeys = localStorage.getItem('apiKeys');
       if (!savedKeys) {
         throw new Error('API keys not found. Please add your Financial Modeling Prep API key in settings.');
@@ -36,28 +37,43 @@ export const useWatchlist = () => {
         return;
       }
 
-      const stocksData = await Promise.all(
+      const stocksData = await Promise.allSettled(
         savedSymbols.map((symbol: string) => fetchStockData(symbol, fmp))
       );
 
+      const validStocksData = stocksData
+        .filter((result): result is PromiseFulfilledResult<any> => 
+          result.status === 'fulfilled' && result.value && result.value.quote)
+        .map(result => result.value);
+
+      if (validStocksData.length === 0) {
+        throw new Error('Failed to fetch stock data. Please try again later.');
+      }
+
       const existingAnalysis = loadAIAnalysis();
       const updatedAnalysis = { ...existingAnalysis };
-      const savedAlerts = JSON.parse(localStorage.getItem('watchlist-alerts') || '{}');
 
       // Run AI analysis if needed
       if (shouldRunAnalysis()) {
-        for (const data of stocksData) {
-          if (data && data.quote) {
-            const analysis = await runAIAnalysis(data);
-            if (analysis) {
-              updatedAnalysis[data.quote.symbol] = analysis;
+        for (const data of validStocksData) {
+          try {
+            if (data && data.quote) {
+              const analysis = await runAIAnalysis(data);
+              if (analysis) {
+                updatedAnalysis[data.quote.symbol] = analysis;
+              }
             }
+          } catch (analysisError) {
+            console.error('Error running AI analysis:', analysisError);
+            // Continue with next stock if analysis fails for one
           }
         }
         saveAIAnalysis(updatedAnalysis);
       }
 
-      const validStocks = stocksData
+      const savedAlerts = JSON.parse(localStorage.getItem('watchlist-alerts') || '{}');
+
+      const validStocks = validStocksData
         .filter(data => data && data.quote && data.profile)
         .map(data => ({
           symbol: data.quote.symbol,
@@ -75,10 +91,11 @@ export const useWatchlist = () => {
       setStocks(validStocks);
       setError(null);
     } catch (err) {
-      setError(err as Error);
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(new Error(errorMessage));
       toast({
         title: "Error loading watchlist",
-        description: (err as Error).message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
