@@ -1,5 +1,5 @@
 
-import { MarketMovers } from "./MarketMovers";
+import { MarketMovers } from "./market-movers/MarketMovers";
 import { AnalystInsights } from "./AnalystInsights";
 import { MarketNews } from "./market-news/MarketNews";
 import { BreakoutStocks } from "./BreakoutStocks";
