@@ -4,6 +4,10 @@ export const extractKeywords = (newsData: any[]): string[] => {
   const keywords = new Map();
 
   newsData.forEach(news => {
+    if (news.symbol) {
+      keywords.set(news.symbol, (keywords.get(news.symbol) || 0) + 1);
+    }
+
     const words = (news.title + ' ' + news.text).toLowerCase()
       .split(/\W+/)
       .filter(word => word.length > 3 && !commonWords.has(word));
@@ -20,8 +24,16 @@ export const extractKeywords = (newsData: any[]): string[] => {
 };
 
 export const identifyTrends = (keywords: string[], newsData: any[]): any[] => {
-  return keywords.map(keyword => ({
-    keyword,
+  const stockTrends = keywords
+    .filter(keyword => /^[A-Z]{1,5}$/.test(keyword))
+    .map(symbol => ({
+      symbol,
+      frequency: newsData.filter(news => news.symbol === symbol).length,
+      sentiment: calculateKeywordSentiment(symbol, newsData)
+    }));
+
+  return stockTrends.length > 0 ? stockTrends : keywords.map(keyword => ({
+    topic: keyword,
     frequency: newsData.filter(news => 
       (news.title + ' ' + news.text).toLowerCase().includes(keyword)
     ).length,
@@ -31,8 +43,11 @@ export const identifyTrends = (keywords: string[], newsData: any[]): any[] => {
 
 const calculateKeywordSentiment = (keyword: string, newsData: any[]): string => {
   const relevantNews = newsData.filter(news => 
-    (news.title + ' ' + news.text).toLowerCase().includes(keyword)
+    news.symbol === keyword || 
+    (news.title + ' ' + news.text).toLowerCase().includes(keyword.toLowerCase())
   );
+
+  if (relevantNews.length === 0) return 'neutral';
 
   const avgSentiment = relevantNews.reduce((acc, news) => acc + news.sentiment.score, 0) / relevantNews.length;
 

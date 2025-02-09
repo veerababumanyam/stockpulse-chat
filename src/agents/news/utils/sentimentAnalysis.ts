@@ -1,7 +1,7 @@
 
 export const calculateSentiment = (text: string) => {
-  const positiveWords = ['surge', 'gain', 'rise', 'growth', 'profit', 'success', 'boost'];
-  const negativeWords = ['drop', 'fall', 'decline', 'loss', 'risk', 'concern', 'fail'];
+  const positiveWords = ['surge', 'gain', 'rise', 'growth', 'profit', 'success', 'boost', 'bullish', 'upgrade', 'outperform'];
+  const negativeWords = ['drop', 'fall', 'decline', 'loss', 'risk', 'concern', 'fail', 'bearish', 'downgrade', 'underperform'];
   
   let score = 0;
   text = text.toLowerCase();
