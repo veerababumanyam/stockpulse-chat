@@ -12,6 +12,9 @@ import { MarketIndices } from "@/components/dashboard/MarketIndices";
 import { EconomicCalendar } from "@/components/dashboard/EconomicCalendar";
 import { EarningsCalendar } from "@/components/dashboard/EarningsCalendar";
 import { SECFilingsCalendar } from "@/components/dashboard/SECFilingsCalendar";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 interface StockData {
   symbol: string;
@@ -21,19 +24,25 @@ interface StockData {
   changePercent: number;
 }
 
-const Dashboard = () => {
+const DashboardContent = () => {
   const [hasApiKey, setHasApiKey] = useState(() => {
-    const savedKeys = localStorage.getItem('apiKeys');
-    if (savedKeys) {
-      const parsedKeys = JSON.parse(savedKeys);
-      return !!parsedKeys.fmp;
+    try {
+      const savedKeys = localStorage.getItem('apiKeys');
+      if (savedKeys) {
+        const parsedKeys = JSON.parse(savedKeys);
+        return !!parsedKeys.fmp;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error checking API key:', error);
+      return false;
     }
-    return false;
   });
 
   const [topGainers, setTopGainers] = useState<StockData[]>([]);
   const [topLosers, setTopLosers] = useState<StockData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -44,9 +53,16 @@ const Dashboard = () => {
       
       try {
         const savedKeys = localStorage.getItem('apiKeys');
-        if (!savedKeys) throw new Error('API key not found');
+        if (!savedKeys) {
+          setError('API key not found');
+          throw new Error('API key not found');
+        }
         
         const { fmp } = JSON.parse(savedKeys);
+        if (!fmp) {
+          setError('FMP API key not found');
+          throw new Error('FMP API key not found');
+        }
         
         const [gainersResponse, losersResponse] = await Promise.all([
           fetch(`https://financialmodelingprep.com/api/v3/stock_market/gainers?apikey=${fmp}`),
@@ -54,19 +70,29 @@ const Dashboard = () => {
         ]);
 
         if (!gainersResponse.ok || !losersResponse.ok) {
-          throw new Error('Failed to fetch market data');
+          const errorMessage = `Failed to fetch market data: ${gainersResponse.status}, ${losersResponse.status}`;
+          setError(errorMessage);
+          throw new Error(errorMessage);
         }
 
         const gainersData = await gainersResponse.json();
         const losersData = await losersResponse.json();
 
+        if (!Array.isArray(gainersData) || !Array.isArray(losersData)) {
+          setError('Invalid data format received from API');
+          throw new Error('Invalid data format received from API');
+        }
+
         setTopGainers(gainersData.slice(0, 5));
         setTopLosers(losersData.slice(0, 5));
+        setError(null);
       } catch (error) {
         console.error('Error fetching market data:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch market data';
+        setError(errorMessage);
         toast({
           title: "Error",
-          description: "Failed to fetch market data. Please try again later.",
+          description: errorMessage,
           variant: "destructive",
         });
       } finally {
@@ -88,6 +114,16 @@ const Dashboard = () => {
       ),
     });
   };
+
+  if (error) {
+    return (
+      <Alert variant="destructive" className="my-4">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
@@ -120,26 +156,44 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="space-y-8 animate-fade-in">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <MarketIndices />
-                  <BreakoutStocks />
-                </div>
+                <ErrorBoundary>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <ErrorBoundary>
+                      <MarketIndices />
+                    </ErrorBoundary>
+                    <ErrorBoundary>
+                      <BreakoutStocks />
+                    </ErrorBoundary>
+                  </div>
+                </ErrorBoundary>
                 
-                <MarketMovers 
-                  gainers={topGainers}
-                  losers={topLosers}
-                  isLoading={isLoading}
-                />
+                <ErrorBoundary>
+                  <MarketMovers 
+                    gainers={topGainers}
+                    losers={topLosers}
+                    isLoading={isLoading}
+                  />
+                </ErrorBoundary>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <AnalystInsights />
-                  <MarketNews />
+                  <ErrorBoundary>
+                    <AnalystInsights />
+                  </ErrorBoundary>
+                  <ErrorBoundary>
+                    <MarketNews />
+                  </ErrorBoundary>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <EconomicCalendar />
-                  <EarningsCalendar />
-                  <SECFilingsCalendar />
+                  <ErrorBoundary>
+                    <EconomicCalendar />
+                  </ErrorBoundary>
+                  <ErrorBoundary>
+                    <EarningsCalendar />
+                  </ErrorBoundary>
+                  <ErrorBoundary>
+                    <SECFilingsCalendar />
+                  </ErrorBoundary>
                 </div>
               </div>
             )}
@@ -147,6 +201,14 @@ const Dashboard = () => {
         </main>
       </div>
     </div>
+  );
+};
+
+const Dashboard = () => {
+  return (
+    <ErrorBoundary>
+      <DashboardContent />
+    </ErrorBoundary>
   );
 };
 
