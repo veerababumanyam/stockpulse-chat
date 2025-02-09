@@ -78,7 +78,7 @@ export const BreakoutStocks = () => {
           <span className="text-xl font-semibold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
             Breakout Stocks
           </span>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 relative z-50">
             <span className="text-sm text-muted-foreground">
               Last updated: {new Date(lastUpdated).toLocaleTimeString()}
             </span>
@@ -87,7 +87,7 @@ export const BreakoutStocks = () => {
               size="sm"
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="gap-2 bg-background text-foreground hover:bg-primary hover:text-primary-foreground transition-colors duration-200"
+              className="gap-2 bg-background text-foreground hover:bg-primary hover:text-primary-foreground transition-colors duration-200 relative z-50"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               {isRefreshing ? 'Refreshing...' : 'Refresh'}
@@ -145,4 +145,3 @@ export const BreakoutStocks = () => {
     </Card>
   );
 };
-
