@@ -29,11 +29,32 @@ const DashboardContent = () => {
   };
 
   if (error) {
+    const isSuspendedError = error.includes('suspended') || error.includes('invalid');
     return (
       <Alert variant="destructive" className="my-4">
         <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
+        <AlertTitle>{isSuspendedError ? "API Key Error" : "Error"}</AlertTitle>
+        <AlertDescription className="space-y-4">
+          <p>{error}</p>
+          {isSuspendedError && (
+            <>
+              <p className="font-medium">What to do:</p>
+              <ol className="list-decimal list-inside space-y-2">
+                <li>Visit <a href="https://financialmodelingprep.com/developer" className="underline" target="_blank" rel="noopener noreferrer">financialmodelingprep.com</a> to check your API key status</li>
+                <li>If needed, generate a new API key</li>
+                <li>Update your API key in the settings</li>
+              </ol>
+              <div className="pt-2">
+                <button
+                  onClick={() => navigate('/api-keys')}
+                  className="bg-white text-destructive px-4 py-2 rounded hover:bg-white/90 transition-colors"
+                >
+                  Update API Key
+                </button>
+              </div>
+            </>
+          )}
+        </AlertDescription>
       </Alert>
     );
   }

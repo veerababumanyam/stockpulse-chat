@@ -7,7 +7,7 @@ export const NoApiKeyPanel = ({ onSetupClick }: NoApiKeyPanelProps) => {
   return (
     <div className="glass-panel rounded-lg p-8 backdrop-blur-xl border border-border/50 animate-fade-in">
       <p className="text-lg text-muted-foreground mb-6">
-        To access real-time market data and AI-powered analysis, you'll need to set up your API key first.
+        To access real-time market data and AI-powered analysis, you'll need to set up your API key first. Make sure your API key is active and not suspended.
       </p>
       <button
         onClick={onSetupClick}
