@@ -54,7 +54,7 @@ export const useDashboardData = () => {
         ]);
 
         if (!gainersResponse.ok || !losersResponse.ok) {
-          const errorMessage = `Failed to fetch market data: ${gainersResponse.status}, ${losersResponse.status}`;
+          const errorMessage = 'Your FMP API key appears to be invalid or suspended. Please check your API key status at financialmodelingprep.com';
           setError(errorMessage);
           throw new Error(errorMessage);
         }

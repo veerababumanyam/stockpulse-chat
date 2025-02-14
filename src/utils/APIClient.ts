@@ -30,6 +30,10 @@ export class APIClient {
 
               const response = await fetch(url);
               
+              if (response.status === 403) {
+                throw new Error('Your FMP API key appears to be invalid or suspended. Please check your API key status at financialmodelingprep.com');
+              }
+
               if (response.status === 429) {
                 if (retryCount < this.rateLimiter.getMaxRetries()) {
                   await this.rateLimiter.handleBackoff(retryCount);
@@ -45,6 +49,10 @@ export class APIClient {
               }
 
               const data = await response.json();
+              if (data?.["Error Message"]) {
+                throw new Error(data["Error Message"]);
+              }
+              
               resolve(data);
               return data;
             } catch (error: any) {
@@ -65,3 +73,4 @@ export class APIClient {
     }
   }
 }
+
