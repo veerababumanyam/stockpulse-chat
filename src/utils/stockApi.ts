@@ -1,7 +1,12 @@
+
 export const fetchStockData = async (query: string, apiKey: string) => {
   try {
     if (!apiKey) {
       throw new Error('FMP API key is missing');
+    }
+
+    if (apiKey.startsWith('hf_')) {
+      throw new Error('Invalid API key format. Please provide a valid Financial Modeling Prep (FMP) API key. Visit https://site.financialmodelingprep.com/developer to get your API key.');
     }
 
     const cleanQuery = query.toLowerCase().replace(/[^a-z0-9\s]/g, '');
@@ -9,6 +14,20 @@ export const fetchStockData = async (query: string, apiKey: string) => {
     const searchTerm = words.find(word => word.length >= 2) || cleanQuery;
 
     console.log('Searching for:', searchTerm);
+
+    // Test the API key first
+    const testResponse = await fetch(`https://financialmodelingprep.com/api/v3/stock/list?apikey=${apiKey}`);
+    const testData = await testResponse.json();
+
+    if (testResponse.status === 401 || testResponse.status === 403) {
+      if (testData?.["Error Message"]?.includes("Invalid API KEY")) {
+        throw new Error('Invalid FMP API key. Please check your API key or get a new one at https://site.financialmodelingprep.com/developer');
+      }
+      if (testData?.["Error Message"]?.includes("suspended")) {
+        throw new Error('Your FMP API key is suspended. Please check your account status at financialmodelingprep.com');
+      }
+      throw new Error('API key validation failed. Please check your FMP API key.');
+    }
 
     // Only fetch essential data in parallel
     const [searchResponse, quoteData] = await Promise.all([
@@ -66,6 +85,10 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
       throw new Error('FMP API key not found');
     }
 
+    if (fmp.startsWith('hf_')) {
+      throw new Error('Invalid API key format. Please provide a valid Financial Modeling Prep (FMP) API key.');
+    }
+
     // Build base URL with common parameters
     let url = `https://financialmodelingprep.com/api/v3/stock-screener?apikey=${fmp}`;
     
@@ -92,6 +115,10 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
 
     const response = await fetch(url);
     if (!response.ok) {
+      const data = await response.json();
+      if (data?.["Error Message"]?.includes("Invalid API KEY")) {
+        throw new Error('Invalid FMP API key. Please check your API key or get a new one at https://site.financialmodelingprep.com/developer');
+      }
       throw new Error(`Failed to fetch screening results: ${response.statusText}`);
     }
 
@@ -125,3 +152,4 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
     throw error;
   }
 }
+
