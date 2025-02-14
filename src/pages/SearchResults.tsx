@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { fetchStockData } from "@/utils/stockApi";
 import { CompanyHeader } from "@/components/search/CompanyHeader";
@@ -18,7 +18,23 @@ import { OrchestratorAgent } from "@/agents/OrchestratorAgent";
 import { formatLargeNumber, getPriceChangeColor } from "@/utils/formatting";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Search } from "lucide-react";
+import { SearchBar } from "@/components/SearchBar";
+
+const EmptySearchState = () => {
+  return (
+    <div className="flex flex-col items-center justify-center space-y-6 p-8">
+      <Search className="h-12 w-12 text-muted-foreground/50" />
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-semibold">Search for a Company</h2>
+        <p className="text-muted-foreground max-w-md">
+          Enter a company name or ticker symbol to view detailed financial analysis, charts, and AI-powered insights.
+        </p>
+      </div>
+      <SearchBar />
+    </div>
+  );
+};
 
 const SearchResultsContent = () => {
   const location = useLocation();
@@ -35,7 +51,7 @@ const SearchResultsContent = () => {
 
     const fetchData = async () => {
       if (!query) {
-        setError("Please provide a search query");
+        setError(null); // Clear error for empty search
         return;
       }
 
@@ -102,6 +118,20 @@ const SearchResultsContent = () => {
     fetchData();
   }, [location.search, toast]);
 
+  const searchParams = new URLSearchParams(location.search);
+  const query = searchParams.get('q');
+
+  if (!query) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto pt-20 p-4">
+          <EmptySearchState />
+        </main>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="min-h-screen bg-background">
@@ -112,6 +142,9 @@ const SearchResultsContent = () => {
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
+          <div className="mt-8">
+            <SearchBar />
+          </div>
         </main>
       </div>
     );
