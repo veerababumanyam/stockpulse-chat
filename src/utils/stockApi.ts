@@ -29,11 +29,10 @@ export const fetchStockData = async (query: string, apiKey: string) => {
       throw new Error('API key validation failed. Please check your FMP API key.');
     }
 
-    // Only fetch essential data in parallel
-    const [searchResponse, quoteData] = await Promise.all([
-      fetch(`https://financialmodelingprep.com/api/v3/search?query=${searchTerm}&limit=1&apikey=${apiKey}`),
-      fetch(`https://financialmodelingprep.com/api/v3/quote/${searchTerm}?apikey=${apiKey}`)
-    ]);
+    // First, get the correct symbol from search
+    const searchResponse = await fetch(
+      `https://financialmodelingprep.com/api/v3/search?query=${searchTerm}&limit=1&apikey=${apiKey}`
+    );
 
     if (!searchResponse.ok) {
       throw new Error('Failed to fetch search results');
@@ -46,17 +45,24 @@ export const fetchStockData = async (query: string, apiKey: string) => {
 
     const symbol = searchResults[0].symbol;
     console.log('Found symbol:', symbol);
-    
-    // Fetch additional data only if needed
-    const [profileData, metricsData] = await Promise.all([
+
+    // Now fetch all data for the correct symbol
+    const [quoteData, profileData, metricsData] = await Promise.all([
+      fetch(`https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${apiKey}`).then(r => r.json()),
       fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKey}`).then(r => r.json()),
       fetch(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${symbol}?apikey=${apiKey}`).then(r => r.json()),
     ]);
 
-    const quoteResult = await quoteData.json();
+    if (!quoteData || quoteData.length === 0) {
+      throw new Error(`No quote data found for symbol ${symbol}`);
+    }
+
+    if (!profileData || profileData.length === 0) {
+      throw new Error(`No profile data found for symbol ${symbol}`);
+    }
 
     return {
-      quote: quoteResult[0],
+      quote: quoteData[0],
       profile: profileData[0],
       metrics: metricsData[0] || {},
       ratios: {}, // Simplified to reduce API calls
