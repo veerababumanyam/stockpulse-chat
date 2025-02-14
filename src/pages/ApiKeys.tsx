@@ -1,12 +1,12 @@
 
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { ExternalLink, Key } from "lucide-react";
+import { ExternalLink, Key, AlertTriangle } from "lucide-react";
 import type { ApiKeys } from "@/types/llm";
 
 const ApiKeys = () => {
@@ -18,6 +18,7 @@ const ApiKeys = () => {
     gemini: "", 
     fmp: "" 
   });
+  const [fmpKeyStatus, setFmpKeyStatus] = useState<'valid' | 'invalid' | 'checking' | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -27,6 +28,11 @@ const ApiKeys = () => {
         const parsedKeys = JSON.parse(savedKeys);
         setApiKeys(prev => ({ ...prev, ...parsedKeys }));
         console.log('Loaded API keys from localStorage');
+
+        // Check FMP key status if present
+        if (parsedKeys.fmp) {
+          checkFmpKeyStatus(parsedKeys.fmp);
+        }
       } catch (error) {
         console.error('Error parsing saved API keys:', error);
         toast({
@@ -38,9 +44,55 @@ const ApiKeys = () => {
     }
   }, []);
 
-  const handleApiKeySubmit = (e: React.FormEvent) => {
+  const checkFmpKeyStatus = async (key: string) => {
+    setFmpKeyStatus('checking');
+    try {
+      // Test the FMP API key with a simple endpoint
+      const response = await fetch(
+        `https://financialmodelingprep.com/api/v3/stock/list?apikey=${key}`
+      );
+
+      if (response.status === 403) {
+        const data = await response.json();
+        if (data?.["Error Message"]?.includes("suspended")) {
+          setFmpKeyStatus('invalid');
+          toast({
+            title: "API Key Error",
+            description: "Your FMP API key appears to be suspended. Please check your key status at financialmodelingprep.com",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      if (!response.ok) {
+        setFmpKeyStatus('invalid');
+        toast({
+          title: "API Key Error",
+          description: "Invalid FMP API key. Please check your key and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setFmpKeyStatus('valid');
+    } catch (error) {
+      console.error('Error checking FMP key status:', error);
+      setFmpKeyStatus('invalid');
+    }
+  };
+
+  const handleApiKeySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // If FMP key is provided, validate it first
+      if (apiKeys.fmp) {
+        await checkFmpKeyStatus(apiKeys.fmp);
+        if (fmpKeyStatus === 'invalid') {
+          return; // Don't save if FMP key is invalid
+        }
+      }
+
       // Filter out empty API keys before saving
       const nonEmptyKeys = Object.fromEntries(
         Object.entries(apiKeys).filter(([_, value]) => value.trim().length > 0)
@@ -99,8 +151,42 @@ const ApiKeys = () => {
                 Manage your API keys for various services. These keys are stored securely in your browser's local storage.
               </AlertDescription>
             </Alert>
+
+            {fmpKeyStatus === 'invalid' && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>FMP API Key Error</AlertTitle>
+                <AlertDescription className="space-y-2">
+                  <p>Your Financial Modeling Prep API key appears to be invalid or suspended.</p>
+                  <p>Please visit <a href="https://financialmodelingprep.com/developer" className="underline" target="_blank" rel="noopener noreferrer">financialmodelingprep.com</a> to check your API key status or generate a new one.</p>
+                </AlertDescription>
+              </Alert>
+            )}
             
             <form onSubmit={handleApiKeySubmit} className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">FMP API Key</label>
+                  {renderApiKeyLink('fmp')}
+                </div>
+                <Input
+                  type="password"
+                  value={apiKeys.fmp}
+                  onChange={(e) => {
+                    setApiKeys(prev => ({ ...prev, fmp: e.target.value }));
+                    setFmpKeyStatus(null);
+                  }}
+                  placeholder="Enter FMP API Key"
+                  className={`bg-white/70 border-[#E5DEFF] ${
+                    fmpKeyStatus === 'invalid' ? 'border-red-500' : 
+                    fmpKeyStatus === 'valid' ? 'border-green-500' : ''
+                  }`}
+                />
+                {fmpKeyStatus === 'checking' && (
+                  <p className="text-sm text-muted-foreground">Checking API key status...</p>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <label className="text-sm font-medium">OpenAI API Key</label>
@@ -167,20 +253,6 @@ const ApiKeys = () => {
                   value={apiKeys.deepseek}
                   onChange={(e) => setApiKeys(prev => ({ ...prev, deepseek: e.target.value }))}
                   placeholder="Enter Deepseek API Key"
-                  className="bg-white/70 border-[#E5DEFF]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium">FMP API Key</label>
-                  {renderApiKeyLink('fmp')}
-                </div>
-                <Input
-                  type="password"
-                  value={apiKeys.fmp}
-                  onChange={(e) => setApiKeys(prev => ({ ...prev, fmp: e.target.value }))}
-                  placeholder="Enter FMP API Key"
                   className="bg-white/70 border-[#E5DEFF]"
                 />
               </div>
