@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,20 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  useEffect(() => {
+    // Check if user is already authenticated
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Get the stored redirect path or default to dashboard
+        const redirectPath = localStorage.getItem('redirectAfterAuth') || '/dashboard';
+        localStorage.removeItem('redirectAfterAuth'); // Clean up
+        navigate(redirectPath);
+      }
+    };
+    checkSession();
+  }, [navigate]);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -23,7 +37,11 @@ const Auth = () => {
         password,
       });
       if (error) throw error;
-      navigate('/api-keys');
+      
+      // Get the stored redirect path or default to dashboard
+      const redirectPath = localStorage.getItem('redirectAfterAuth') || '/dashboard';
+      localStorage.removeItem('redirectAfterAuth'); // Clean up
+      navigate(redirectPath);
     } catch (error: any) {
       toast({
         title: "Error",
