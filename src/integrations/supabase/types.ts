@@ -50,6 +50,7 @@ export type Database = {
           service: string
           subscription_type: string | null
           updated_at: string | null
+          use_yahoo_backup: boolean | null
           user_id: string
         }
         Insert: {
@@ -59,6 +60,7 @@ export type Database = {
           service: string
           subscription_type?: string | null
           updated_at?: string | null
+          use_yahoo_backup?: boolean | null
           user_id: string
         }
         Update: {
@@ -68,6 +70,7 @@ export type Database = {
           service?: string
           subscription_type?: string | null
           updated_at?: string | null
+          use_yahoo_backup?: boolean | null
           user_id?: string
         }
         Relationships: []

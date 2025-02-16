@@ -1,4 +1,5 @@
 
+
 export const validateFMPKey = (apiKey: string) => {
   if (!apiKey) {
     throw new Error('FMP API key not found. Please set up your API key in the API Keys page');

@@ -1,4 +1,5 @@
 
+
 const BASE_URL = 'https://query2.finance.yahoo.com/v8/finance';
 
 export const fetchYahooStockData = async (symbol: string) => {

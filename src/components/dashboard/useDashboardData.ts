@@ -32,7 +32,7 @@ export const useDashboardData = () => {
 
         const { data: apiKeyData, error: apiKeyError } = await supabase
           .from('api_keys')
-          .select('api_key')
+          .select('api_key, use_yahoo_backup')
           .eq('service', 'fmp')
           .single();
 
