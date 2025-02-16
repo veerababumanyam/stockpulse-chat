@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,14 +25,43 @@ const ApiKeys = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadApiKeys();
+    checkAuth();
   }, []);
+
+  const checkAuth = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/auth');
+        return;
+      }
+      loadApiKeys();
+    } catch (error) {
+      console.error('Auth error:', error);
+      navigate('/auth');
+    }
+  };
+
+  // Subscribe to auth changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        navigate('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const loadApiKeys = async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
       const { data, error } = await supabase
         .from('api_keys')
-        .select('service, api_key');
+        .select('service, api_key')
+        .eq('user_id', session.user.id);
 
       if (error) throw error;
 
@@ -44,7 +74,7 @@ const ApiKeys = () => {
         fmp: "" 
       };
 
-      data.forEach(({ service, api_key }) => {
+      data?.forEach(({ service, api_key }) => {
         if (service in keyMap) {
           keyMap[service as keyof ApiKeys] = api_key;
         }
@@ -105,6 +135,12 @@ const ApiKeys = () => {
   const handleApiKeySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/auth');
+        return;
+      }
+
       if (apiKeys.fmp) {
         await checkFmpKeyStatus(apiKeys.fmp);
         if (fmpKeyStatus === 'invalid') {
@@ -115,6 +151,7 @@ const ApiKeys = () => {
       const entries = Object.entries(apiKeys)
         .filter(([_, value]) => value.trim().length > 0)
         .map(([service, api_key]) => ({
+          user_id: session.user.id,
           service,
           api_key
         }));
@@ -122,7 +159,7 @@ const ApiKeys = () => {
       const { error } = await supabase
         .from('api_keys')
         .upsert(entries, {
-          onConflict: 'service'
+          onConflict: 'user_id,service'
         });
 
       if (error) throw error;
@@ -131,6 +168,9 @@ const ApiKeys = () => {
         title: "Success",
         description: "API keys saved successfully",
       });
+      
+      // Reload keys to ensure we have the latest data
+      loadApiKeys();
     } catch (error) {
       console.error('Error saving API keys:', error);
       toast({
