@@ -30,8 +30,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ role, content }) => (
 );
 
 const ChatWindow: React.FC = () => {
+  const functionUrl = `${supabase.functions.invoke('stock-chat').url}`;
+  
   const { messages, input, handleInputChange, handleSubmit, setMessages } = useChat({
-    api: supabase.functions.invoke.url('stock-chat'),
+    api: functionUrl,
     onError: (error) => {
       console.error('Chat error:', error);
     }
