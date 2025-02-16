@@ -4,7 +4,7 @@ import {
   TableBody,
 } from "@/components/ui/table";
 import { useWatchlist } from "@/hooks/useWatchlist";
-import { Stock } from "@/types/watchlist";
+import { Stock, WatchlistStock } from "@/types/watchlist";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo } from "react";
 import { StockAlertsDialog } from "./StockAlertsDialog";
@@ -23,11 +23,22 @@ type SortConfig = {
   direction: 'asc' | 'desc';
 };
 
+const convertToWatchlistStock = (stock: Stock): WatchlistStock => ({
+  ...stock,
+  price: 0,
+  change: 0,
+  changePercent: 0,
+  marketCap: 0,
+  volume: 0,
+  sector: '',
+  alerts: []
+});
+
 export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps) => {
   const { removeFromWatchlist, createAlert, deleteAlert } = useWatchlist();
   const [filterValue, setFilterValue] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: '', direction: 'asc' });
-  const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
+  const [selectedStock, setSelectedStock] = useState<WatchlistStock | null>(null);
 
   const handleSort = (key: keyof Stock) => {
     setSortConfig(current => ({
@@ -96,9 +107,9 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
             {filteredAndSortedStocks.map((stock) => (
               <StockTableRow
                 key={stock.symbol}
-                stock={stock}
+                stock={convertToWatchlistStock(stock)}
                 onRemove={removeFromWatchlist}
-                onSelectStock={setSelectedStock}
+                onSelectStock={(stock) => setSelectedStock(stock)}
               />
             ))}
           </TableBody>
@@ -110,7 +121,7 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
           stock={selectedStock}
           open={!!selectedStock}
           onOpenChange={(open) => !open && setSelectedStock(null)}
-          onAddAlert={(price, type) => {
+          onAddAlert={(price) => {
             createAlert({ symbol: selectedStock.symbol, targetPrice: price });
           }}
           onRemoveAlert={deleteAlert}

@@ -26,6 +26,7 @@ export interface Alert {
   id: string;
   symbol: string;
   target_price: number;
+  type: 'above' | 'below';
   triggered: boolean;
   created_at?: string;
   user_id?: string;

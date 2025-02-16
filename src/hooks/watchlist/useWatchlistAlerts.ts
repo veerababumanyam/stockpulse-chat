@@ -6,13 +6,14 @@ import { useToast } from "@/components/ui/use-toast";
 export const useWatchlistAlerts = (stocks: WatchlistStock[], setStocks: React.Dispatch<React.SetStateAction<WatchlistStock[]>>) => {
   const { toast } = useToast();
 
-  const addAlert = (symbol: string, price: number, type: 'above' | 'below') => {
+  const addAlert = (symbol: string, target_price: number, type: 'above' | 'below') => {
     const alert: Alert = {
       id: Math.random().toString(36).substr(2, 9),
-      stockSymbol: symbol,
-      price,
+      symbol,
+      target_price,
       type,
-      createdAt: new Date().toISOString()
+      triggered: false,
+      created_at: new Date().toISOString()
     };
 
     setStocks(current => {
@@ -36,7 +37,7 @@ export const useWatchlistAlerts = (stocks: WatchlistStock[], setStocks: React.Di
 
     toast({
       title: "Alert added",
-      description: `Alert set for ${symbol} at $${price}`,
+      description: `Alert set for ${symbol} at $${target_price}`,
     });
   };
 

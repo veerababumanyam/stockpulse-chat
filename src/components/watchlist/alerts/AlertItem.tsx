@@ -12,12 +12,12 @@ interface AlertItemProps {
 
 export const AlertItem = ({ alert, stock, onRemoveAlert }: AlertItemProps) => {
   const getAlertStatusColor = (alert: Alert) => {
-    if (alert.isTriggered) return "text-gray-400";
+    if (alert.triggered) return "text-gray-400";
     const currentPrice = stock.price;
     if (alert.type === 'above') {
-      return currentPrice >= alert.price ? "text-green-500" : "text-yellow-500";
+      return currentPrice >= alert.target_price ? "text-green-500" : "text-yellow-500";
     }
-    return currentPrice <= alert.price ? "text-red-500" : "text-yellow-500";
+    return currentPrice <= alert.target_price ? "text-red-500" : "text-yellow-500";
   };
 
   return (
@@ -28,7 +28,7 @@ export const AlertItem = ({ alert, stock, onRemoveAlert }: AlertItemProps) => {
         ) : (
           <ArrowDown className={`h-4 w-4 ${getAlertStatusColor(alert)}`} />
         )}
-        <span>{formatPrice(alert.price)}</span>
+        <span>{formatPrice(alert.target_price)}</span>
       </div>
       <Button
         variant="ghost"
