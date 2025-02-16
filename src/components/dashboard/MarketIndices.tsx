@@ -1,3 +1,4 @@
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -35,12 +36,20 @@ export const MarketIndices = () => {
           throw new Error('FMP API key not found. Please set up your API key in the API Keys page');
         }
 
-        const fmp = apiKeyData.api_key;
+        // Validate API key format
+        if (apiKeyData.api_key.startsWith('hf_')) {
+          throw new Error('Invalid API key format. Please provide a valid Financial Modeling Prep (FMP) API key, not a Hugging Face key.');
+        }
         
-        const url = `https://financialmodelingprep.com/api/v3/quotes/index?apikey=${fmp}`;
-        const response = await fetch(url);
+        const response = await fetch(
+          `https://financialmodelingprep.com/api/v3/quotes/index?apikey=${apiKeyData.api_key}`
+        );
 
         if (!response.ok) {
+          const data = await response.json();
+          if (response.status === 403 && data?.["Error Message"]?.includes("Exclusive Endpoint")) {
+            throw new Error('This feature requires a premium FMP subscription. Please upgrade your plan at financialmodelingprep.com');
+          }
           throw new Error('Failed to fetch indices. Please check your API key status.');
         }
         

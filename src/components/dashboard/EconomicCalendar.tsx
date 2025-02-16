@@ -34,12 +34,21 @@ export const EconomicCalendar = () => {
         if (apiKeyError || !apiKeyData) {
           throw new Error('FMP API key not found. Please set up your API key in the API Keys page');
         }
+
+        // Validate API key format
+        if (apiKeyData.api_key.startsWith('hf_')) {
+          throw new Error('Invalid API key format. Please provide a valid Financial Modeling Prep (FMP) API key, not a Hugging Face key.');
+        }
         
         const response = await fetch(
           `https://financialmodelingprep.com/api/v3/economic_calendar?apikey=${apiKeyData.api_key}`
         );
 
         if (!response.ok) {
+          const data = await response.json();
+          if (response.status === 403 && data?.["Error Message"]?.includes("Exclusive Endpoint")) {
+            throw new Error('The Economic Calendar feature requires a premium FMP subscription. Please upgrade your plan at financialmodelingprep.com');
+          }
           throw new Error('Failed to fetch economic calendar. Please check your API key status.');
         }
         
