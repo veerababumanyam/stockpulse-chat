@@ -42,15 +42,22 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.email || !formData.password) {
+      toast({
+        title: "Missing Fields",
+        description: "Please fill in both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      console.log('Attempting sign in with:', {
-        email: formData.email.trim().toLowerCase(),
-        password: formData.password,
-      });
+      const trimmedEmail = formData.email.trim().toLowerCase();
+      console.log('Attempting sign in with:', { email: trimmedEmail });
 
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email.trim().toLowerCase(),
+        email: trimmedEmail,
         password: formData.password,
       });
 
@@ -69,12 +76,17 @@ const Auth = () => {
             variant: "destructive",
           });
         } else {
-          throw error;
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
         }
         return;
       }
 
       if (data.user) {
+        console.log('Sign in successful:', data.user);
         toast({
           title: "Success",
           description: "You have been signed in successfully.",
@@ -95,6 +107,15 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.email || !formData.password || !formData.fullName) {
+      toast({
+        title: "Missing Fields",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (formData.password.length < 6) {
       toast({
         title: "Invalid Password",
@@ -106,14 +127,14 @@ const Auth = () => {
 
     setIsLoading(true);
     try {
+      const trimmedEmail = formData.email.trim().toLowerCase();
       console.log('Attempting sign up with:', {
-        email: formData.email.trim().toLowerCase(),
-        password: formData.password,
+        email: trimmedEmail,
         fullName: formData.fullName,
       });
 
       const { data, error } = await supabase.auth.signUp({
-        email: formData.email.trim().toLowerCase(),
+        email: trimmedEmail,
         password: formData.password,
         options: {
           data: {
@@ -122,7 +143,15 @@ const Auth = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Sign up error:', error);
+        toast({
+          title: "Registration Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
 
       if (data.user?.identities?.length === 0) {
         toast({
@@ -133,6 +162,7 @@ const Auth = () => {
         return;
       }
       
+      console.log('Sign up successful:', data);
       toast({
         title: "Registration Successful",
         description: "Please check your email to confirm your account. Check your spam folder if you don't see it.",
@@ -167,7 +197,7 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="space-y-6">
+          <Tabs defaultValue="signup" className="space-y-6">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin" className="flex items-center gap-2">
                 <LogIn className="w-4 h-4" />
