@@ -23,8 +23,13 @@ const Auth = () => {
   // Check for existing session on mount
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('Session check error:', error);
+        return;
+      }
       if (session) {
+        console.log('Existing session found, redirecting to dashboard');
         navigate('/dashboard');
       }
     };
@@ -33,11 +38,17 @@ const Auth = () => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
+        console.log('Auth state changed: User authenticated');
         navigate('/dashboard');
+      } else {
+        console.log('Auth state changed: User signed out');
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('Cleaning up auth state listener');
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -54,7 +65,7 @@ const Auth = () => {
     setIsLoading(true);
     try {
       const trimmedEmail = formData.email.trim().toLowerCase();
-      console.log('Attempting sign in with:', { email: trimmedEmail });
+      console.log('Attempting sign in for:', trimmedEmail);
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
@@ -86,7 +97,7 @@ const Auth = () => {
       }
 
       if (data.user) {
-        console.log('Sign in successful:', data.user);
+        console.log('Sign in successful for user:', data.user.id);
         toast({
           title: "Success",
           description: "You have been signed in successfully.",
@@ -94,7 +105,7 @@ const Auth = () => {
         navigate('/dashboard');
       }
     } catch (error: any) {
-      console.error('Auth error:', error);
+      console.error('Unexpected auth error:', error);
       toast({
         title: "Authentication Error",
         description: error.message,
@@ -128,10 +139,7 @@ const Auth = () => {
     setIsLoading(true);
     try {
       const trimmedEmail = formData.email.trim().toLowerCase();
-      console.log('Attempting sign up with:', {
-        email: trimmedEmail,
-        fullName: formData.fullName,
-      });
+      console.log('Attempting sign up for:', trimmedEmail);
 
       const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
@@ -162,14 +170,14 @@ const Auth = () => {
         return;
       }
       
-      console.log('Sign up successful:', data);
+      console.log('Sign up successful, user id:', data.user?.id);
       toast({
         title: "Registration Successful",
         description: "Please check your email to confirm your account. Check your spam folder if you don't see it.",
       });
       
     } catch (error: any) {
-      console.error('Signup error:', error);
+      console.error('Unexpected signup error:', error);
       toast({
         title: "Registration Error",
         description: error.message,
@@ -197,7 +205,7 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signup" className="space-y-6">
+          <Tabs defaultValue="signin" className="space-y-6">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin" className="flex items-center gap-2">
                 <LogIn className="w-4 h-4" />
