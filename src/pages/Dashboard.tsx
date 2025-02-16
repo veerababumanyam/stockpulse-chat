@@ -1,8 +1,6 @@
 
 import { Navigation } from "@/components/Navigation";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { ToastAction } from "@/components/ui/toast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
@@ -13,7 +11,6 @@ import { useDashboardData } from "@/components/dashboard/useDashboardData";
 
 const DashboardContent = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const {
     hasApiKey,
     topGainers,
@@ -23,7 +20,6 @@ const DashboardContent = () => {
   } = useDashboardData();
 
   const handleSetupApiKey = () => {
-    // Direct navigation to API keys page without any auth check
     navigate('/api-keys');
   };
 
