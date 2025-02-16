@@ -19,12 +19,14 @@ export const useDashboardData = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // First, check if API key exists without making any external API calls
   useEffect(() => {
-    const fetchMarketData = async () => {
+    const checkApiKey = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           setError('You must be logged in to view market data');
+          setIsLoading(false);
           return;
         }
 
@@ -36,55 +38,54 @@ export const useDashboardData = () => {
 
         if (apiKeyError || !apiKeyData) {
           setHasApiKey(false);
-          setError('FMP API key not found. Please set up your API key in the API Keys page');
+          setIsLoading(false);
           return;
         }
 
         setHasApiKey(true);
+        
+        // Only fetch market data if we have an API key
         const fmp = apiKeyData.api_key;
-
+        
+        // Validate API key format
         if (fmp.startsWith('hf_')) {
-          setError('Invalid API key format. Please provide a valid Financial Modeling Prep (FMP) API key. Visit https://site.financialmodelingprep.com/developer to get your API key.');
+          setError('Invalid API key format. Please provide a valid Financial Modeling Prep (FMP) API key.');
+          setIsLoading(false);
           return;
         }
 
-        const [gainersResponse, losersResponse] = await Promise.all([
-          fetch(`https://financialmodelingprep.com/api/v3/stock_market/gainers?apikey=${fmp}`),
-          fetch(`https://financialmodelingprep.com/api/v3/stock_market/losers?apikey=${fmp}`)
-        ]);
+        try {
+          const [gainersResponse, losersResponse] = await Promise.all([
+            fetch(`https://financialmodelingprep.com/api/v3/stock_market/gainers?apikey=${fmp}`),
+            fetch(`https://financialmodelingprep.com/api/v3/stock_market/losers?apikey=${fmp}`)
+          ]);
 
-        if (!gainersResponse.ok || !losersResponse.ok) {
-          const errorMessage = 'Your FMP API key appears to be invalid or suspended. Please check your API key status at financialmodelingprep.com';
-          setError(errorMessage);
-          throw new Error(errorMessage);
+          if (!gainersResponse.ok || !losersResponse.ok) {
+            throw new Error('Your FMP API key appears to be invalid or suspended. Please check your API key status at financialmodelingprep.com');
+          }
+
+          const [gainersData, losersData] = await Promise.all([
+            gainersResponse.json(),
+            losersResponse.json()
+          ]);
+
+          setTopGainers(gainersData.slice(0, 5));
+          setTopLosers(losersData.slice(0, 5));
+          setError(null);
+        } catch (error) {
+          console.error('API request error:', error);
+          setError(error instanceof Error ? error.message : 'Failed to fetch market data');
+          setHasApiKey(false);
         }
-
-        const gainersData = await gainersResponse.json();
-        const losersData = await losersResponse.json();
-
-        if (!Array.isArray(gainersData) || !Array.isArray(losersData)) {
-          setError('Invalid data format received from API');
-          throw new Error('Invalid data format received from API');
-        }
-
-        setTopGainers(gainersData.slice(0, 5));
-        setTopLosers(losersData.slice(0, 5));
-        setError(null);
       } catch (error) {
-        console.error('Error fetching market data:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch market data';
-        setError(errorMessage);
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
+        console.error('Error checking API key:', error);
+        setError(error instanceof Error ? error.message : 'Failed to check API key status');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchMarketData();
+    checkApiKey();
   }, [toast]);
 
   return {
