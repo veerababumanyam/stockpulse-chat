@@ -1,8 +1,8 @@
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface IndexData {
   symbol: string;
@@ -20,48 +20,39 @@ export const MarketIndices = () => {
   useEffect(() => {
     const fetchIndices = async () => {
       try {
-        const savedKeys = localStorage.getItem('apiKeys');
-        console.log('Saved API keys:', savedKeys);
-        
-        if (!savedKeys) {
-          console.error('API key not found in localStorage');
-          throw new Error('API key not found');
-        }
-        
-        const parsedKeys = JSON.parse(savedKeys);
-        console.log('Parsed API keys:', parsedKeys);
-        
-        const { fmp } = parsedKeys;
-        if (!fmp) {
-          console.error('FMP API key not found in parsed keys');
-          throw new Error('FMP API key not found');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('You must be logged in to view market data');
         }
 
-        console.log('Using FMP API key:', fmp.slice(0, 4) + '...');
+        const { data: apiKeyData, error: apiKeyError } = await supabase
+          .from('api_keys')
+          .select('api_key')
+          .eq('service', 'fmp')
+          .single();
+
+        if (apiKeyError || !apiKeyData) {
+          throw new Error('FMP API key not found. Please set up your API key in the API Keys page');
+        }
+
+        const fmp = apiKeyData.api_key;
         
         const url = `https://financialmodelingprep.com/api/v3/quotes/index?apikey=${fmp}`;
-        console.log('Fetching from URL:', url);
-        
         const response = await fetch(url);
-        console.log('Response status:', response.status);
 
         if (!response.ok) {
-          console.error('API response not OK:', response.status);
-          throw new Error(`Failed to fetch indices: ${response.status}`);
+          throw new Error('Failed to fetch indices. Please check your API key status.');
         }
         
         const data = await response.json();
-        console.log('Raw API response:', data);
         
         if (!Array.isArray(data)) {
-          console.error('Received data is not an array:', data);
-          throw new Error('Invalid data format');
+          throw new Error('Invalid data format received from API');
         }
 
         // Filter for specific major indices
         const importantSymbols = ['^GSPC', '^DJI', '^IXIC', '^RUT', '^VIX'];
         const filteredData = data.filter((index: any) => importantSymbols.includes(index?.symbol));
-        console.log('Filtered indices:', filteredData);
 
         const validIndices = filteredData.map((index: any) => ({
           symbol: index.symbol,
@@ -71,13 +62,12 @@ export const MarketIndices = () => {
           changePercent: Number(index.changesPercentage) || 0
         }));
 
-        console.log('Processed indices:', validIndices);
         setIndices(validIndices);
       } catch (error) {
         console.error('Error fetching indices:', error);
         toast({
           title: "Error",
-          description: "Failed to fetch market indices. Please check your API key.",
+          description: error instanceof Error ? error.message : "Failed to fetch market indices",
           variant: "destructive",
         });
       } finally {

@@ -2,6 +2,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EarningsEvent {
   symbol: string;
@@ -20,16 +21,28 @@ export const EarningsCalendar = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const savedKeys = localStorage.getItem('apiKeys');
-        if (!savedKeys) throw new Error('API key not found');
-        
-        const { fmp } = JSON.parse(savedKeys);
-        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('You must be logged in to view earnings data');
+        }
+
+        const { data: apiKeyData, error: apiKeyError } = await supabase
+          .from('api_keys')
+          .select('api_key')
+          .eq('service', 'fmp')
+          .single();
+
+        if (apiKeyError || !apiKeyData) {
+          throw new Error('FMP API key not found. Please set up your API key in the API Keys page');
+        }
+
         const response = await fetch(
-          `https://financialmodelingprep.com/api/v3/earning_calendar?apikey=${fmp}`
+          `https://financialmodelingprep.com/api/v3/earning_calendar?apikey=${apiKeyData.api_key}`
         );
 
-        if (!response.ok) throw new Error('Failed to fetch earnings calendar');
+        if (!response.ok) {
+          throw new Error('Failed to fetch earnings calendar. Please check your API key status.');
+        }
         
         const data = await response.json();
         setEvents(data.slice(0, 5));
@@ -37,7 +50,7 @@ export const EarningsCalendar = () => {
         console.error('Error fetching earnings calendar:', error);
         toast({
           title: "Error",
-          description: "Failed to fetch earnings calendar",
+          description: error instanceof Error ? error.message : "Failed to fetch earnings calendar",
           variant: "destructive",
         });
       } finally {
