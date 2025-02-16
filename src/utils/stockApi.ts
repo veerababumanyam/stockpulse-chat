@@ -13,9 +13,13 @@ export const fetchStockData = async (query: string) => {
       .from('api_keys')
       .select('api_key')
       .eq('service', 'fmp')
-      .single();
+      .maybeSingle();
 
-    if (apiKeyError || !apiKeyData) {
+    if (apiKeyError) {
+      throw new Error('Error fetching API key from database');
+    }
+
+    if (!apiKeyData) {
       throw new Error('FMP API key is missing. Please set up your API key in the API Keys page');
     }
 
@@ -106,9 +110,13 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
       .from('api_keys')
       .select('api_key')
       .eq('service', 'fmp')
-      .single();
+      .maybeSingle();
 
-    if (apiKeyError || !apiKeyData) {
+    if (apiKeyError) {
+      throw new Error('Error fetching API key from database');
+    }
+
+    if (!apiKeyData) {
       throw new Error('FMP API key not found. Please set up your API key in the API Keys page');
     }
 
