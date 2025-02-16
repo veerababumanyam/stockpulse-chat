@@ -1,5 +1,7 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Navigation } from "@/components/Navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,34 +22,64 @@ const ApiKeys = () => {
   });
   const [fmpKeyStatus, setFmpKeyStatus] = useState<'valid' | 'invalid' | 'checking' | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const savedKeys = localStorage.getItem('apiKeys');
-    if (savedKeys) {
-      try {
-        const parsedKeys = JSON.parse(savedKeys);
-        setApiKeys(prev => ({ ...prev, ...parsedKeys }));
-        console.log('Loaded API keys from localStorage');
-
-        // Check FMP key status if present
-        if (parsedKeys.fmp) {
-          checkFmpKeyStatus(parsedKeys.fmp);
-        }
-      } catch (error) {
-        console.error('Error parsing saved API keys:', error);
-        toast({
-          title: "Error Loading API Keys",
-          description: "There was an error loading your saved API keys",
-          variant: "destructive",
-        });
-      }
-    }
+    checkAuth();
+    loadApiKeys();
   }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate('/auth');
+    }
+  };
+
+  const loadApiKeys = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from('api_keys')
+        .select('service, api_key');
+
+      if (error) throw error;
+
+      const keyMap: ApiKeys = { 
+        openai: "", 
+        anthropic: "", 
+        openrouter: "", 
+        deepseek: "",
+        gemini: "", 
+        fmp: "" 
+      };
+
+      data.forEach(({ service, api_key }) => {
+        if (service in keyMap) {
+          keyMap[service as keyof ApiKeys] = api_key;
+        }
+      });
+
+      setApiKeys(keyMap);
+      
+      if (keyMap.fmp) {
+        checkFmpKeyStatus(keyMap.fmp);
+      }
+    } catch (error) {
+      console.error('Error loading API keys:', error);
+      toast({
+        title: "Error Loading API Keys",
+        description: "There was an error loading your saved API keys",
+        variant: "destructive",
+      });
+    }
+  };
 
   const checkFmpKeyStatus = async (key: string) => {
     setFmpKeyStatus('checking');
     try {
-      // Test the FMP API key with a simple endpoint
       const response = await fetch(
         `https://financialmodelingprep.com/api/v3/stock/list?apikey=${key}`
       );
@@ -85,19 +117,38 @@ const ApiKeys = () => {
   const handleApiKeySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/auth');
+        return;
+      }
+
       // If FMP key is provided, validate it first
       if (apiKeys.fmp) {
         await checkFmpKeyStatus(apiKeys.fmp);
         if (fmpKeyStatus === 'invalid') {
-          return; // Don't save if FMP key is invalid
+          return;
         }
       }
 
-      // Filter out empty API keys before saving
-      const nonEmptyKeys = Object.fromEntries(
-        Object.entries(apiKeys).filter(([_, value]) => value.trim().length > 0)
-      );
-      localStorage.setItem('apiKeys', JSON.stringify(nonEmptyKeys));
+      // Prepare API key entries for each non-empty key
+      const entries = Object.entries(apiKeys)
+        .filter(([_, value]) => value.trim().length > 0)
+        .map(([service, api_key]) => ({
+          user_id: session.user.id,
+          service,
+          api_key
+        }));
+
+      // Use upsert to handle both insert and update cases
+      const { error } = await supabase
+        .from('api_keys')
+        .upsert(entries, {
+          onConflict: 'user_id,service'
+        });
+
+      if (error) throw error;
+
       toast({
         title: "Success",
         description: "API keys saved successfully",
@@ -148,7 +199,7 @@ const ApiKeys = () => {
           <CardContent>
             <Alert className="mb-6 bg-[#F1F0FB] border-[#E5DEFF]">
               <AlertDescription>
-                Manage your API keys for various services. These keys are stored securely in your browser's local storage.
+                Manage your API keys for various services. These keys are stored securely in your database.
               </AlertDescription>
             </Alert>
 
@@ -272,4 +323,3 @@ const ApiKeys = () => {
 };
 
 export default ApiKeys;
-

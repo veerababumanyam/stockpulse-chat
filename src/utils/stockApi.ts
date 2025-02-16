@@ -1,9 +1,25 @@
 
-export const fetchStockData = async (query: string, apiKey: string) => {
+import { supabase } from "@/integrations/supabase/client";
+
+export const fetchStockData = async (query: string) => {
   try {
-    if (!apiKey) {
-      throw new Error('FMP API key is missing');
+    // Get FMP API key from Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('You must be logged in to use the stock API');
     }
+
+    const { data, error } = await supabase
+      .from('api_keys')
+      .select('api_key')
+      .eq('service', 'fmp')
+      .single();
+
+    if (error || !data) {
+      throw new Error('FMP API key is missing. Please set up your API key in the API Keys page');
+    }
+
+    const apiKey = data.api_key;
 
     if (apiKey.startsWith('hf_')) {
       throw new Error('Invalid API key format. Please provide a valid Financial Modeling Prep (FMP) API key. Visit https://site.financialmodelingprep.com/developer to get your API key.');
@@ -69,8 +85,7 @@ export const fetchStockData = async (query: string, apiKey: string) => {
       analyst: [], // Simplified to reduce API calls
       insider: [],
       upgrades: [],
-      technical: [],
-      dividend: []
+      technical: []
     };
 
   } catch (error) {
@@ -81,15 +96,23 @@ export const fetchStockData = async (query: string, apiKey: string) => {
 
 export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]> {
   try {
-    const savedKeys = localStorage.getItem('apiKeys');
-    if (!savedKeys) {
-      throw new Error('FMP API key not found');
+    // Get FMP API key from Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('You must be logged in to use the stock screener');
     }
 
-    const { fmp } = JSON.parse(savedKeys);
-    if (!fmp) {
-      throw new Error('FMP API key not found');
+    const { data, error } = await supabase
+      .from('api_keys')
+      .select('api_key')
+      .eq('service', 'fmp')
+      .single();
+
+    if (error || !data) {
+      throw new Error('FMP API key not found. Please set up your API key in the API Keys page');
     }
+
+    const fmp = data.api_key;
 
     if (fmp.startsWith('hf_')) {
       throw new Error('Invalid API key format. Please provide a valid Financial Modeling Prep (FMP) API key.');
@@ -158,4 +181,3 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
     throw error;
   }
 }
-

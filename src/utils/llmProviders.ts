@@ -1,4 +1,6 @@
 
+import { supabase } from "@/integrations/supabase/client";
+
 interface LLMResponse {
   content: string;
 }
@@ -27,18 +29,46 @@ export const getProviderEndpoint = (provider: string, baseUrl?: string): string 
   }
 };
 
-export const getRequestHeaders = (provider: string, apiKey: string): Record<string, string> => {
+export const getRequestHeaders = async (provider: string, apiKey?: string): Promise<Record<string, string>> => {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
+  if (apiKey) {
+    if (provider === "anthropic") {
+      headers["x-api-key"] = apiKey;
+      headers["anthropic-version"] = "2023-06-01";
+    } else if (provider === "ollama") {
+      headers.Authorization = `Bearer ${apiKey}`;
+    } else {
+      headers.Authorization = `Bearer ${apiKey}`;
+    }
+    return headers;
+  }
+
+  // Get API key from Supabase
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error("You must be logged in to use API keys");
+  }
+
+  const { data, error } = await supabase
+    .from('api_keys')
+    .select('api_key')
+    .eq('service', provider)
+    .single();
+
+  if (error || !data) {
+    throw new Error(`${provider.toUpperCase()} API key not found. Please set up your API key in the API Keys page`);
+  }
+
   if (provider === "anthropic") {
-    headers["x-api-key"] = apiKey;
+    headers["x-api-key"] = data.api_key;
     headers["anthropic-version"] = "2023-06-01";
-  } else if (provider === "ollama" && apiKey) {
-    headers.Authorization = `Bearer ${apiKey}`;
-  } else if (provider !== "ollama") {
-    headers.Authorization = `Bearer ${apiKey}`;
+  } else if (provider === "ollama" && data.api_key) {
+    headers.Authorization = `Bearer ${data.api_key}`;
+  } else {
+    headers.Authorization = `Bearer ${data.api_key}`;
   }
 
   return headers;
@@ -81,25 +111,10 @@ export const callLLMAPI = async (
   input: string
 ): Promise<LLMResponse> => {
   const provider = getProviderFromModel(agent.model);
-  
-  const savedKeys = localStorage.getItem('apiKeys');
-  if (!savedKeys) {
-    throw new Error("API keys not found. Please set up your API keys in the API Keys page");
-  }
-
-  const apiKeys = JSON.parse(savedKeys);
-  let apiKey = apiKeys[provider];
   let baseUrl = localStorage.getItem('ollamaBaseUrl') || 'http://localhost:11434';
 
-  if (provider === 'ollama' && !apiKey) {
-    // For Ollama, API key is optional
-    console.log('Using Ollama without API key');
-  } else if (!apiKey && provider !== 'ollama') {
-    throw new Error(`${provider.toUpperCase()} API key not found. Please set up your API key in the API Keys page`);
-  }
-
   const endpoint = getProviderEndpoint(provider, baseUrl);
-  const headers = getRequestHeaders(provider, apiKey);
+  const headers = await getRequestHeaders(provider);
   const body = getRequestBody(provider, agent.model, agent.systemPrompt, input, agent.temperature);
 
   try {
@@ -133,4 +148,3 @@ export const callLLMAPI = async (
     throw error;
   }
 };
-
