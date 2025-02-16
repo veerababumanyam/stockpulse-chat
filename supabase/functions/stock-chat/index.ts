@@ -31,23 +31,28 @@ serve(async (req) => {
       throw new Error('Invalid authentication');
     }
 
-    // Get API keys
+    // Get API keys with detailed error handling
     const { data: apiKeys, error: apiKeyError } = await supabase
       .from('api_keys')
       .select('service, api_key')
       .eq('user_id', user.id);
 
     if (apiKeyError) {
-      throw new Error('Error fetching API keys');
+      console.error('API key fetch error:', apiKeyError);
+      throw new Error('Error fetching API keys: ' + apiKeyError.message);
     }
 
-    const apiKeyMap = apiKeys?.reduce((acc: Record<string, string>, curr) => {
+    if (!apiKeys || apiKeys.length === 0) {
+      throw new Error('No API keys found. Please add your API keys in the API Keys page.');
+    }
+
+    const apiKeyMap = apiKeys.reduce((acc: Record<string, string>, curr) => {
       acc[curr.service] = curr.api_key;
       return acc;
     }, {});
 
-    const fmpKey = apiKeyMap?.['fmp'];
-    const openaiKey = apiKeyMap?.['openai'];
+    const fmpKey = apiKeyMap['fmp'];
+    const openaiKey = apiKeyMap['openai'];
 
     if (!fmpKey) {
       throw new Error('FMP API key not found. Please add your API key in the API Keys page.');
@@ -59,28 +64,32 @@ serve(async (req) => {
 
     const body = await req.json();
     if (!body.messages || !Array.isArray(body.messages)) {
-      throw new Error('Invalid request format');
+      throw new Error('Invalid request format: messages array is required');
     }
 
     const lastMessage = body.messages[body.messages.length - 1];
     if (!lastMessage || !lastMessage.content) {
-      throw new Error('No message content found');
+      throw new Error('No message content found in the request');
     }
 
-    // Fetch stock data from FMP
+    // Fetch stock data from FMP with improved error handling
+    console.log('Fetching stock data from FMP...');
     const fmpResponse = await fetch(`https://financialmodelingprep.com/api/v3/stock/list?apikey=${fmpKey}`);
     
     if (!fmpResponse.ok) {
       const errorData = await fmpResponse.json();
+      console.error('FMP API error:', errorData);
       if (errorData?.["Error Message"]?.includes("Invalid API KEY")) {
         throw new Error('Invalid FMP API key. Please check your API key in the API Keys page.');
       }
-      throw new Error('Error fetching stock data');
+      throw new Error(`Error fetching stock data: ${fmpResponse.status} ${fmpResponse.statusText}`);
     }
 
     const stockData = await fmpResponse.json();
+    console.log('Successfully fetched stock data');
 
-    // Process with OpenAI
+    // Process with OpenAI with improved error handling
+    console.log('Sending request to OpenAI...');
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -103,16 +112,19 @@ serve(async (req) => {
     });
 
     if (!openAIResponse.ok) {
-      throw new Error('Error processing with OpenAI. Please check your OpenAI API key.');
+      const errorData = await openAIResponse.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error('Error processing with OpenAI: ' + (errorData.error?.message || 'Please check your OpenAI API key.'));
     }
 
     const aiResponse = await openAIResponse.json();
+    console.log('Successfully received OpenAI response');
     
     return new Response(JSON.stringify({ role: "assistant", content: aiResponse.choices[0].message.content }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in stock-chat function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
