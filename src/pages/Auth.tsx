@@ -24,13 +24,39 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
       });
-      if (error) throw error;
-      navigate('/dashboard');
+
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast({
+            title: "Login Failed",
+            description: "Please check your email and password, or sign up if you don't have an account.",
+            variant: "destructive",
+          });
+        } else if (error.message.includes('Email not confirmed')) {
+          toast({
+            title: "Email Not Confirmed",
+            description: "Please check your email inbox and confirm your email address before signing in.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      if (data.user) {
+        toast({
+          title: "Success",
+          description: "You have been signed in successfully.",
+        });
+        navigate('/dashboard');
+      }
     } catch (error: any) {
+      console.error('Auth error:', error);
       toast({
         title: "Authentication Error",
         description: error.message,
@@ -43,10 +69,19 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.password.length < 6) {
+      toast({
+        title: "Invalid Password",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
-        email: formData.email,
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
         options: {
           data: {
@@ -54,14 +89,25 @@ const Auth = () => {
           },
         },
       });
+
       if (error) throw error;
+
+      if (data.user?.identities?.length === 0) {
+        toast({
+          title: "Account Exists",
+          description: "An account with this email already exists. Please sign in instead.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       toast({
         title: "Registration Successful",
-        description: "Please check your email to confirm your account.",
+        description: "Please check your email to confirm your account. Check your spam folder if you don't see it.",
       });
       
     } catch (error: any) {
+      console.error('Signup error:', error);
       toast({
         title: "Registration Error",
         description: error.message,
@@ -165,10 +211,11 @@ const Auth = () => {
                     id="signup-password"
                     name="password"
                     type="password"
-                    placeholder="Choose a strong password"
+                    placeholder="Choose a strong password (min. 6 characters)"
                     value={formData.password}
                     onChange={handleInputChange}
                     required
+                    minLength={6}
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
