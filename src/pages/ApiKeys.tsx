@@ -26,32 +26,15 @@ const ApiKeys = () => {
 
   useEffect(() => {
     checkAuth();
+    loadApiKeys();
   }, []);
 
   const checkAuth = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/auth');
-        return;
-      }
-      loadApiKeys();
-    } catch (error) {
-      console.error('Auth error:', error);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       navigate('/auth');
     }
   };
-
-  // Subscribe to auth changes
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        navigate('/auth');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
 
   const loadApiKeys = async () => {
     try {
@@ -60,8 +43,7 @@ const ApiKeys = () => {
 
       const { data, error } = await supabase
         .from('api_keys')
-        .select('service, api_key')
-        .eq('user_id', session.user.id);
+        .select('service, api_key');
 
       if (error) throw error;
 
@@ -74,7 +56,7 @@ const ApiKeys = () => {
         fmp: "" 
       };
 
-      data?.forEach(({ service, api_key }) => {
+      data.forEach(({ service, api_key }) => {
         if (service in keyMap) {
           keyMap[service as keyof ApiKeys] = api_key;
         }
@@ -141,6 +123,7 @@ const ApiKeys = () => {
         return;
       }
 
+      // If FMP key is provided, validate it first
       if (apiKeys.fmp) {
         await checkFmpKeyStatus(apiKeys.fmp);
         if (fmpKeyStatus === 'invalid') {
@@ -148,6 +131,7 @@ const ApiKeys = () => {
         }
       }
 
+      // Prepare API key entries for each non-empty key
       const entries = Object.entries(apiKeys)
         .filter(([_, value]) => value.trim().length > 0)
         .map(([service, api_key]) => ({
@@ -156,6 +140,7 @@ const ApiKeys = () => {
           api_key
         }));
 
+      // Use upsert to handle both insert and update cases
       const { error } = await supabase
         .from('api_keys')
         .upsert(entries, {
@@ -168,9 +153,6 @@ const ApiKeys = () => {
         title: "Success",
         description: "API keys saved successfully",
       });
-      
-      // Reload keys to ensure we have the latest data
-      loadApiKeys();
     } catch (error) {
       console.error('Error saving API keys:', error);
       toast({

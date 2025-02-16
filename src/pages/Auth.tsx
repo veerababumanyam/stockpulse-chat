@@ -1,74 +1,97 @@
 
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
 const Auth = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    setupDemoUser();
-  }, []);
-
-  const setupDemoUser = async () => {
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
     try {
-      setIsLoading(true);
-      
-      // First try to sign in
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: 'admin@sp.com',
-        password: 'admin123',
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-
-      // If login fails, try to sign up
-      if (signInError) {
-        console.log('Sign in failed, attempting signup...', signInError);
-        
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: 'admin@sp.com',
-          password: 'admin123',
-        });
-
-        if (signUpError) {
-          console.error('Signup error:', signUpError);
-          throw signUpError;
-        }
-
-        // After successful signup, try signing in again
-        const { error: finalSignInError } = await supabase.auth.signInWithPassword({
-          email: 'admin@sp.com',
-          password: 'admin123',
-        });
-
-        if (finalSignInError) throw finalSignInError;
-      }
-
-      navigate('/');
+      if (error) throw error;
+      navigate('/api-keys');
     } catch (error: any) {
-      console.error('Auth error:', error);
       toast({
-        title: "Authentication Error",
-        description: error.message || "Failed to set up demo user. Please try again.",
+        title: "Error",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      if (error) throw error;
+      toast({
+        title: "Success",
+        description: "Check your email for the confirmation link.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center space-y-4">
-        <h1 className="text-2xl font-bold">Setting up demo account...</h1>
-        <div className="flex items-center justify-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <p className="text-muted-foreground">This may take a few moments...</p>
-        </div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Authentication</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSignIn} className="space-y-4">
+            <Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <div className="flex space-x-4">
+              <Button type="submit" disabled={loading} className="flex-1">
+                Sign In
+              </Button>
+              <Button type="button" onClick={handleSignUp} disabled={loading} variant="outline" className="flex-1">
+                Sign Up
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

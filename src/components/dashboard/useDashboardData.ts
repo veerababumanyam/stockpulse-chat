@@ -19,24 +19,24 @@ export const useDashboardData = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // First, check if API key exists without making any external API calls
   useEffect(() => {
     const checkApiKey = async () => {
       try {
-        const { data: apiKeyData, error: apiKeyError } = await supabase
-          .from('api_keys')
-          .select('api_key')
-          .eq('service', 'fmp')
-          .maybeSingle();
-
-        if (apiKeyError) {
-          console.error('Error fetching API key:', apiKeyError);
-          setError('Failed to check API key status');
-          setHasApiKey(false);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setError('You must be logged in to view market data');
           setIsLoading(false);
           return;
         }
 
-        if (!apiKeyData) {
+        const { data: apiKeyData, error: apiKeyError } = await supabase
+          .from('api_keys')
+          .select('api_key')
+          .eq('service', 'fmp')
+          .single();
+
+        if (apiKeyError || !apiKeyData) {
           setHasApiKey(false);
           setIsLoading(false);
           return;
