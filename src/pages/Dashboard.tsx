@@ -45,7 +45,7 @@ const DashboardContent = () => {
                 <li>Update your API key in the settings</li>
               </ol>
               <div className="pt-2">
-                <button onClick={() => navigate('/api-keys')} className="text-destructive px-4 py-2 rounded transition-colors bg-slate-400 hover:bg-slate-300">
+                <button onClick={() => navigate('/api-keys')} className="text-destructive px-4 py-2 rounded transition-colors text-slate-50 bg-red-600 hover:bg-red-500">
                   Update API Key
                 </button>
               </div>
