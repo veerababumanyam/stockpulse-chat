@@ -1,5 +1,5 @@
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import { Bot, User } from 'lucide-react';
 import { useChat } from 'ai/react';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -30,26 +32,75 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ role, content }) => (
 );
 
 const ChatWindow: React.FC = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [session, setSession] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Check for session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoading(false);
+      if (!session) {
+        navigate('/auth');
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to use the chat feature",
+          variant: "destructive"
+        });
+      }
+    });
+
+    // Set up auth state listener
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (!session) {
+        navigate('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, toast]);
+
   const { messages, input, handleInputChange, handleSubmit, setMessages } = useChat({
     api: `https://llswqgpmjvxjdpmdnypq.supabase.co/functions/v1/stock-chat`,
     headers: {
       'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxsc3dxZ3BtanZ4amRwbWRueXBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk3MTk2MjksImV4cCI6MjA1NTI5NTYyOX0.cvX-MJEwdK9HV1rBaA61RgTBu-O7PIxEgNQWDRNBcIw',
-      'Authorization': `Bearer ${supabase.auth.getSession().then(({ data }) => data.session?.access_token)}`
+      'Authorization': `Bearer ${session?.access_token || ''}`
     },
     body: {
-      session: async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        return session;
-      }
+      session: session
     },
     onError: (error) => {
       console.error('Chat error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      });
     }
   });
 
   const clearChat = useCallback(() => {
     setMessages([])
   }, [setMessages])
+
+  if (isLoading) {
+    return (
+      <Card className="flex flex-col h-full">
+        <CardContent className="flex items-center justify-center h-full">
+          <p>Loading...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
 
   return (
     <Card className="flex flex-col h-full">
