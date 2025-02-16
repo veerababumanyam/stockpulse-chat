@@ -20,8 +20,8 @@ const Auth = () => {
       
       // First try to sign in
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: 'demo@example.com',
-        password: 'demo-password',
+        email: 'admin@sp.com',
+        password: 'admin123',
       });
 
       // If login fails, try to sign up
@@ -29,8 +29,8 @@ const Auth = () => {
         console.log('Sign in failed, attempting signup...', signInError);
         
         const { error: signUpError } = await supabase.auth.signUp({
-          email: 'demo@example.com',
-          password: 'demo-password',
+          email: 'admin@sp.com',
+          password: 'admin123',
         });
 
         if (signUpError) {
@@ -40,8 +40,8 @@ const Auth = () => {
 
         // After successful signup, try signing in again
         const { error: finalSignInError } = await supabase.auth.signInWithPassword({
-          email: 'demo@example.com',
-          password: 'demo-password',
+          email: 'admin@sp.com',
+          password: 'admin123',
         });
 
         if (finalSignInError) throw finalSignInError;
