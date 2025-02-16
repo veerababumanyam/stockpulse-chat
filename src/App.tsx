@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Dashboard from "@/pages/Dashboard";
 import ApiKeys from "@/pages/ApiKeys";
 import Auth from "@/pages/Auth";
+import Index from "@/pages/Index";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -46,12 +47,13 @@ const App = () => {
   return (
     <Router>
       <Routes>
+        <Route path="/" element={<Index />} />
         <Route
           path="/auth"
-          element={isAuthenticated ? <Navigate to="/" /> : <Auth />}
+          element={isAuthenticated ? <Navigate to="/dashboard" /> : <Auth />}
         />
         <Route
-          path="/"
+          path="/dashboard"
           element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />}
         />
         <Route
