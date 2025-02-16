@@ -23,46 +23,69 @@ const DashboardContent = () => {
   } = useDashboardData();
 
   const handleSetupApiKey = () => {
-    toast({
-      title: "API Key Required",
-      description: "You'll need to set up your API key to access market data.",
-      action: <ToastAction altText="Set up API key" onClick={() => navigate('/api-keys')}>
-          Set up now
-        </ToastAction>
-    });
+    navigate('/api-keys');
   };
 
-  if (error) {
-    const isSuspendedError = error.includes('suspended') || error.includes('invalid');
+  // Show loading state while checking API key
+  if (isLoading) {
     return (
-      <Alert variant="destructive" className="my-4">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>{isSuspendedError ? "API Key Error" : "Error"}</AlertTitle>
-        <AlertDescription className="space-y-4">
-          <p>{error}</p>
-          {isSuspendedError && (
-            <>
-              <p className="font-medium">What to do:</p>
-              <ol className="list-decimal list-inside space-y-2">
-                <li>Visit <a href="https://financialmodelingprep.com/developer" className="underline" target="_blank" rel="noopener noreferrer">financialmodelingprep.com</a> to check your API key status</li>
-                <li>If needed, generate a new API key</li>
-                <li>Update your API key in the settings</li>
-              </ol>
-              <div className="pt-2">
-                <button 
-                  onClick={() => navigate('/api-keys')} 
-                  className="text-destructive px-4 py-2 rounded transition-colors text-slate-50 bg-red-600 hover:bg-red-500"
-                >
-                  Update API Key
-                </button>
+      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+        <Navigation />
+        <div className="pt-[72px]">
+          <main className="px-4 py-6 md:p-8 lg:p-10">
+            <div className="max-w-[1600px] mx-auto space-y-8">
+              <div className="animate-pulse space-y-4">
+                <div className="h-8 bg-muted rounded w-1/4"></div>
+                <div className="h-32 bg-muted rounded"></div>
               </div>
-            </>
-          )}
-        </AlertDescription>
-      </Alert>
+            </div>
+          </main>
+        </div>
+      </div>
     );
   }
 
+  // If no API key or error, show setup panel or error message
+  if (!hasApiKey || error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+        <Navigation />
+        <div className="pt-[72px]">
+          <main className="px-4 py-6 md:p-8 lg:p-10">
+            <div className="max-w-[1600px] mx-auto space-y-8">
+              {error ? (
+                <Alert variant="destructive" className="my-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>API Key Error</AlertTitle>
+                  <AlertDescription className="space-y-4">
+                    <p>{error}</p>
+                    <div className="space-y-4">
+                      <p className="font-medium">To fix this:</p>
+                      <ol className="list-decimal list-inside space-y-2">
+                        <li>Visit <a href="https://site.financialmodelingprep.com/developer" className="underline" target="_blank" rel="noopener noreferrer">financialmodelingprep.com</a> to get a valid API key</li>
+                        <li>Copy your new API key</li>
+                        <li>Click the button below to add it to your settings</li>
+                      </ol>
+                      <button 
+                        onClick={handleSetupApiKey}
+                        className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                      >
+                        Set up API Key
+                      </button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <NoApiKeyPanel onSetupClick={handleSetupApiKey} />
+              )}
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // Only show dashboard content if we have a valid API key
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
       <Navigation />
@@ -70,12 +93,7 @@ const DashboardContent = () => {
         <main className="px-4 py-6 md:p-8 lg:p-10">
           <div className="max-w-[1600px] mx-auto space-y-8">
             <DashboardHeader handleSetupApiKey={handleSetupApiKey} />
-            
-            {!hasApiKey ? (
-              <NoApiKeyPanel onSetupClick={handleSetupApiKey} />
-            ) : (
-              <DashboardGrid gainers={topGainers} losers={topLosers} isLoading={isLoading} />
-            )}
+            <DashboardGrid gainers={topGainers} losers={topLosers} isLoading={isLoading} />
           </div>
         </main>
       </div>
