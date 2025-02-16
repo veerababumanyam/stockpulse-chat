@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast"
@@ -15,7 +16,7 @@ export type Alert = {
   createdAt?: string;
 };
 
-const useWatchlist = () => {
+export const useWatchlist = () => {
   const [watchlist, setWatchlist] = useState<Stock[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);

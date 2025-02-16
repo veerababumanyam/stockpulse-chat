@@ -1,12 +1,12 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useChat } from 'ai/react';
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from '@/lib/utils';
 import { Bot, User } from 'lucide-react';
+import { useChat } from 'ai/react';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -49,7 +49,11 @@ const ChatWindow: React.FC = () => {
         <ScrollArea className="h-full">
           <div className="flex flex-col gap-2">
             {messages.map(message => (
-              <ChatMessage key={message.id} role={message.role} content={message.content} />
+              <ChatMessage 
+                key={message.id} 
+                role={message.role as 'user' | 'assistant'} 
+                content={message.content} 
+              />
             ))}
           </div>
         </ScrollArea>
