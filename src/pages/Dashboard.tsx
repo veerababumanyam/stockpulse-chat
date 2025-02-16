@@ -10,10 +10,13 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { NoApiKeyPanel } from "@/components/dashboard/NoApiKeyPanel";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { useDashboardData } from "@/components/dashboard/useDashboardData";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 const DashboardContent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const {
     hasApiKey,
     topGainers,
@@ -22,7 +25,29 @@ const DashboardContent = () => {
     error
   } = useDashboardData();
 
-  const handleSetupApiKey = () => {
+  useEffect(() => {
+    // Check authentication status
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    checkAuth();
+
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSetupApiKey = async () => {
+    if (!isAuthenticated) {
+      // Store the intended destination
+      localStorage.setItem('redirectAfterAuth', '/api-keys');
+      navigate('/auth');
+      return;
+    }
     navigate('/api-keys');
   };
 

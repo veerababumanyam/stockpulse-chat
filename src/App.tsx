@@ -1,25 +1,45 @@
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "@/components/theme-provider";
-import Dashboard from "@/pages/Dashboard";
-import ApiKeys from "@/pages/ApiKeys";
 import { Toaster } from "@/components/ui/toaster";
-import NotFound from "@/pages/NotFound";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
+import ApiKeys from "./pages/ApiKeys";
+import Portfolio from "./pages/Portfolio";
+import Watchlist from "./pages/Watchlist";
+import Screener from "./pages/Screener";
+import Agents from "./pages/Agents";
+import SearchResults from "./pages/SearchResults";
+import Chat from "./pages/Chat";
 
-function App() {
-  return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <Router>
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/api-keys" element={<ApiKeys />} />
+          <Route path="/portfolio" element={<Portfolio />} />
+          <Route path="/watchlist" element={<Watchlist />} />
+          <Route path="/screener" element={<Screener />} />
+          <Route path="/agents" element={<Agents />} />
+          <Route path="/search" element={<SearchResults />} />
+          <Route path="/chat" element={<Chat />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </Router>
-      <Toaster />
-    </ThemeProvider>
-  );
-}
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;

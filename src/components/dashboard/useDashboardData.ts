@@ -19,9 +19,17 @@ export const useDashboardData = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // First, check if API key exists without making any external API calls
   useEffect(() => {
     const checkApiKey = async () => {
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setError('You must be logged in to view market data');
+          setIsLoading(false);
+          return;
+        }
+
         const { data: apiKeyData, error: apiKeyError } = await supabase
           .from('api_keys')
           .select('api_key')
