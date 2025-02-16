@@ -8,47 +8,36 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 
 const Auth = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleDemoLogin = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // First try to sign up
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: 'admin@sp.com',
+        password: 'admin123',
       });
-      if (error) throw error;
+
+      if (signUpError) {
+        // If signup fails because user exists, try to sign in
+        if (signUpError.message.includes('User already registered')) {
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: 'admin@sp.com',
+            password: 'admin123',
+          });
+          
+          if (signInError) throw signInError;
+        } else {
+          throw signUpError;
+        }
+      }
+
       navigate('/api-keys');
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      if (error) throw error;
-      toast({
-        title: "Success",
-        description: "Check your email for the confirmation link.",
-      });
-    } catch (error: any) {
+      console.error('Auth error:', error);
       toast({
         title: "Error",
         description: error.message,
@@ -66,30 +55,20 @@ const Auth = () => {
           <CardTitle>Authentication</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSignIn} className="space-y-4">
-            <Input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <div className="flex space-x-4">
-              <Button type="submit" disabled={loading} className="flex-1">
-                Sign In
-              </Button>
-              <Button type="button" onClick={handleSignUp} disabled={loading} variant="outline" className="flex-1">
-                Sign Up
-              </Button>
+          <div className="space-y-4">
+            <Button 
+              onClick={handleDemoLogin} 
+              disabled={loading} 
+              className="w-full"
+            >
+              {loading ? 'Setting up...' : 'Use Demo Account'}
+            </Button>
+            <div className="text-sm text-muted-foreground text-center">
+              Using demo credentials:<br />
+              Email: admin@sp.com<br />
+              Password: admin123
             </div>
-          </form>
+          </div>
         </CardContent>
       </Card>
     </div>
