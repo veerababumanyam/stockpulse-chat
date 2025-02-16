@@ -58,6 +58,10 @@ serve(async (req) => {
       throw new Error('FMP API key not found. Please add your API key in the API Keys page.');
     }
 
+    if (fmpKey.startsWith('hf_')) {
+      throw new Error('Invalid FMP API key format. Please provide a valid Financial Modeling Prep (FMP) API key, not a Hugging Face key.');
+    }
+
     if (!openaiKey) {
       throw new Error('OpenAI API key not found. Please add your API key in the API Keys page.');
     }
@@ -72,6 +76,21 @@ serve(async (req) => {
       throw new Error('No message content found in the request');
     }
 
+    // Test the FMP API key first
+    console.log('Testing FMP API key...');
+    const testResponse = await fetch(`https://financialmodelingprep.com/api/v3/stock/list?apikey=${fmpKey}`);
+    const testData = await testResponse.json();
+
+    if (testResponse.status === 401 || testResponse.status === 403) {
+      if (testData?.["Error Message"]?.includes("Invalid API KEY")) {
+        throw new Error('Invalid FMP API key. Please get a valid key from https://site.financialmodelingprep.com/developer');
+      }
+      if (testData?.["Error Message"]?.includes("suspended")) {
+        throw new Error('Your FMP API key is suspended. Please check your account status at financialmodelingprep.com');
+      }
+      throw new Error('API key validation failed. Please check your FMP API key.');
+    }
+
     // Fetch stock data from FMP with improved error handling
     console.log('Fetching stock data from FMP...');
     const fmpResponse = await fetch(`https://financialmodelingprep.com/api/v3/stock/list?apikey=${fmpKey}`);
@@ -79,8 +98,8 @@ serve(async (req) => {
     if (!fmpResponse.ok) {
       const errorData = await fmpResponse.json();
       console.error('FMP API error:', errorData);
-      if (errorData?.["Error Message"]?.includes("Invalid API KEY")) {
-        throw new Error('Invalid FMP API key. Please check your API key in the API Keys page.');
+      if (errorData?.["Error Message"]?.includes("Exclusive Endpoint")) {
+        throw new Error('This endpoint requires a higher FMP subscription tier. Please upgrade your plan at financialmodelingprep.com');
       }
       throw new Error(`Error fetching stock data: ${fmpResponse.status} ${fmpResponse.statusText}`);
     }
