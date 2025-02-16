@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -6,7 +7,6 @@ import { useChat } from 'ai/react';
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from '@/lib/utils';
 import { Bot, User } from 'lucide-react';
-import { useCompletion } from 'ai/react';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -29,19 +29,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ role, content }) => (
 );
 
 const ChatWindow: React.FC = () => {
-  const [input, setInput] = useState('');
-  const { messages, input: hookInput, handleInputChange, handleSubmit: hookHandleSubmit, setMessages } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, setMessages } = useChat({
     api: "/api/chat",
   });
-  const { completion, complete, setCompletion } = useCompletion();
-
-  const handleSubmit = async (message: string) => {
-    try {
-      await hookHandleSubmit(message);
-    } catch (error) {
-      console.error('Error submitting message:', error);
-    }
-  };
 
   const clearChat = useCallback(() => {
     setMessages([])
@@ -65,23 +55,23 @@ const ChatWindow: React.FC = () => {
         </ScrollArea>
       </CardContent>
       <CardFooter>
-        <div className="w-full flex items-center space-x-2">
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit(e);
+          }} 
+          className="w-full flex items-center space-x-2"
+        >
           <Input
             type="text"
             placeholder="Ask me anything..."
-            value={hookInput}
+            value={input}
             onChange={handleInputChange}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit(hookInput);
-              }
-            }}
             className="flex-1"
           />
-          <Button type="submit" onClick={() => handleSubmit(hookInput)}>Send</Button>
+          <Button type="submit">Send</Button>
           <Button type="button" variant="outline" onClick={clearChat}>Clear</Button>
-        </div>
+        </form>
       </CardFooter>
     </Card>
   );
