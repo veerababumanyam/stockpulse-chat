@@ -1,14 +1,4 @@
 
-export interface Alert {
-  id: string;
-  stockSymbol: string;
-  price: number;
-  type: 'above' | 'below';
-  createdAt: string;
-  isTriggered?: boolean;
-  triggeredAt?: string;
-}
-
 export interface WatchlistStock {
   symbol: string;
   companyName: string;
@@ -25,4 +15,18 @@ export interface WatchlistStock {
     lastUpdated: string;
   };
   alerts: Alert[];
+}
+
+export interface Stock {
+  symbol: string;
+  companyName: string;
+}
+
+export interface Alert {
+  id: string;
+  symbol: string;
+  target_price: number;
+  triggered: boolean;
+  created_at?: string;
+  user_id?: string;
 }

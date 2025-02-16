@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      alerts: {
+        Row: {
+          created_at: string
+          id: string
+          symbol: string
+          target_price: number
+          triggered: boolean | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          symbol: string
+          target_price: number
+          triggered?: boolean | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          symbol?: string
+          target_price?: number
+          triggered?: boolean | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           api_key: string
@@ -96,6 +126,33 @@ export type Database = {
           id?: string
           is_pinned?: boolean | null
           title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      watchlist: {
+        Row: {
+          company_name: string
+          created_at: string
+          id: string
+          symbol: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          id?: string
+          symbol: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          id?: string
+          symbol?: string
           updated_at?: string
           user_id?: string | null
         }

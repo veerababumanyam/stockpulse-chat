@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bell, Download, Plus, Search } from "lucide-react";
+import { Bell, Download, Plus } from "lucide-react";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useState } from "react";
 
@@ -12,11 +12,11 @@ interface WatchlistHeaderProps {
 
 export const WatchlistHeader = ({ onExport, onOpenAlerts }: WatchlistHeaderProps) => {
   const [symbol, setSymbol] = useState("");
-  const { addStock } = useWatchlist();
+  const { addToWatchlist } = useWatchlist();
 
   const handleAddStock = async () => {
     if (symbol) {
-      await addStock(symbol.toUpperCase());
+      await addToWatchlist(symbol.toUpperCase(), symbol.toUpperCase());
       setSymbol("");
     }
   };

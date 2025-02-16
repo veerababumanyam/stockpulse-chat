@@ -4,7 +4,7 @@ import {
   TableBody,
 } from "@/components/ui/table";
 import { useWatchlist } from "@/hooks/useWatchlist";
-import { WatchlistStock } from "@/types/watchlist";
+import { Stock } from "@/types/watchlist";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo } from "react";
 import { StockAlertsDialog } from "./StockAlertsDialog";
@@ -13,23 +13,23 @@ import { StockTableRow } from "./table/StockTableRow";
 import { StockTableFilter } from "./table/StockTableFilter";
 
 interface WatchlistTableProps {
-  stocks: WatchlistStock[];
+  stocks: Stock[];
   isLoading: boolean;
   theme: 'light' | 'dark';
 }
 
 type SortConfig = {
-  key: keyof WatchlistStock | '';
+  key: keyof Stock | '';
   direction: 'asc' | 'desc';
 };
 
 export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps) => {
-  const { removeStock, addAlert, removeAlert } = useWatchlist();
+  const { removeFromWatchlist, createAlert, deleteAlert } = useWatchlist();
   const [filterValue, setFilterValue] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: '', direction: 'asc' });
-  const [selectedStock, setSelectedStock] = useState<WatchlistStock | null>(null);
+  const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
 
-  const handleSort = (key: keyof WatchlistStock) => {
+  const handleSort = (key: keyof Stock) => {
     setSortConfig(current => ({
       key,
       direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
@@ -39,28 +39,18 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
   const filteredAndSortedStocks = useMemo(() => {
     let result = [...stocks];
 
-    // Filter
     if (filterValue) {
       const lowerFilter = filterValue.toLowerCase();
       result = result.filter(stock => 
         stock.symbol.toLowerCase().includes(lowerFilter) ||
-        stock.companyName.toLowerCase().includes(lowerFilter) ||
-        stock.sector.toLowerCase().includes(lowerFilter)
+        stock.companyName.toLowerCase().includes(lowerFilter)
       );
     }
 
-    // Sort
     if (sortConfig.key) {
       result.sort((a, b) => {
-        let aValue = a[sortConfig.key];
-        let bValue = b[sortConfig.key];
-
-        // Handle nested aiAnalysis properties
-        if (sortConfig.key === 'aiAnalysis') {
-          aValue = a.aiAnalysis?.signal || '';
-          bValue = b.aiAnalysis?.signal || '';
-        }
-
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
         if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
         if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
@@ -69,19 +59,6 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
 
     return result;
   }, [stocks, filterValue, sortConfig]);
-
-  const getSignalColor = (signal: string) => {
-    switch (signal?.toUpperCase()) {
-      case 'STRONG BUY':
-      case 'BUY':
-        return 'text-green-600';
-      case 'STRONG SELL':
-      case 'SELL':
-        return 'text-red-600';
-      default:
-        return 'text-yellow-600';
-    }
-  };
 
   if (isLoading) {
     return (
@@ -120,9 +97,8 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
               <StockTableRow
                 key={stock.symbol}
                 stock={stock}
-                onRemove={removeStock}
+                onRemove={removeFromWatchlist}
                 onSelectStock={setSelectedStock}
-                getSignalColor={getSignalColor}
               />
             ))}
           </TableBody>
@@ -134,8 +110,10 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
           stock={selectedStock}
           open={!!selectedStock}
           onOpenChange={(open) => !open && setSelectedStock(null)}
-          onAddAlert={addAlert}
-          onRemoveAlert={removeAlert}
+          onAddAlert={(price, type) => {
+            createAlert({ symbol: selectedStock.symbol, targetPrice: price });
+          }}
+          onRemoveAlert={deleteAlert}
         />
       )}
     </div>

@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const WatchlistContent = () => {
   const [showAlertsDialog, setShowAlertsDialog] = useState(false);
-  const { stocks = [], isLoading, error, exportData } = useWatchlist();
+  const { watchlist, loading, error, exportData } = useWatchlist();
   const { theme } = useTheme();
 
   if (error) {
@@ -30,8 +30,8 @@ const WatchlistContent = () => {
       
       <div className="rounded-lg border bg-card">
         <WatchlistTable 
-          stocks={stocks} 
-          isLoading={isLoading} 
+          stocks={watchlist} 
+          isLoading={loading} 
           theme={theme as 'light' | 'dark'} 
         />
       </div>
@@ -58,4 +58,3 @@ const Watchlist = () => {
 };
 
 export default Watchlist;
-

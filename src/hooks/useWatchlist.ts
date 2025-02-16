@@ -2,25 +2,23 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast"
+import { Stock } from '@/types/watchlist';
 
-export type Stock = {
+export interface Alert {
+  id: string;
   symbol: string;
-  companyName: string;
-};
-
-export type Alert = {
-  id?: number;
-  symbol: string;
-  targetPrice: number;
+  target_price: number;
   triggered: boolean;
-  createdAt?: string;
-};
+  created_at?: string;
+  user_id?: string;
+}
 
 export const useWatchlist = () => {
   const [watchlist, setWatchlist] = useState<Stock[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast()
+  const [error, setError] = useState<Error | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchWatchlist();
@@ -35,16 +33,19 @@ export const useWatchlist = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching watchlist:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load watchlist",
-          variant: "destructive",
-        })
-      }
-
-      setWatchlist(data || []);
+      if (error) throw error;
+      setWatchlist(data.map(item => ({
+        symbol: item.symbol,
+        companyName: item.company_name,
+      })));
+    } catch (err) {
+      console.error('Error fetching watchlist:', err);
+      setError(err instanceof Error ? err : new Error('Failed to load watchlist'));
+      toast({
+        title: "Error",
+        description: "Failed to load watchlist",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -57,53 +58,47 @@ export const useWatchlist = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching alerts:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load alerts",
-          variant: "destructive",
-        })
-      }
-
-      setAlerts(data || []);
-    } catch (error) {
-      console.error('Error fetching alerts:', error);
+      if (error) throw error;
+      setAlerts(data.map(item => ({
+        id: item.id,
+        symbol: item.symbol,
+        target_price: Number(item.target_price),
+        triggered: item.triggered,
+        created_at: item.created_at,
+        user_id: item.user_id,
+      })));
+    } catch (err) {
+      console.error('Error fetching alerts:', err);
       toast({
         title: "Error",
         description: "Failed to load alerts",
         variant: "destructive",
-      })
+      });
     }
   };
 
-  const addToWatchlist = async (stock: Stock) => {
+  const addToWatchlist = async (symbol: string, companyName: string) => {
     try {
       const { error } = await supabase
         .from('watchlist')
-        .insert(stock);
+        .insert({
+          symbol: symbol.toUpperCase(),
+          company_name: companyName,
+        });
 
-      if (error) {
-        console.error('Error adding to watchlist:', error);
-        toast({
-          title: "Error",
-          description: "Failed to add to watchlist",
-          variant: "destructive",
-        })
-      } else {
-        toast({
-          title: "Success",
-          description: `${stock.companyName} added to watchlist`,
-        })
-        fetchWatchlist();
-      }
-    } catch (error) {
-      console.error('Error adding to watchlist:', error);
+      if (error) throw error;
+      toast({
+        title: "Success",
+        description: `${companyName} added to watchlist`,
+      });
+      await fetchWatchlist();
+    } catch (err) {
+      console.error('Error adding to watchlist:', err);
       toast({
         title: "Error",
         description: "Failed to add to watchlist",
         variant: "destructive",
-      })
+      });
     }
   };
 
@@ -114,140 +109,97 @@ export const useWatchlist = () => {
         .delete()
         .eq('symbol', symbol);
 
-      if (error) {
-        console.error('Error removing from watchlist:', error);
-        toast({
-          title: "Error",
-          description: "Failed to remove from watchlist",
-          variant: "destructive",
-        })
-      } else {
-        toast({
-          title: "Success",
-          description: `Stock removed from watchlist`,
-        })
-        fetchWatchlist();
-      }
-    } catch (error) {
-      console.error('Error removing from watchlist:', error);
+      if (error) throw error;
+      toast({
+        title: "Success",
+        description: `Stock removed from watchlist`,
+      });
+      await fetchWatchlist();
+    } catch (err) {
+      console.error('Error removing from watchlist:', err);
       toast({
         title: "Error",
         description: "Failed to remove from watchlist",
         variant: "destructive",
-      })
+      });
     }
   };
 
-  const createAlert = async (alert: Omit<Alert, 'id' | 'triggered'>) => {
+  const createAlert = async (params: { symbol: string; targetPrice: number }) => {
     try {
       const { error } = await supabase
         .from('alerts')
-        .insert({ ...alert, triggered: false });
+        .insert({
+          symbol: params.symbol.toUpperCase(),
+          target_price: params.targetPrice,
+          triggered: false,
+        });
 
-      if (error) {
-        console.error('Error creating alert:', error);
-        toast({
-          title: "Error",
-          description: "Failed to create alert",
-          variant: "destructive",
-        })
-      } else {
-        toast({
-          title: "Success",
-          description: `Alert created for ${alert.symbol}`,
-        })
-        fetchAlerts();
-      }
-    } catch (error) {
-      console.error('Error creating alert:', error);
+      if (error) throw error;
+      toast({
+        title: "Success",
+        description: `Alert created for ${params.symbol}`,
+      });
+      await fetchAlerts();
+    } catch (err) {
+      console.error('Error creating alert:', err);
       toast({
         title: "Error",
         description: "Failed to create alert",
         variant: "destructive",
-      })
+      });
     }
   };
 
-  const updateAlert = async (alert: Alert) => {
-    try {
-      const { error } = await supabase
-        .from('alerts')
-        .update({ ...alert })
-        .eq('id', alert.id);
-
-      if (error) {
-        console.error('Error updating alert:', error);
-        toast({
-          title: "Error",
-          description: "Failed to update alert",
-          variant: "destructive",
-        })
-      } else {
-        toast({
-          title: "Success",
-          description: `Alert updated for ${alert.symbol}`,
-        })
-        fetchAlerts();
-      }
-    } catch (error) {
-      console.error('Error updating alert:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update alert",
-        variant: "destructive",
-      })
-    }
-  };
-
-  const deleteAlert = async (id: number) => {
+  const deleteAlert = async (alertId: string) => {
     try {
       const { error } = await supabase
         .from('alerts')
         .delete()
-        .eq('id', id);
+        .eq('id', alertId);
 
-      if (error) {
-        console.error('Error deleting alert:', error);
-        toast({
-          title: "Error",
-          description: "Failed to delete alert",
-          variant: "destructive",
-        })
-      } else {
-        toast({
-          title: "Success",
-          description: `Alert deleted`,
-        })
-        fetchAlerts();
-      }
-    } catch (error) {
-      console.error('Error deleting alert:', error);
+      if (error) throw error;
+      toast({
+        title: "Success",
+        description: `Alert deleted`,
+      });
+      await fetchAlerts();
+    } catch (err) {
+      console.error('Error deleting alert:', err);
       toast({
         title: "Error",
         description: "Failed to delete alert",
         variant: "destructive",
-      })
+      });
     }
   };
 
-  const handleAlertAction = async (alert: Alert) => {
-    try {
-      await updateAlert(alert);
-    } catch (error) {
-      console.error('Error updating alert:', error);
-    }
+  const exportData = () => {
+    const data = {
+      watchlist,
+      alerts,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'watchlist-export.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return {
     watchlist,
     alerts,
     loading,
+    error,
     addToWatchlist,
     removeFromWatchlist,
     createAlert,
-    updateAlert,
     deleteAlert,
-    handleAlertAction,
+    exportData,
   };
 };
 
