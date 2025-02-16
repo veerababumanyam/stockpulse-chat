@@ -124,8 +124,8 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
           stock={selectedStock}
           open={!!selectedStock}
           onOpenChange={(open) => !open && setSelectedStock(null)}
-          onAddAlert={(price: number) => {
-            createAlert({ symbol: selectedStock.symbol, targetPrice: price });
+          onAddAlert={(symbol: string, price: number, type: 'above' | 'below') => {
+            createAlert({ symbol, targetPrice: price });
           }}
           onRemoveAlert={deleteAlert}
         />

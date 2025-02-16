@@ -27,6 +27,11 @@ const Index = () => {
       <nav className="fixed top-0 left-0 w-full p-4 z-50 backdrop-blur-sm bg-background/80">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
+            <img 
+              src="/lovable-uploads/3671637f-1440-4a52-bdee-c9cebda8a546.png" 
+              alt="StockPulse Logo" 
+              className="h-8 w-8"
+            />
             <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               StockPulse
             </h2>
