@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StockData {
   symbol: string;
@@ -11,20 +12,7 @@ interface StockData {
 }
 
 export const useDashboardData = () => {
-  const [hasApiKey, setHasApiKey] = useState(() => {
-    try {
-      const savedKeys = localStorage.getItem('apiKeys');
-      if (savedKeys) {
-        const parsedKeys = JSON.parse(savedKeys);
-        return !!parsedKeys.fmp;
-      }
-      return false;
-    } catch (error) {
-      console.error('Error checking API key:', error);
-      return false;
-    }
-  });
-
+  const [hasApiKey, setHasApiKey] = useState(false);
   const [topGainers, setTopGainers] = useState<StockData[]>([]);
   const [topLosers, setTopLosers] = useState<StockData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,21 +21,33 @@ export const useDashboardData = () => {
 
   useEffect(() => {
     const fetchMarketData = async () => {
-      if (!hasApiKey) return;
-      
       try {
-        const savedKeys = localStorage.getItem('apiKeys');
-        if (!savedKeys) {
-          setError('API key not found');
-          throw new Error('API key not found');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setError('You must be logged in to view market data');
+          return;
         }
-        
-        const { fmp } = JSON.parse(savedKeys);
-        if (!fmp) {
-          setError('FMP API key not found');
-          throw new Error('FMP API key not found');
+
+        const { data: apiKeyData, error: apiKeyError } = await supabase
+          .from('api_keys')
+          .select('api_key')
+          .eq('service', 'fmp')
+          .single();
+
+        if (apiKeyError || !apiKeyData) {
+          setHasApiKey(false);
+          setError('FMP API key not found. Please set up your API key in the API Keys page');
+          return;
         }
-        
+
+        setHasApiKey(true);
+        const fmp = apiKeyData.api_key;
+
+        if (fmp.startsWith('hf_')) {
+          setError('Invalid API key format. Please provide a valid Financial Modeling Prep (FMP) API key. Visit https://site.financialmodelingprep.com/developer to get your API key.');
+          return;
+        }
+
         const [gainersResponse, losersResponse] = await Promise.all([
           fetch(`https://financialmodelingprep.com/api/v3/stock_market/gainers?apikey=${fmp}`),
           fetch(`https://financialmodelingprep.com/api/v3/stock_market/losers?apikey=${fmp}`)
@@ -85,7 +85,7 @@ export const useDashboardData = () => {
     };
 
     fetchMarketData();
-  }, [hasApiKey, toast]);
+  }, [toast]);
 
   return {
     hasApiKey,
@@ -95,4 +95,3 @@ export const useDashboardData = () => {
     error
   };
 };
-
