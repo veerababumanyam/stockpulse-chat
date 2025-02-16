@@ -32,6 +32,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ role, content }) => (
 const ChatWindow: React.FC = () => {
   const { messages, input, handleInputChange, handleSubmit, setMessages } = useChat({
     api: `https://llswqgpmjvxjdpmdnypq.supabase.co/functions/v1/stock-chat`,
+    headers: {
+      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxsc3dxZ3BtanZ4amRwbWRueXBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk3MTk2MjksImV4cCI6MjA1NTI5NTYyOX0.cvX-MJEwdK9HV1rBaA61RgTBu-O7PIxEgNQWDRNBcIw',
+      'Authorization': `Bearer ${supabase.auth.getSession().then(({ data }) => data.session?.access_token)}`
+    },
     body: {
       session: async () => {
         const { data: { session } } = await supabase.auth.getSession();
