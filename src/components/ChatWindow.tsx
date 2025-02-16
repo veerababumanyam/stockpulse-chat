@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from '@/lib/utils';
 import { Bot, User } from 'lucide-react';
 import { useChat } from 'ai/react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -30,7 +31,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ role, content }) => (
 
 const ChatWindow: React.FC = () => {
   const { messages, input, handleInputChange, handleSubmit, setMessages } = useChat({
-    api: "/api/chat",
+    api: `${supabase.functions.url}/stock-chat`,
+    onError: (error) => {
+      console.error('Chat error:', error);
+    }
   });
 
   const clearChat = useCallback(() => {
