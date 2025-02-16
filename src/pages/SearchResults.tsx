@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -35,9 +36,9 @@ const SearchResults = () => {
       handleSearch(query);
     } else {
       toast({
-        title: "Warning",
+        title: "Error",
         description: "Please enter a search query.",
-        variant: "warning",
+        variant: "destructive",
       });
     }
   }, [query, handleSearch, toast]);

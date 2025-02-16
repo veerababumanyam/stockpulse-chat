@@ -104,14 +104,17 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
         <Table>
           <StockTableHeader onSort={handleSort} />
           <TableBody>
-            {filteredAndSortedStocks.map((stock) => (
-              <StockTableRow
-                key={stock.symbol}
-                stock={convertToWatchlistStock(stock)}
-                onRemove={removeFromWatchlist}
-                onSelectStock={(stock) => setSelectedStock(stock)}
-              />
-            ))}
+            {filteredAndSortedStocks.map((stock) => {
+              const watchlistStock = convertToWatchlistStock(stock);
+              return (
+                <StockTableRow
+                  key={stock.symbol}
+                  stock={watchlistStock}
+                  onRemove={removeFromWatchlist}
+                  onSelectStock={setSelectedStock}
+                />
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -121,7 +124,7 @@ export const WatchlistTable = ({ stocks, isLoading, theme }: WatchlistTableProps
           stock={selectedStock}
           open={!!selectedStock}
           onOpenChange={(open) => !open && setSelectedStock(null)}
-          onAddAlert={(price) => {
+          onAddAlert={(price: number) => {
             createAlert({ symbol: selectedStock.symbol, targetPrice: price });
           }}
           onRemoveAlert={deleteAlert}
