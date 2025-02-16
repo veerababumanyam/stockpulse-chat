@@ -26,9 +26,17 @@ export const useDashboardData = () => {
           .from('api_keys')
           .select('api_key')
           .eq('service', 'fmp')
-          .single();
+          .maybeSingle();
 
-        if (apiKeyError || !apiKeyData) {
+        if (apiKeyError) {
+          console.error('Error fetching API key:', apiKeyError);
+          setError('Failed to check API key status');
+          setHasApiKey(false);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!apiKeyData) {
           setHasApiKey(false);
           setIsLoading(false);
           return;
