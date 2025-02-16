@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchYahooQuotes } from "@/utils/yahooFinanceAPI";
 
 interface StockData {
   symbol: string;
@@ -19,7 +20,6 @@ export const useDashboardData = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // First, check if API key exists without making any external API calls
   useEffect(() => {
     const checkApiKey = async () => {
       try {
@@ -46,6 +46,7 @@ export const useDashboardData = () => {
         
         // Only fetch market data if we have an API key
         const fmp = apiKeyData.api_key;
+        const useYahooBackup = apiKeyData.use_yahoo_backup ?? true;
         
         // Validate API key format
         if (fmp.startsWith('hf_')) {
@@ -55,19 +56,48 @@ export const useDashboardData = () => {
         }
 
         try {
+          // Try FMP first
           const [gainersResponse, losersResponse] = await Promise.all([
             fetch(`https://financialmodelingprep.com/api/v3/stock_market/gainers?apikey=${fmp}`),
             fetch(`https://financialmodelingprep.com/api/v3/stock_market/losers?apikey=${fmp}`)
           ]);
 
-          if (!gainersResponse.ok || !losersResponse.ok) {
-            throw new Error('Your FMP API key appears to be invalid or suspended. Please check your API key status at financialmodelingprep.com');
-          }
+          // Handle FMP errors
+          const gainersData = await gainersResponse.json();
+          const losersData = await losersResponse.json();
 
-          const [gainersData, losersData] = await Promise.all([
-            gainersResponse.json(),
-            losersResponse.json()
-          ]);
+          if (!gainersResponse.ok || !losersResponse.ok) {
+            // Check for suspension
+            if (gainersData?.["Error Message"]?.includes("suspended") || 
+                losersData?.["Error Message"]?.includes("suspended")) {
+              console.log('FMP account suspended, falling back to Yahoo Finance');
+              if (useYahooBackup) {
+                // Fallback to Yahoo Finance
+                const defaultSymbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META'];
+                const yahooData = await fetchYahooQuotes(defaultSymbols);
+                
+                if (yahooData?.quoteResponse?.result) {
+                  const quotes = yahooData.quoteResponse.result
+                    .map((quote: any) => ({
+                      symbol: quote.symbol,
+                      name: quote.shortName || quote.longName || quote.symbol,
+                      price: quote.regularMarketPrice,
+                      change: quote.regularMarketChange,
+                      changePercent: quote.regularMarketChangePercent
+                    }))
+                    .sort((a: StockData, b: StockData) => b.changePercent - a.changePercent);
+
+                  const mid = Math.floor(quotes.length / 2);
+                  setTopGainers(quotes.slice(0, mid));
+                  setTopLosers(quotes.slice(mid).reverse());
+                  setError(null);
+                  return;
+                }
+              }
+              throw new Error('Your FMP API key has been suspended. Please contact FMP support at info@financialmodelingprep.com for details.');
+            }
+            throw new Error('Failed to fetch market data. Please check your API key status.');
+          }
 
           setTopGainers(gainersData.slice(0, 5));
           setTopLosers(losersData.slice(0, 5));
