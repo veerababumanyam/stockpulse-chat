@@ -9,24 +9,31 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    loginAsDemoUser();
+    setupDemoUser();
   }, []);
 
-  const loginAsDemoUser = async () => {
+  const setupDemoUser = async () => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      // First try to sign up the demo user
+      const { error: signUpError } = await supabase.auth.signUp({
         email: 'demo@example.com',
         password: 'demo-password',
       });
 
-      if (error) throw error;
+      // If sign up fails (likely because user exists), proceed to login
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: 'demo@example.com',
+        password: 'demo-password',
+      });
+
+      if (signInError) throw signInError;
 
       navigate('/');
     } catch (error) {
       console.error('Auth error:', error);
       toast({
         title: "Authentication Error",
-        description: "Failed to log in as demo user. Please try again.",
+        description: "Failed to set up demo user. Please try again.",
         variant: "destructive",
       });
     }
@@ -35,8 +42,8 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
-        <h1 className="text-2xl font-bold mb-4">Authenticating...</h1>
-        <p className="text-muted-foreground">Logging in as demo user...</p>
+        <h1 className="text-2xl font-bold mb-4">Setting up demo account...</h1>
+        <p className="text-muted-foreground">This may take a few moments...</p>
       </div>
     </div>
   );
