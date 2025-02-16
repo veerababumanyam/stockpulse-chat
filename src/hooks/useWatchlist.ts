@@ -79,11 +79,15 @@ export const useWatchlist = () => {
 
   const addToWatchlist = async (symbol: string, companyName: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { error } = await supabase
         .from('watchlist')
         .insert({
           symbol: symbol.toUpperCase(),
           company_name: companyName,
+          user_id: user.id
         });
 
       if (error) throw error;
@@ -125,14 +129,19 @@ export const useWatchlist = () => {
     }
   };
 
-  const createAlert = async (params: { symbol: string; targetPrice: number }) => {
+  const createAlert = async (params: { symbol: string; targetPrice: number; type: 'above' | 'below' }) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { error } = await supabase
         .from('alerts')
         .insert({
           symbol: params.symbol.toUpperCase(),
           target_price: params.targetPrice,
+          type: params.type,
           triggered: false,
+          user_id: user.id
         });
 
       if (error) throw error;
