@@ -56,7 +56,15 @@ serve(async (req) => {
       throw new Error('OpenAI API key not found. Please add your API key in the API Keys page.');
     }
 
-    const { message } = await req.json();
+    const body = await req.json();
+    if (!body.messages || !Array.isArray(body.messages)) {
+      throw new Error('Invalid request format');
+    }
+
+    const lastMessage = body.messages[body.messages.length - 1];
+    if (!lastMessage || !lastMessage.content) {
+      throw new Error('No message content found');
+    }
 
     // Fetch stock data from FMP
     const fmpResponse = await fetch(`https://financialmodelingprep.com/api/v3/stock/list?apikey=${fmpKey}`);
@@ -87,7 +95,7 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: `Context: ${JSON.stringify(stockData.slice(0, 10))}. Question: ${message}`
+            content: `Context: ${JSON.stringify(stockData.slice(0, 10))}. Question: ${lastMessage.content}`
           }
         ],
       }),
@@ -98,9 +106,8 @@ serve(async (req) => {
     }
 
     const aiResponse = await openAIResponse.json();
-    const answer = aiResponse.choices[0].message.content;
-
-    return new Response(JSON.stringify({ answer }), {
+    
+    return new Response(JSON.stringify({ role: "assistant", content: aiResponse.choices[0].message.content }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
