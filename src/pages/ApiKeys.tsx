@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,26 +24,14 @@ const ApiKeys = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    checkAuth();
     loadApiKeys();
   }, []);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate('/auth');
-    }
-  };
-
   const loadApiKeys = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
       const { data, error } = await supabase
         .from('api_keys')
-        .select('service, api_key')
-        .eq('user_id', session.user.id);
+        .select('service, api_key');
 
       if (error) throw error;
 
@@ -118,12 +105,6 @@ const ApiKeys = () => {
   const handleApiKeySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/auth');
-        return;
-      }
-
       if (apiKeys.fmp) {
         await checkFmpKeyStatus(apiKeys.fmp);
         if (fmpKeyStatus === 'invalid') {
@@ -134,7 +115,6 @@ const ApiKeys = () => {
       const entries = Object.entries(apiKeys)
         .filter(([_, value]) => value.trim().length > 0)
         .map(([service, api_key]) => ({
-          user_id: session.user.id,
           service,
           api_key
         }));
@@ -142,7 +122,7 @@ const ApiKeys = () => {
       const { error } = await supabase
         .from('api_keys')
         .upsert(entries, {
-          onConflict: 'user_id,service'
+          onConflict: 'service'
         });
 
       if (error) throw error;
