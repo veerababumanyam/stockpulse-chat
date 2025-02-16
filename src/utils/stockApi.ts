@@ -102,17 +102,17 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
       throw new Error('You must be logged in to use the stock screener');
     }
 
-    const { data, error } = await supabase
+    const { data: apiKeyData, error: apiKeyError } = await supabase
       .from('api_keys')
       .select('api_key')
       .eq('service', 'fmp')
       .single();
 
-    if (error || !data) {
+    if (apiKeyError || !apiKeyData) {
       throw new Error('FMP API key not found. Please set up your API key in the API Keys page');
     }
 
-    const fmp = data.api_key;
+    const fmp = apiKeyData.api_key;
 
     if (fmp.startsWith('hf_')) {
       throw new Error('Invalid API key format. Please provide a valid Financial Modeling Prep (FMP) API key.');
@@ -144,22 +144,22 @@ export async function fetchStockScreenerResults(criteria: any[]): Promise<any[]>
 
     const response = await fetch(url);
     if (!response.ok) {
-      const data = await response.json();
-      if (data?.["Error Message"]?.includes("Invalid API KEY")) {
+      const errorData = await response.json();
+      if (errorData?.["Error Message"]?.includes("Invalid API KEY")) {
         throw new Error('Invalid FMP API key. Please check your API key or get a new one at https://site.financialmodelingprep.com/developer');
       }
       throw new Error(`Failed to fetch screening results: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const screenerData = await response.json();
     
-    if (!Array.isArray(data)) {
-      console.error('Unexpected API response format:', data);
+    if (!Array.isArray(screenerData)) {
+      console.error('Unexpected API response format:', screenerData);
       throw new Error('Invalid API response format');
     }
 
     // Filter and sort results
-    const filteredResults = data
+    const filteredResults = screenerData
       .filter((stock: any) => 
         stock && 
         stock.symbol && 
