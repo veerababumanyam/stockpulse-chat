@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { ExternalLink, Key, AlertTriangle } from "lucide-react";
+import { ExternalLink, Key, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import type { ApiKeys } from "@/types/llm";
 
 const ApiKeys = () => {
@@ -20,6 +19,7 @@ const ApiKeys = () => {
     gemini: "", 
     fmp: "" 
   });
+  const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
   const [fmpKeyStatus, setFmpKeyStatus] = useState<'valid' | 'invalid' | 'checking' | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -123,7 +123,6 @@ const ApiKeys = () => {
         return;
       }
 
-      // If FMP key is provided, validate it first
       if (apiKeys.fmp) {
         await checkFmpKeyStatus(apiKeys.fmp);
         if (fmpKeyStatus === 'invalid') {
@@ -131,7 +130,6 @@ const ApiKeys = () => {
         }
       }
 
-      // Prepare API key entries for each non-empty key
       const entries = Object.entries(apiKeys)
         .filter(([_, value]) => value.trim().length > 0)
         .map(([service, api_key]) => ({
@@ -140,7 +138,6 @@ const ApiKeys = () => {
           api_key
         }));
 
-      // Use upsert to handle both insert and update cases
       const { error } = await supabase
         .from('api_keys')
         .upsert(entries, {
@@ -185,6 +182,57 @@ const ApiKeys = () => {
     );
   };
 
+  const toggleKeyVisibility = (key: string) => {
+    setVisibleKeys(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const renderApiKeyInput = (service: keyof ApiKeys, label: string) => {
+    const isVisible = visibleKeys[service] || false;
+
+    return (
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <label className="text-sm font-medium">{label}</label>
+          {renderApiKeyLink(service)}
+        </div>
+        <div className="relative">
+          <Input
+            type={isVisible ? "text" : "password"}
+            value={apiKeys[service]}
+            onChange={(e) => {
+              setApiKeys(prev => ({ ...prev, [service]: e.target.value }));
+              if (service === 'fmp') {
+                setFmpKeyStatus(null);
+              }
+            }}
+            placeholder={`Enter ${label}`}
+            className={`bg-white/70 border-[#E5DEFF] pr-10 ${
+              service === 'fmp' && fmpKeyStatus === 'invalid' ? 'border-red-500' : 
+              service === 'fmp' && fmpKeyStatus === 'valid' ? 'border-green-500' : ''
+            }`}
+          />
+          <button
+            type="button"
+            onClick={() => toggleKeyVisibility(service)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+          >
+            {isVisible ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+          </button>
+        </div>
+        {service === 'fmp' && fmpKeyStatus === 'checking' && (
+          <p className="text-sm text-muted-foreground">Checking API key status...</p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -215,98 +263,12 @@ const ApiKeys = () => {
             )}
             
             <form onSubmit={handleApiKeySubmit} className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium">FMP API Key</label>
-                  {renderApiKeyLink('fmp')}
-                </div>
-                <Input
-                  type="password"
-                  value={apiKeys.fmp}
-                  onChange={(e) => {
-                    setApiKeys(prev => ({ ...prev, fmp: e.target.value }));
-                    setFmpKeyStatus(null);
-                  }}
-                  placeholder="Enter FMP API Key"
-                  className={`bg-white/70 border-[#E5DEFF] ${
-                    fmpKeyStatus === 'invalid' ? 'border-red-500' : 
-                    fmpKeyStatus === 'valid' ? 'border-green-500' : ''
-                  }`}
-                />
-                {fmpKeyStatus === 'checking' && (
-                  <p className="text-sm text-muted-foreground">Checking API key status...</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium">OpenAI API Key</label>
-                  {renderApiKeyLink('openai')}
-                </div>
-                <Input
-                  type="password"
-                  value={apiKeys.openai}
-                  onChange={(e) => setApiKeys(prev => ({ ...prev, openai: e.target.value }))}
-                  placeholder="Enter OpenAI API Key"
-                  className="bg-white/70 border-[#E5DEFF]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium">Anthropic API Key</label>
-                  {renderApiKeyLink('anthropic')}
-                </div>
-                <Input
-                  type="password"
-                  value={apiKeys.anthropic}
-                  onChange={(e) => setApiKeys(prev => ({ ...prev, anthropic: e.target.value }))}
-                  placeholder="Enter Anthropic API Key"
-                  className="bg-white/70 border-[#E5DEFF]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium">OpenRouter API Key</label>
-                  {renderApiKeyLink('openrouter')}
-                </div>
-                <Input
-                  type="password"
-                  value={apiKeys.openrouter}
-                  onChange={(e) => setApiKeys(prev => ({ ...prev, openrouter: e.target.value }))}
-                  placeholder="Enter OpenRouter API Key"
-                  className="bg-white/70 border-[#E5DEFF]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium">Google Gemini API Key</label>
-                  {renderApiKeyLink('gemini')}
-                </div>
-                <Input
-                  type="password"
-                  value={apiKeys.gemini}
-                  onChange={(e) => setApiKeys(prev => ({ ...prev, gemini: e.target.value }))}
-                  placeholder="Enter Google Gemini API Key"
-                  className="bg-white/70 border-[#E5DEFF]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium">Deepseek API Key</label>
-                  {renderApiKeyLink('deepseek')}
-                </div>
-                <Input
-                  type="password"
-                  value={apiKeys.deepseek}
-                  onChange={(e) => setApiKeys(prev => ({ ...prev, deepseek: e.target.value }))}
-                  placeholder="Enter Deepseek API Key"
-                  className="bg-white/70 border-[#E5DEFF]"
-                />
-              </div>
+              {renderApiKeyInput('fmp', 'FMP API Key')}
+              {renderApiKeyInput('openai', 'OpenAI API Key')}
+              {renderApiKeyInput('anthropic', 'Anthropic API Key')}
+              {renderApiKeyInput('openrouter', 'OpenRouter API Key')}
+              {renderApiKeyInput('gemini', 'Google Gemini API Key')}
+              {renderApiKeyInput('deepseek', 'Deepseek API Key')}
 
               <Button 
                 type="submit" 
