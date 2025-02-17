@@ -139,7 +139,7 @@ export const MarketNews = () => {
         <CardTitle className="flex items-center justify-between">
           <span>Market News</span>
           {news.length > 0 && (
-            <TopicItem symbol={news[0].symbol} />
+            <TopicItem topic={news[0].symbol} />
           )}
         </CardTitle>
       </CardHeader>

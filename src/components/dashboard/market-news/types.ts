@@ -1,18 +1,15 @@
 
-export interface NewsItem {
+export interface NewsItemType {
+  id: string;
   title: string;
-  text: string;
-  date: string;
+  description: string;
+  publishedAt: string;
   source: string;
   url: string;
-  sentiment: {
-    score: number;
-    magnitude: number;
-  };
+  symbol: string;
+  image: string | null;
 }
 
-export interface TopicCount {
+export interface TopicItemProps {
   topic: string;
-  count: number;
-  sentiment: number;
 }
