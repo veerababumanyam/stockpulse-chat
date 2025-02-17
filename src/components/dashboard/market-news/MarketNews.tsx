@@ -1,89 +1,133 @@
 
 import { useEffect, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { NewsAnalysisAgent } from "@/agents/NewsAnalysisAgent";
-import { RefreshCw, TrendingUp, Hash } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { NewsItem, TopicCount } from "./types";
-import { analyzeTopics } from "./utils";
-import { NewsItemComponent } from "./NewsItem";
+import { supabase } from "@/integrations/supabase/client";
+import { NewsItem } from "./NewsItem";
 import { TopicItem } from "./TopicItem";
+import type { NewsItemType } from "./types";
 
 export const MarketNews = () => {
-  const [news, setNews] = useState<NewsItem[]>([]);
+  const [news, setNews] = useState<NewsItemType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [displayCount, setDisplayCount] = useState(5);
-  const [topTopics, setTopTopics] = useState<TopicCount[]>([]);
-  const [selectedTab, setSelectedTab] = useState("news");
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchNews = async (showToast = false) => {
-    try {
-      setIsLoading(true);
-      const analysis = await NewsAnalysisAgent.analyze('SPY');
-      if (analysis.type === 'news-analysis' && analysis.analysis?.keyHighlights) {
-        const newsData = analysis.analysis.keyHighlights.map(item => ({
-          title: item.title,
-          text: item.text || '',
-          date: new Date(item.date).toLocaleDateString(),
-          source: item.source || 'Financial News',
-          url: item.url || '#',
-          sentiment: {
-            score: item.sentiment || 0,
-            magnitude: Math.abs(item.sentiment || 0)
-          }
-        }));
-        
-        setNews(newsData);
-        setTopTopics(analyzeTopics(newsData));
-        
-        if (showToast) {
-          toast({
-            title: "News Updated",
-            description: "Latest market news has been loaded",
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching news:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch market news",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
-
   useEffect(() => {
-    fetchNews();
-  }, []);
+    const fetchNews = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('You must be logged in to view market news');
+        }
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchNews(true);
-  };
+        // Get FMP API key from database
+        const { data: apiKeyData, error: apiKeyError } = await supabase
+          .from('api_keys')
+          .select('api_key, use_yahoo_backup')
+          .eq('service', 'fmp')
+          .single();
+
+        if (apiKeyError || !apiKeyData?.api_key) {
+          throw new Error('FMP API key not found. Please set up your API key in the API Keys page');
+        }
+
+        try {
+          // Try FMP first
+          const response = await fetch(
+            `https://financialmodelingprep.com/api/v3/stock_news?tickers=AAPL,GOOGL,MSFT,AMZN&limit=10&apikey=${apiKeyData.api_key}`
+          );
+
+          const data = await response.json();
+
+          // Check for API key suspension or other errors
+          if (!response.ok) {
+            if (data?.["Error Message"]?.includes("suspended")) {
+              throw new Error('Your FMP API key has been suspended. Please contact FMP support.');
+            }
+            throw new Error('Failed to fetch market news');
+          }
+
+          // Transform FMP data to our format
+          const formattedNews = data.map((item: any) => ({
+            id: item.id || Math.random().toString(),
+            title: item.title,
+            description: item.text,
+            publishedAt: item.publishedDate,
+            source: item.site,
+            url: item.url,
+            symbol: item.symbol,
+            image: item.image || null
+          }));
+
+          setNews(formattedNews);
+          setError(null);
+
+        } catch (error) {
+          console.error('Error fetching FMP news:', error);
+          
+          // If Yahoo backup is enabled and FMP fails, try to get basic news
+          if (apiKeyData.use_yahoo_backup) {
+            const defaultNews = [
+              {
+                id: '1',
+                title: 'Market data temporarily unavailable',
+                description: 'Please check back later for market news updates.',
+                publishedAt: new Date().toISOString(),
+                source: 'System',
+                url: '#',
+                symbol: 'INFO',
+                image: null
+              }
+            ];
+            setNews(defaultNews);
+            setError('Market news temporarily unavailable. Using backup data source.');
+          } else {
+            throw error;
+          }
+        }
+      } catch (error) {
+        console.error('Error in news fetch:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch market news');
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to fetch market news",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchNews();
+  }, [toast]);
 
   if (isLoading) {
     return (
-      <Card className="animate-pulse">
+      <Card>
+        <CardHeader>
+          <CardTitle>Market News</CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center items-center h-40">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
         <CardHeader>
           <CardTitle>Market News</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {Array(5).fill(0).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <div className="h-4 bg-muted rounded w-3/4" />
-                <div className="h-3 bg-muted rounded w-1/2" />
-              </div>
-            ))}
-          </div>
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     );
@@ -91,80 +135,21 @@ export const MarketNews = () => {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle>AI-Analyzed Market News</CardTitle>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="h-8 relative z-50"
-          >
-            <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span>Market News</span>
+          {news.length > 0 && (
+            <TopicItem symbol={news[0].symbol} />
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="news">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Latest News
-            </TabsTrigger>
-            <TabsTrigger value="topics">
-              <Hash className="h-4 w-4 mr-2" />
-              Top Topics
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="news" className="space-y-4">
-            {news.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No news articles available at the moment
-              </div>
-            ) : (
-              <>
-                {news.slice(0, displayCount).map((item, index) => (
-                  <NewsItemComponent key={index} item={item} />
-                ))}
-                {news.length > 5 && displayCount === 5 && (
-                  <Button
-                    variant="link"
-                    className="w-full mt-2"
-                    onClick={() => setDisplayCount(news.length)}
-                  >
-                    View All News
-                  </Button>
-                )}
-                {displayCount > 5 && (
-                  <Button
-                    variant="link"
-                    className="w-full mt-2"
-                    onClick={() => setDisplayCount(5)}
-                  >
-                    Show Less
-                  </Button>
-                )}
-              </>
-            )}
-          </TabsContent>
-
-          <TabsContent value="topics" className="space-y-4">
-            {topTopics.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No trending topics available
-              </div>
-            ) : (
-              topTopics.map((topic, index) => (
-                <TopicItem key={index} topic={topic} />
-              ))
-            )}
-          </TabsContent>
-        </Tabs>
+        <div className="space-y-4">
+          {news.map((item) => (
+            <NewsItem key={item.id} news={item} />
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
 };
-

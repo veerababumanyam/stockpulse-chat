@@ -1,24 +1,28 @@
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface EconomicEvent {
   event: string;
   date: string;
-  impact: 'High' | 'Medium' | 'Low';
-  forecast?: string;
+  country: string;
+  actual?: string;
   previous?: string;
+  impact: string;
 }
 
 export const EconomicCalendar = () => {
   const [events, setEvents] = useState<EconomicEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchEconomicData = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
@@ -27,38 +31,81 @@ export const EconomicCalendar = () => {
 
         const { data: apiKeyData, error: apiKeyError } = await supabase
           .from('api_keys')
-          .select('api_key')
+          .select('api_key, use_yahoo_backup')
           .eq('service', 'fmp')
           .single();
 
-        if (apiKeyError || !apiKeyData) {
+        if (apiKeyError || !apiKeyData?.api_key) {
           throw new Error('FMP API key not found. Please set up your API key in the API Keys page');
         }
 
-        // Validate API key format
-        if (apiKeyData.api_key.startsWith('hf_')) {
-          throw new Error('Invalid API key format. Please provide a valid Financial Modeling Prep (FMP) API key, not a Hugging Face key.');
-        }
-        
-        const response = await fetch(
-          `https://financialmodelingprep.com/api/v3/economic_calendar?apikey=${apiKeyData.api_key}`
-        );
+        try {
+          const response = await fetch(
+            `https://financialmodelingprep.com/api/v3/economic_calendar?apikey=${apiKeyData.api_key}`
+          );
 
-        if (!response.ok) {
           const data = await response.json();
-          if (response.status === 403 && data?.["Error Message"]?.includes("Exclusive Endpoint")) {
-            throw new Error('The Economic Calendar feature requires a premium FMP subscription. Please upgrade your plan at financialmodelingprep.com');
+
+          if (!response.ok) {
+            // Handle premium endpoint restriction
+            if (data?.["Error Message"]?.includes("Exclusive Endpoint")) {
+              if (apiKeyData.use_yahoo_backup) {
+                // Use basic placeholder data when premium endpoint is not available
+                const placeholderData = [
+                  {
+                    event: "Economic data temporarily unavailable",
+                    date: new Date().toISOString(),
+                    country: "US",
+                    impact: "Medium"
+                  }
+                ];
+                setEvents(placeholderData);
+                setError("Premium economic data not available. Please upgrade your FMP subscription for full access.");
+                return;
+              }
+              throw new Error('This feature requires a premium FMP subscription');
+            }
+            throw new Error('Failed to fetch economic data');
           }
-          throw new Error('Failed to fetch economic calendar. Please check your API key status.');
+
+          const formattedEvents = data
+            .slice(0, 5)
+            .map((event: any) => ({
+              event: event.event,
+              date: event.date,
+              country: event.country,
+              actual: event.actual,
+              previous: event.previous,
+              impact: event.impact
+            }));
+
+          setEvents(formattedEvents);
+          setError(null);
+
+        } catch (error) {
+          console.error('Error fetching economic data:', error);
+          if (apiKeyData.use_yahoo_backup) {
+            // Fallback to basic data
+            const basicData = [
+              {
+                event: "Economic data temporarily unavailable",
+                date: new Date().toISOString(),
+                country: "US",
+                impact: "Medium"
+              }
+            ];
+            setEvents(basicData);
+            setError("Economic data temporarily unavailable. Using backup data source.");
+          } else {
+            throw error;
+          }
         }
-        
-        const data = await response.json();
-        setEvents(data.slice(0, 5));
       } catch (error) {
-        console.error('Error fetching economic calendar:', error);
+        console.error('Error in economic data fetch:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch economic data');
         toast({
           title: "Error",
-          description: error instanceof Error ? error.message : "Failed to fetch economic calendar",
+          description: error instanceof Error ? error.message : "Failed to fetch economic data",
           variant: "destructive",
         });
       } finally {
@@ -66,24 +113,33 @@ export const EconomicCalendar = () => {
       }
     };
 
-    fetchEvents();
+    fetchEconomicData();
   }, [toast]);
 
   if (isLoading) {
     return (
-      <Card className="animate-pulse">
+      <Card>
+        <CardHeader>
+          <CardTitle>Economic Calendar</CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center items-center h-40">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
         <CardHeader>
           <CardTitle>Economic Calendar</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {Array(5).fill(0).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <div className="h-4 bg-muted rounded w-3/4" />
-                <div className="h-3 bg-muted rounded w-1/2" />
-              </div>
-            ))}
-          </div>
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     );
@@ -97,27 +153,36 @@ export const EconomicCalendar = () => {
       <CardContent>
         <div className="space-y-4">
           {events.map((event, index) => (
-            <div key={index} className="pb-4 border-b last:border-b-0">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-semibold">{event.event}</h4>
-                <span className={`px-2 py-1 rounded text-xs ${
-                  event.impact === 'High' ? 'bg-red-100 text-red-800' :
-                  event.impact === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-green-100 text-green-800'
+            <div
+              key={`${event.event}-${event.date}-${index}`}
+              className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-lg"
+            >
+              <div>
+                <div className="font-medium">{event.event}</div>
+                <div className="text-sm text-muted-foreground">{event.country}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-medium">
+                  {new Date(event.date).toLocaleDateString()}
+                </div>
+                {event.actual && (
+                  <div className="text-sm text-muted-foreground">
+                    Actual: {event.actual}
+                  </div>
+                )}
+                {event.previous && (
+                  <div className="text-sm text-muted-foreground">
+                    Previous: {event.previous}
+                  </div>
+                )}
+                <div className={`text-xs ${
+                  event.impact === 'High' ? 'text-red-500' :
+                  event.impact === 'Medium' ? 'text-yellow-500' :
+                  'text-green-500'
                 }`}>
                   {event.impact} Impact
-                </span>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {new Date(event.date).toLocaleDateString()}
-              </div>
-              {(event.forecast || event.previous) && (
-                <div className="text-sm mt-2">
-                  {event.forecast && <span>Forecast: {event.forecast}</span>}
-                  {event.forecast && event.previous && <span className="mx-2">|</span>}
-                  {event.previous && <span>Previous: {event.previous}</span>}
                 </div>
-              )}
+              </div>
             </div>
           ))}
         </div>

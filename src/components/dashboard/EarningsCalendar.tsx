@@ -1,25 +1,26 @@
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface EarningsEvent {
   symbol: string;
   date: string;
-  eps: string;
-  epsEstimated: string;
-  revenue?: string;
-  revenueEstimated?: string;
+  eps: number | null;
+  revenue: number | null;
 }
 
 export const EarningsCalendar = () => {
   const [events, setEvents] = useState<EarningsEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchEarnings = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
@@ -28,29 +29,79 @@ export const EarningsCalendar = () => {
 
         const { data: apiKeyData, error: apiKeyError } = await supabase
           .from('api_keys')
-          .select('api_key')
+          .select('api_key, use_yahoo_backup')
           .eq('service', 'fmp')
           .single();
 
-        if (apiKeyError || !apiKeyData) {
+        if (apiKeyError || !apiKeyData?.api_key) {
           throw new Error('FMP API key not found. Please set up your API key in the API Keys page');
         }
 
-        const response = await fetch(
-          `https://financialmodelingprep.com/api/v3/earning_calendar?apikey=${apiKeyData.api_key}`
-        );
+        try {
+          const response = await fetch(
+            `https://financialmodelingprep.com/api/v3/earning_calendar?apikey=${apiKeyData.api_key}`
+          );
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch earnings calendar. Please check your API key status.');
+          const data = await response.json();
+
+          if (!response.ok) {
+            // Handle premium endpoint restriction
+            if (data?.["Error Message"]?.includes("Exclusive Endpoint")) {
+              if (apiKeyData.use_yahoo_backup) {
+                // Use basic placeholder data when premium endpoint is not available
+                const placeholderData = [
+                  {
+                    symbol: "INFO",
+                    date: new Date().toISOString().split('T')[0],
+                    eps: null,
+                    revenue: null
+                  }
+                ];
+                setEvents(placeholderData);
+                setError("Premium earnings data not available. Please upgrade your FMP subscription for full access.");
+                return;
+              }
+              throw new Error('This feature requires a premium FMP subscription');
+            }
+            throw new Error('Failed to fetch earnings data');
+          }
+
+          const formattedEvents = data
+            .slice(0, 5)
+            .map((event: any) => ({
+              symbol: event.symbol,
+              date: event.date,
+              eps: event.eps,
+              revenue: event.revenue
+            }));
+
+          setEvents(formattedEvents);
+          setError(null);
+
+        } catch (error) {
+          console.error('Error fetching earnings:', error);
+          if (apiKeyData.use_yahoo_backup) {
+            // Fallback to basic data
+            const basicData = [
+              {
+                symbol: "INFO",
+                date: new Date().toISOString().split('T')[0],
+                eps: null,
+                revenue: null
+              }
+            ];
+            setEvents(basicData);
+            setError("Earnings data temporarily unavailable. Using backup data source.");
+          } else {
+            throw error;
+          }
         }
-        
-        const data = await response.json();
-        setEvents(data.slice(0, 5));
       } catch (error) {
-        console.error('Error fetching earnings calendar:', error);
+        console.error('Error in earnings fetch:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch earnings data');
         toast({
           title: "Error",
-          description: error instanceof Error ? error.message : "Failed to fetch earnings calendar",
+          description: error instanceof Error ? error.message : "Failed to fetch earnings data",
           variant: "destructive",
         });
       } finally {
@@ -58,24 +109,33 @@ export const EarningsCalendar = () => {
       }
     };
 
-    fetchEvents();
+    fetchEarnings();
   }, [toast]);
 
   if (isLoading) {
     return (
-      <Card className="animate-pulse">
+      <Card>
+        <CardHeader>
+          <CardTitle>Earnings Calendar</CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center items-center h-40">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
         <CardHeader>
           <CardTitle>Earnings Calendar</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {Array(5).fill(0).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <div className="h-4 bg-muted rounded w-3/4" />
-                <div className="h-3 bg-muted rounded w-1/2" />
-              </div>
-            ))}
-          </div>
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     );
@@ -89,25 +149,24 @@ export const EarningsCalendar = () => {
       <CardContent>
         <div className="space-y-4">
           {events.map((event, index) => (
-            <div key={index} className="pb-4 border-b last:border-b-0">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold">{event.symbol}</span>
-                <span className="text-sm text-muted-foreground">
-                  {new Date(event.date).toLocaleDateString()}
-                </span>
+            <div
+              key={`${event.symbol}-${event.date}-${index}`}
+              className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-lg"
+            >
+              <div>
+                <div className="font-medium">{event.symbol}</div>
+                <div className="text-sm text-muted-foreground">{new Date(event.date).toLocaleDateString()}</div>
               </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">EPS: </span>
-                  {event.eps || 'N/A'} vs {event.epsEstimated || 'N/A'} est.
+              {(event.eps !== null || event.revenue !== null) && (
+                <div className="text-right">
+                  {event.eps !== null && <div>EPS: ${event.eps.toFixed(2)}</div>}
+                  {event.revenue !== null && (
+                    <div className="text-sm text-muted-foreground">
+                      Rev: ${(event.revenue / 1e6).toFixed(1)}M
+                    </div>
+                  )}
                 </div>
-                {event.revenue && (
-                  <div>
-                    <span className="text-muted-foreground">Rev: </span>
-                    {event.revenue} vs {event.revenueEstimated || 'N/A'} est.
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           ))}
         </div>

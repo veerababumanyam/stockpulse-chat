@@ -1,33 +1,104 @@
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { LegalDocumentAgent } from "@/agents/LegalDocumentAgent";
+import { supabase } from "@/integrations/supabase/client";
 
-interface Filing {
+interface SECFiling {
+  symbol: string;
   type: string;
   date: string;
-  title: string;
-  link: string;
+  url: string;
 }
 
 export const SECFilingsCalendar = () => {
-  const [filings, setFilings] = useState<Filing[]>([]);
+  const [filings, setFilings] = useState<SECFiling[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchFilings = async () => {
       try {
-        const result = await LegalDocumentAgent.analyze('SPY');
-        if (result.analysis?.recentFilings) {
-          setFilings(result.analysis.recentFilings.slice(0, 5));
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('You must be logged in to view SEC filings');
+        }
+
+        const { data: apiKeyData, error: apiKeyError } = await supabase
+          .from('api_keys')
+          .select('api_key, use_yahoo_backup')
+          .eq('service', 'fmp')
+          .single();
+
+        if (apiKeyError || !apiKeyData?.api_key) {
+          throw new Error('FMP API key not found. Please set up your API key in the API Keys page');
+        }
+
+        try {
+          const response = await fetch(
+            `https://financialmodelingprep.com/api/v3/sec_filings/AAPL?limit=5&apikey=${apiKeyData.api_key}`
+          );
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            if (data?.["Error Message"]?.includes("suspended")) {
+              if (apiKeyData.use_yahoo_backup) {
+                // Use placeholder data when API key is suspended
+                const placeholderData = [
+                  {
+                    symbol: "INFO",
+                    type: "Notice",
+                    date: new Date().toISOString(),
+                    url: "#"
+                  }
+                ];
+                setFilings(placeholderData);
+                setError("SEC filings data temporarily unavailable. Using backup data source.");
+                return;
+              }
+              throw new Error('Your FMP API key has been suspended');
+            }
+            throw new Error('Failed to fetch SEC filings');
+          }
+
+          const formattedFilings = data.map((filing: any) => ({
+            symbol: filing.symbol,
+            type: filing.type,
+            date: filing.fillingDate,
+            url: filing.finalLink
+          }));
+
+          setFilings(formattedFilings);
+          setError(null);
+
+        } catch (error) {
+          console.error('Error fetching SEC filings:', error);
+          if (apiKeyData.use_yahoo_backup) {
+            // Fallback to basic data
+            const basicData = [
+              {
+                symbol: "INFO",
+                type: "Notice",
+                date: new Date().toISOString(),
+                url: "#"
+              }
+            ];
+            setFilings(basicData);
+            setError("SEC filings temporarily unavailable. Using backup data source.");
+          } else {
+            throw error;
+          }
         }
       } catch (error) {
-        console.error('Error fetching SEC filings:', error);
+        console.error('Error in SEC filings fetch:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch SEC filings');
         toast({
           title: "Error",
-          description: "Failed to fetch SEC filings",
+          description: error instanceof Error ? error.message : "Failed to fetch SEC filings",
           variant: "destructive",
         });
       } finally {
@@ -40,19 +111,28 @@ export const SECFilingsCalendar = () => {
 
   if (isLoading) {
     return (
-      <Card className="animate-pulse">
+      <Card>
+        <CardHeader>
+          <CardTitle>SEC Filings</CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center items-center h-40">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
         <CardHeader>
           <CardTitle>SEC Filings</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {Array(5).fill(0).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <div className="h-4 bg-muted rounded w-3/4" />
-                <div className="h-3 bg-muted rounded w-1/2" />
-              </div>
-            ))}
-          </div>
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     );
@@ -66,21 +146,29 @@ export const SECFilingsCalendar = () => {
       <CardContent>
         <div className="space-y-4">
           {filings.map((filing, index) => (
-            <div key={index} className="pb-4 border-b last:border-b-0">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold">{filing.type}</span>
-                <span className="text-sm text-muted-foreground">
-                  {filing.date}
-                </span>
+            <div
+              key={`${filing.symbol}-${filing.date}-${index}`}
+              className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-lg"
+            >
+              <div>
+                <div className="font-medium">{filing.symbol}</div>
+                <div className="text-sm text-muted-foreground">{filing.type}</div>
               </div>
-              <a 
-                href={filing.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-primary hover:underline"
-              >
-                {filing.title}
-              </a>
+              <div className="text-right">
+                <div className="text-sm text-muted-foreground">
+                  {new Date(filing.date).toLocaleDateString()}
+                </div>
+                {filing.url !== "#" && (
+                  <a
+                    href={filing.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-500 hover:text-blue-600"
+                  >
+                    View
+                  </a>
+                )}
+              </div>
             </div>
           ))}
         </div>
