@@ -15,24 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Get user ID from JWT
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-      throw new Error('Invalid authentication');
-    }
-
-    // Get request body
+    // Get messages from request
     const { messages } = await req.json();
     if (!Array.isArray(messages) || messages.length === 0) {
       throw new Error('Invalid messages format');
@@ -43,18 +26,7 @@ serve(async (req) => {
       throw new Error('Invalid message content');
     }
 
-    // Set up stream encoder and writer
-    const encoder = new TextEncoder();
-    const stream = new TransformStream();
-    const writer = stream.writable.getWriter();
-
-    // Create initial system message
-    const systemMessage = {
-      role: 'system',
-      content: 'You are a stock market expert assistant. Provide concise and accurate responses to user questions about stocks and trading.'
-    };
-
-    // Send request to OpenAI
+    // Set up OpenAI request
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -63,7 +35,13 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'gpt-4',
-        messages: [systemMessage, ...messages],
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a stock market expert assistant. Provide concise and accurate responses to user questions about stocks and trading.',
+          },
+          ...messages
+        ],
         stream: true,
       }),
     });
@@ -73,12 +51,11 @@ serve(async (req) => {
       throw new Error(error.error?.message || 'OpenAI API error');
     }
 
-    // Handle streaming response
-    if (!openaiResponse.body) {
-      throw new Error('No response body from OpenAI');
-    }
-
-    const reader = openaiResponse.body.getReader();
+    // Set up stream
+    const reader = openaiResponse.body!.getReader();
+    const stream = new TransformStream();
+    const writer = stream.writable.getWriter();
+    const encoder = new TextEncoder();
     const decoder = new TextDecoder();
 
     // Process the stream
