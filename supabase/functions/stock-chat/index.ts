@@ -23,86 +23,66 @@ serve(async (req) => {
     // Get user ID from JWT
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('No authorization header');
+      throw new Error('Missing authorization header');
     }
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) {
       throw new Error('Invalid authentication');
     }
 
-    // Get API keys from database
-    const { data: apiKeys, error: apiKeyError } = await supabase
-      .from('api_keys')
-      .select('service, api_key')
-      .in('service', ['openai', 'fmp'])
-      .eq('user_id', user.id);
-
-    if (apiKeyError) {
-      throw new Error('Error fetching API keys: ' + apiKeyError.message);
-    }
-
-    const apiKeyMap = apiKeys?.reduce((acc: Record<string, string>, curr) => {
-      acc[curr.service] = curr.api_key;
-      return acc;
-    }, {}) || {};
-
-    const openaiKey = apiKeyMap['openai'];
-    const fmpKey = apiKeyMap['fmp'];
-
-    if (!openaiKey) {
-      throw new Error('OpenAI API key not found. Please add your API key in the API Keys page');
-    }
-
-    if (!fmpKey) {
-      throw new Error('FMP API key not found. Please add your API key in the API Keys page');
-    }
-
-    // Get the request body
+    // Get request body
     const { messages } = await req.json();
+    if (!Array.isArray(messages) || messages.length === 0) {
+      throw new Error('Invalid messages format');
+    }
+
     const lastMessage = messages[messages.length - 1];
+    if (!lastMessage?.content) {
+      throw new Error('Invalid message content');
+    }
 
-    // Fetch some basic stock data for context
-    const stockData = await fetch(
-      `https://financialmodelingprep.com/api/v3/stock/list?apikey=${fmpKey}`
-    ).then(res => res.json());
-
-    // Create stream transformer
+    // Set up stream encoder and writer
     const encoder = new TextEncoder();
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
 
-    // Start OpenAI streaming request
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Create initial system message
+    const systemMessage = {
+      role: 'system',
+      content: 'You are a stock market expert assistant. Provide concise and accurate responses to user questions about stocks and trading.'
+    };
+
+    // Send request to OpenAI
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openaiKey}`,
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model: 'gpt-4',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a stock market expert assistant. Use the provided stock data to answer user questions accurately and concisely.'
-          },
-          ...messages.slice(0, -1),
-          {
-            role: 'user',
-            content: `Context: ${JSON.stringify(stockData.slice(0, 10))}. Question: ${lastMessage.content}`
-          }
-        ],
+        messages: [systemMessage, ...messages],
         stream: true,
       }),
     });
 
-    // Handle streaming response
-    const reader = openAIResponse.body?.getReader();
-    if (!reader) {
-      throw new Error('Failed to get response reader');
+    if (!openaiResponse.ok) {
+      const error = await openaiResponse.json();
+      throw new Error(error.error?.message || 'OpenAI API error');
     }
 
-    const processStream = async () => {
+    // Handle streaming response
+    if (!openaiResponse.body) {
+      throw new Error('No response body from OpenAI');
+    }
+
+    const reader = openaiResponse.body.getReader();
+    const decoder = new TextDecoder();
+
+    // Process the stream
+    (async () => {
       try {
         while (true) {
           const { done, value } = await reader.read();
@@ -111,21 +91,19 @@ serve(async (req) => {
             break;
           }
 
-          const chunk = new TextDecoder().decode(value);
+          const chunk = decoder.decode(value);
           const lines = chunk.split('\n').filter(line => line.trim() !== '');
 
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const data = line.slice(6);
-              if (data === '[DONE]') {
-                continue;
-              }
+              if (data === '[DONE]') continue;
 
               try {
-                const json = JSON.parse(data);
-                const token = json.choices[0]?.delta?.content || '';
-                if (token) {
-                  await writer.write(encoder.encode(`data: ${JSON.stringify({ content: token })}\n\n`));
+                const parsed = JSON.parse(data);
+                const content = parsed.choices[0]?.delta?.content || '';
+                if (content) {
+                  await writer.write(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
                 }
               } catch (e) {
                 console.error('Error parsing JSON:', e);
@@ -134,15 +112,12 @@ serve(async (req) => {
           }
         }
       } catch (error) {
-        console.error('Error processing stream:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Stream processing error';
+        console.error('Stream processing error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         await writer.write(encoder.encode(`data: ${JSON.stringify({ error: errorMessage })}\n\n`));
         await writer.close();
       }
-    };
-
-    // Start processing the stream
-    processStream();
+    })();
 
     // Return the stream response
     return new Response(stream.readable, {
@@ -157,10 +132,15 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in stock-chat function:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'An error occurred' }),
-      { 
+      JSON.stringify({
+        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+      }),
+      {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       }
     );
   }
