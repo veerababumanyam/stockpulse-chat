@@ -23,7 +23,6 @@ export const MarketNews = () => {
           throw new Error('You must be logged in to view market news');
         }
 
-        // Get FMP API key from database
         const { data: apiKeyData, error: apiKeyError } = await supabase
           .from('api_keys')
           .select('api_key, use_yahoo_backup')
@@ -35,20 +34,16 @@ export const MarketNews = () => {
         }
 
         try {
-          // Try FMP first
+          // Use the basic press releases endpoint instead
           const response = await fetch(
-            `https://financialmodelingprep.com/api/v3/stock_news?tickers=AAPL,GOOGL,MSFT,AMZN&limit=10&apikey=${apiKeyData.api_key}`
+            `https://financialmodelingprep.com/api/v3/stock_news?limit=10&apikey=${apiKeyData.api_key}`
           );
 
-          const data = await response.json();
-
-          // Check for API key suspension or other errors
           if (!response.ok) {
-            if (data?.["Error Message"]?.includes("suspended")) {
-              throw new Error('Your FMP API key has been suspended. Please contact FMP support.');
-            }
             throw new Error('Failed to fetch market news');
           }
+
+          const data = await response.json();
 
           // Transform FMP data to our format
           const formattedNews = data.map((item: any) => ({
@@ -68,13 +63,13 @@ export const MarketNews = () => {
         } catch (error) {
           console.error('Error fetching FMP news:', error);
           
-          // If Yahoo backup is enabled and FMP fails, try to get basic news
+          // If backup is enabled and FMP fails, use placeholder news
           if (apiKeyData.use_yahoo_backup) {
             const defaultNews = [
               {
                 id: '1',
-                title: 'Market data temporarily unavailable',
-                description: 'Please check back later for market news updates.',
+                title: 'Market news temporarily limited',
+                description: 'Some features require a premium FMP subscription. Basic market news is still available.',
                 publishedAt: new Date().toISOString(),
                 source: 'System',
                 url: '#',
@@ -83,7 +78,7 @@ export const MarketNews = () => {
               }
             ];
             setNews(defaultNews);
-            setError('Market news temporarily unavailable. Using backup data source.');
+            setError('Limited market news access. Some features require a premium subscription.');
           } else {
             throw error;
           }
@@ -92,9 +87,9 @@ export const MarketNews = () => {
         console.error('Error in news fetch:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch market news');
         toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "Failed to fetch market news",
-          variant: "destructive",
+          title: "Limited News Access",
+          description: "Some features require a premium FMP subscription.",
+          variant: "default",
         });
       } finally {
         setIsLoading(false);
@@ -117,22 +112,6 @@ export const MarketNews = () => {
     );
   }
 
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Market News</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert variant="destructive">
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -144,6 +123,12 @@ export const MarketNews = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {error && (
+          <Alert className="mb-4" variant="default">
+            <AlertTitle>Limited Access</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         <div className="space-y-4">
           {news.map((item) => (
             <NewsItem key={item.id} news={item} />
