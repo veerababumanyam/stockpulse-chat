@@ -66,7 +66,7 @@ const ChatWindow: React.FC = () => {
   }, [navigate, toast]);
 
   const { messages, input, handleInputChange, handleSubmit, setMessages } = useChat({
-    api: '/api/chat',
+    api: `${supabase.supabaseUrl}/functions/v1/stock-chat`,
     headers: {
       'Authorization': `Bearer ${session?.access_token || ''}`,
       'Content-Type': 'application/json'
