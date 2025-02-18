@@ -15,8 +15,12 @@ serve(async (req) => {
 
   try {
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    
+    // Add more detailed error logging
+    console.log('Environment check - OPENAI_API_KEY exists:', !!openAIApiKey);
+    
     if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+      throw new Error('OpenAI API key not configured in Edge Function secrets');
     }
 
     // Get messages from request
@@ -29,8 +33,6 @@ serve(async (req) => {
     if (!lastMessage?.content) {
       throw new Error('Invalid message content');
     }
-
-    console.log('Sending request to OpenAI with API key:', openAIApiKey.substring(0, 3) + '...');
 
     // Set up OpenAI request
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
