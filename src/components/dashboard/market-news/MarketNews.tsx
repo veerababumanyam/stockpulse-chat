@@ -34,18 +34,39 @@ export const MarketNews = () => {
         }
 
         try {
-          // Use the basic press releases endpoint instead
+          // Try premium endpoint first
           const response = await fetch(
-            `https://financialmodelingprep.com/api/v3/stock_news?limit=10&apikey=${apiKeyData.api_key}`
+            `https://financialmodelingprep.com/api/v3/stock_news?tickers=AAPL,GOOGL,MSFT,AMZN&limit=10&apikey=${apiKeyData.api_key}`
           );
 
           if (!response.ok) {
-            throw new Error('Failed to fetch market news');
+            // If premium fails, try basic endpoint
+            const basicResponse = await fetch(
+              `https://financialmodelingprep.com/api/v3/stock_news?limit=10&apikey=${apiKeyData.api_key}`
+            );
+
+            if (!basicResponse.ok) {
+              throw new Error('Failed to fetch market news');
+            }
+
+            const data = await basicResponse.json();
+            const formattedNews = data.map((item: any) => ({
+              id: item.id || Math.random().toString(),
+              title: item.title,
+              description: item.text,
+              publishedAt: item.publishedDate,
+              source: item.site,
+              url: item.url,
+              symbol: item.symbol,
+              image: item.image || null
+            }));
+
+            setNews(formattedNews);
+            setError("Using basic market news. Some premium features are limited.");
+            return;
           }
 
           const data = await response.json();
-
-          // Transform FMP data to our format
           const formattedNews = data.map((item: any) => ({
             id: item.id || Math.random().toString(),
             title: item.title,
@@ -63,13 +84,12 @@ export const MarketNews = () => {
         } catch (error) {
           console.error('Error fetching FMP news:', error);
           
-          // If backup is enabled and FMP fails, use placeholder news
           if (apiKeyData.use_yahoo_backup) {
             const defaultNews = [
               {
                 id: '1',
                 title: 'Market news temporarily limited',
-                description: 'Some features require a premium FMP subscription. Basic market news is still available.',
+                description: 'Basic market news is still available.',
                 publishedAt: new Date().toISOString(),
                 source: 'System',
                 url: '#',
@@ -78,7 +98,7 @@ export const MarketNews = () => {
               }
             ];
             setNews(defaultNews);
-            setError('Limited market news access. Some features require a premium subscription.');
+            setError('Limited market news access.');
           } else {
             throw error;
           }
@@ -87,8 +107,8 @@ export const MarketNews = () => {
         console.error('Error in news fetch:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch market news');
         toast({
-          title: "Limited News Access",
-          description: "Some features require a premium FMP subscription.",
+          title: "Market News",
+          description: "Using basic market news feed.",
           variant: "default",
         });
       } finally {

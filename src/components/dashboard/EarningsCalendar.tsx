@@ -38,20 +38,37 @@ export const EarningsCalendar = () => {
         }
 
         try {
-          // Use financial statements endpoint instead of earnings calendar
+          // Try premium earnings calendar endpoint first
           const response = await fetch(
-            `https://financialmodelingprep.com/api/v3/income-statement/AAPL?limit=1&apikey=${apiKeyData.api_key}`
+            `https://financialmodelingprep.com/api/v3/earning_calendar?apikey=${apiKeyData.api_key}`
           );
 
           if (!response.ok) {
-            throw new Error('Failed to fetch earnings data');
+            // Fallback to basic income statement endpoint
+            const basicResponse = await fetch(
+              `https://financialmodelingprep.com/api/v3/income-statement/AAPL?limit=1&apikey=${apiKeyData.api_key}`
+            );
+
+            if (!basicResponse.ok) {
+              throw new Error('Failed to fetch earnings data');
+            }
+
+            const data = await basicResponse.json();
+            const formattedEvents = data.map((event: any) => ({
+              symbol: 'AAPL',
+              date: event.date,
+              eps: event.eps,
+              revenue: event.revenue
+            }));
+
+            setEvents(formattedEvents);
+            setError("Using basic earnings data. Some features require a premium subscription.");
+            return;
           }
 
           const data = await response.json();
-          
-          // Transform the data into our format
-          const formattedEvents = data.map((event: any) => ({
-            symbol: 'AAPL',
+          const formattedEvents = data.slice(0, 10).map((event: any) => ({
+            symbol: event.symbol,
             date: event.date,
             eps: event.eps,
             revenue: event.revenue
@@ -63,7 +80,6 @@ export const EarningsCalendar = () => {
         } catch (error) {
           console.error('Error fetching earnings:', error);
           if (apiKeyData.use_yahoo_backup) {
-            // Use placeholder data
             const basicData = [
               {
                 symbol: "INFO",
@@ -73,7 +89,7 @@ export const EarningsCalendar = () => {
               }
             ];
             setEvents(basicData);
-            setError("Earnings data temporarily limited. Some features require a premium subscription.");
+            setError("Basic earnings data available.");
           } else {
             throw error;
           }
@@ -82,8 +98,8 @@ export const EarningsCalendar = () => {
         console.error('Error in earnings fetch:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch earnings data');
         toast({
-          title: "Limited Access",
-          description: "Some earnings features require a premium FMP subscription.",
+          title: "Earnings Data",
+          description: "Using basic earnings information.",
           variant: "default",
         });
       } finally {

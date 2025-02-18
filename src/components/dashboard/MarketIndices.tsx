@@ -43,7 +43,32 @@ export const MarketIndices = () => {
           throw new Error('FMP API key not found. Please set up your API key in the API Keys page');
         }
 
-        // Use quote endpoint instead of indices endpoint
+        // Try premium quotes/index endpoint first
+        try {
+          const premiumResponse = await fetch(
+            `https://financialmodelingprep.com/api/v3/quotes/index?apikey=${apiKeyData.api_key}`
+          );
+
+          if (premiumResponse.ok) {
+            const data = await premiumResponse.json();
+            const majorIndices = data.filter((index: any) => 
+              ['S&P 500', 'Dow Jones', 'NASDAQ Composite', 'Russell 2000'].includes(index.name)
+            );
+            
+            setIndices(majorIndices.map((index: any) => ({
+              symbol: index.symbol,
+              name: index.name,
+              price: Number(index.price) || 0,
+              change: Number(index.change) || 0,
+              changePercent: Number(index.changesPercentage) || 0
+            })));
+            return;
+          }
+        } catch (error) {
+          console.log('Premium endpoint not available, falling back to basic endpoint');
+        }
+
+        // Fallback to basic quote endpoint
         const promises = defaultIndices.map(index =>
           fetch(`https://financialmodelingprep.com/api/v3/quote/${index.symbol}?apikey=${apiKeyData.api_key}`)
             .then(res => res.json())
@@ -63,15 +88,15 @@ export const MarketIndices = () => {
         }));
 
         setIndices(validIndices);
+
       } catch (error) {
         console.error('Error fetching indices:', error);
         toast({
           title: "Market Data Limited",
-          description: "Using basic market data. Some features require a premium FMP subscription.",
+          description: "Using basic market data.",
           variant: "default",
         });
         
-        // Set placeholder data
         setIndices(defaultIndices.map(index => ({
           symbol: index.symbol,
           name: index.name,
