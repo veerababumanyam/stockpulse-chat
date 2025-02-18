@@ -38,44 +38,25 @@ export const EarningsCalendar = () => {
         }
 
         try {
-          // Try premium earnings calendar endpoint first
+          // Use basic financial statements endpoint instead of earnings calendar
           const response = await fetch(
-            `https://financialmodelingprep.com/api/v3/earning_calendar?apikey=${apiKeyData.api_key}`
+            `https://financialmodelingprep.com/api/v3/income-statement/AAPL?limit=1&apikey=${apiKeyData.api_key}`
           );
 
           if (!response.ok) {
-            // Fallback to basic income statement endpoint
-            const basicResponse = await fetch(
-              `https://financialmodelingprep.com/api/v3/income-statement/AAPL?limit=1&apikey=${apiKeyData.api_key}`
-            );
-
-            if (!basicResponse.ok) {
-              throw new Error('Failed to fetch earnings data');
-            }
-
-            const data = await basicResponse.json();
-            const formattedEvents = data.map((event: any) => ({
-              symbol: 'AAPL',
-              date: event.date,
-              eps: event.eps,
-              revenue: event.revenue
-            }));
-
-            setEvents(formattedEvents);
-            setError("Using basic earnings data. Some features require a premium subscription.");
-            return;
+            throw new Error('Failed to fetch earnings data');
           }
 
           const data = await response.json();
-          const formattedEvents = data.slice(0, 10).map((event: any) => ({
-            symbol: event.symbol,
+          const formattedEvents = data.map((event: any) => ({
+            symbol: 'AAPL',
             date: event.date,
             eps: event.eps,
             revenue: event.revenue
           }));
 
           setEvents(formattedEvents);
-          setError(null);
+          setError("Using basic earnings data. Full calendar requires premium subscription.");
 
         } catch (error) {
           console.error('Error fetching earnings:', error);
@@ -97,11 +78,6 @@ export const EarningsCalendar = () => {
       } catch (error) {
         console.error('Error in earnings fetch:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch earnings data');
-        toast({
-          title: "Earnings Data",
-          description: "Using basic earnings information.",
-          variant: "default",
-        });
       } finally {
         setIsLoading(false);
       }

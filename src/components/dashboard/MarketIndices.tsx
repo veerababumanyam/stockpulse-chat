@@ -43,51 +43,28 @@ export const MarketIndices = () => {
           throw new Error('FMP API key not found. Please set up your API key in the API Keys page');
         }
 
-        // Try premium quotes/index endpoint first
-        try {
-          const premiumResponse = await fetch(
-            `https://financialmodelingprep.com/api/v3/quotes/index?apikey=${apiKeyData.api_key}`
-          );
-
-          if (premiumResponse.ok) {
-            const data = await premiumResponse.json();
-            const majorIndices = data.filter((index: any) => 
-              ['S&P 500', 'Dow Jones', 'NASDAQ Composite', 'Russell 2000'].includes(index.name)
-            );
-            
-            setIndices(majorIndices.map((index: any) => ({
-              symbol: index.symbol,
-              name: index.name,
-              price: Number(index.price) || 0,
-              change: Number(index.change) || 0,
-              changePercent: Number(index.changesPercentage) || 0
-            })));
-            return;
-          }
-        } catch (error) {
-          console.log('Premium endpoint not available, falling back to basic endpoint');
-        }
-
-        // Fallback to basic quote endpoint
+        // Use basic quote endpoint instead of premium index endpoint
         const promises = defaultIndices.map(index =>
           fetch(`https://financialmodelingprep.com/api/v3/quote/${index.symbol}?apikey=${apiKeyData.api_key}`)
             .then(res => res.json())
             .then(data => ({
-              ...data[0],
-              name: index.name
+              symbol: index.symbol,
+              name: index.name,
+              price: data[0]?.price || 0,
+              change: data[0]?.change || 0,
+              changePercent: data[0]?.changesPercentage || 0
+            }))
+            .catch(() => ({
+              symbol: index.symbol,
+              name: index.name,
+              price: 0,
+              change: 0,
+              changePercent: 0
             }))
         );
 
         const results = await Promise.all(promises);
-        const validIndices = results.map(data => ({
-          symbol: data.symbol,
-          name: data.name,
-          price: Number(data.price) || 0,
-          change: Number(data.change) || 0,
-          changePercent: Number(data.changesPercentage) || 0
-        }));
-
-        setIndices(validIndices);
+        setIndices(results);
 
       } catch (error) {
         console.error('Error fetching indices:', error);

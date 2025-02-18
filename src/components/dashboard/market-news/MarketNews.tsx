@@ -34,15 +34,14 @@ export const MarketNews = () => {
         }
 
         try {
-          // Try premium endpoint first
+          // Use basic stock news endpoint instead of premium one
           const response = await fetch(
-            `https://financialmodelingprep.com/api/v3/stock_news?tickers=AAPL,GOOGL,MSFT,AMZN&limit=10&apikey=${apiKeyData.api_key}`
+            `https://financialmodelingprep.com/api/v3/stock/actives?apikey=${apiKeyData.api_key}`
           );
 
           if (!response.ok) {
-            // If premium fails, try basic endpoint
             const basicResponse = await fetch(
-              `https://financialmodelingprep.com/api/v3/stock_news?limit=10&apikey=${apiKeyData.api_key}`
+              `https://financialmodelingprep.com/api/v3/stock_market/gainers?limit=10&apikey=${apiKeyData.api_key}`
             );
 
             if (!basicResponse.ok) {
@@ -50,67 +49,58 @@ export const MarketNews = () => {
             }
 
             const data = await basicResponse.json();
-            const formattedNews = data.map((item: any) => ({
-              id: item.id || Math.random().toString(),
-              title: item.title,
-              description: item.text,
-              publishedAt: item.publishedDate,
-              source: item.site,
-              url: item.url,
+            const formattedNews = data.map((item: any, index: number) => ({
+              id: index.toString(),
+              title: `${item.symbol} shows notable market movement`,
+              description: `${item.companyName} (${item.symbol}) changed by ${item.changesPercentage?.toFixed(2)}%`,
+              publishedAt: new Date().toISOString(),
+              source: 'Market Data',
+              url: '#',
               symbol: item.symbol,
-              image: item.image || null
+              image: null
             }));
 
             setNews(formattedNews);
-            setError("Using basic market news. Some premium features are limited.");
+            setError("Using basic market data. Some features require a premium subscription.");
             return;
           }
 
           const data = await response.json();
-          const formattedNews = data.map((item: any) => ({
-            id: item.id || Math.random().toString(),
-            title: item.title,
-            description: item.text,
-            publishedAt: item.publishedDate,
-            source: item.site,
-            url: item.url,
+          const formattedNews = data.map((item: any, index: number) => ({
+            id: index.toString(),
+            title: `Active Stock: ${item.symbol}`,
+            description: `${item.companyName} (${item.symbol}) - Price: $${item.price?.toFixed(2)}`,
+            publishedAt: new Date().toISOString(),
+            source: 'Market Data',
+            url: '#',
             symbol: item.symbol,
-            image: item.image || null
+            image: null
           }));
 
           setNews(formattedNews);
           setError(null);
 
         } catch (error) {
-          console.error('Error fetching FMP news:', error);
+          console.error('Error fetching news:', error);
           
-          if (apiKeyData.use_yahoo_backup) {
-            const defaultNews = [
-              {
-                id: '1',
-                title: 'Market news temporarily limited',
-                description: 'Basic market news is still available.',
-                publishedAt: new Date().toISOString(),
-                source: 'System',
-                url: '#',
-                symbol: 'INFO',
-                image: null
-              }
-            ];
-            setNews(defaultNews);
-            setError('Limited market news access.');
-          } else {
-            throw error;
-          }
+          // Provide basic market information as fallback
+          const fallbackNews = [{
+            id: '1',
+            title: 'Market Update',
+            description: 'Basic market information available. Premium features require subscription.',
+            publishedAt: new Date().toISOString(),
+            source: 'System',
+            url: '#',
+            symbol: 'INFO',
+            image: null
+          }];
+          
+          setNews(fallbackNews);
+          setError('Limited market news access. Some features require a premium subscription.');
         }
       } catch (error) {
         console.error('Error in news fetch:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch market news');
-        toast({
-          title: "Market News",
-          description: "Using basic market news feed.",
-          variant: "default",
-        });
       } finally {
         setIsLoading(false);
       }
