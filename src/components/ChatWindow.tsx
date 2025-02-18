@@ -66,7 +66,7 @@ const ChatWindow: React.FC = () => {
   }, [navigate, toast]);
 
   const { messages, input, handleInputChange, handleSubmit, setMessages } = useChat({
-    api: `${window.location.origin}/functions/v1/stock-chat`,
+    api: '/api/chat',
     headers: {
       'Authorization': `Bearer ${session?.access_token || ''}`,
       'Content-Type': 'application/json'
@@ -78,7 +78,7 @@ const ChatWindow: React.FC = () => {
       console.error('Chat error:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to send message. Please try again.",
+        description: error instanceof Error ? error.message || "Failed to send message" : "Failed to send message. Please try again.",
         variant: "destructive"
       });
     }
