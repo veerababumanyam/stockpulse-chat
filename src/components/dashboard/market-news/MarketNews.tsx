@@ -23,6 +23,7 @@ export const MarketNews = () => {
           throw new Error('You must be logged in to view market news');
         }
 
+        // Get FMP API key from database
         const { data: apiKeyData, error: apiKeyError } = await supabase
           .from('api_keys')
           .select('api_key, use_yahoo_backup')
@@ -34,39 +35,22 @@ export const MarketNews = () => {
         }
 
         try {
-          // Try premium endpoint first
+          // Try FMP first
           const response = await fetch(
             `https://financialmodelingprep.com/api/v3/stock_news?tickers=AAPL,GOOGL,MSFT,AMZN&limit=10&apikey=${apiKeyData.api_key}`
           );
 
+          const data = await response.json();
+
+          // Check for API key suspension or other errors
           if (!response.ok) {
-            // If premium fails, try basic endpoint
-            const basicResponse = await fetch(
-              `https://financialmodelingprep.com/api/v3/stock_news?limit=10&apikey=${apiKeyData.api_key}`
-            );
-
-            if (!basicResponse.ok) {
-              throw new Error('Failed to fetch market news');
+            if (data?.["Error Message"]?.includes("suspended")) {
+              throw new Error('Your FMP API key has been suspended. Please contact FMP support.');
             }
-
-            const data = await basicResponse.json();
-            const formattedNews = data.map((item: any) => ({
-              id: item.id || Math.random().toString(),
-              title: item.title,
-              description: item.text,
-              publishedAt: item.publishedDate,
-              source: item.site,
-              url: item.url,
-              symbol: item.symbol,
-              image: item.image || null
-            }));
-
-            setNews(formattedNews);
-            setError("Using basic market news. Some premium features are limited.");
-            return;
+            throw new Error('Failed to fetch market news');
           }
 
-          const data = await response.json();
+          // Transform FMP data to our format
           const formattedNews = data.map((item: any) => ({
             id: item.id || Math.random().toString(),
             title: item.title,
@@ -84,12 +68,13 @@ export const MarketNews = () => {
         } catch (error) {
           console.error('Error fetching FMP news:', error);
           
+          // If Yahoo backup is enabled and FMP fails, try to get basic news
           if (apiKeyData.use_yahoo_backup) {
             const defaultNews = [
               {
                 id: '1',
-                title: 'Market news temporarily limited',
-                description: 'Basic market news is still available.',
+                title: 'Market data temporarily unavailable',
+                description: 'Please check back later for market news updates.',
                 publishedAt: new Date().toISOString(),
                 source: 'System',
                 url: '#',
@@ -98,7 +83,7 @@ export const MarketNews = () => {
               }
             ];
             setNews(defaultNews);
-            setError('Limited market news access.');
+            setError('Market news temporarily unavailable. Using backup data source.');
           } else {
             throw error;
           }
@@ -107,9 +92,9 @@ export const MarketNews = () => {
         console.error('Error in news fetch:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch market news');
         toast({
-          title: "Market News",
-          description: "Using basic market news feed.",
-          variant: "default",
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to fetch market news",
+          variant: "destructive",
         });
       } finally {
         setIsLoading(false);
@@ -132,6 +117,22 @@ export const MarketNews = () => {
     );
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Market News</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -143,12 +144,6 @@ export const MarketNews = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {error && (
-          <Alert className="mb-4" variant="default">
-            <AlertTitle>Limited Access</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
         <div className="space-y-4">
           {news.map((item) => (
             <NewsItem key={item.id} news={item} />

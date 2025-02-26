@@ -13,13 +13,6 @@ interface IndexData {
   changePercent: number;
 }
 
-const defaultIndices = [
-  { symbol: 'SPY', name: 'S&P 500 ETF' },
-  { symbol: 'DIA', name: 'Dow Jones ETF' },
-  { symbol: 'QQQ', name: 'Nasdaq ETF' },
-  { symbol: 'IWM', name: 'Russell 2000 ETF' },
-];
-
 export const MarketIndices = () => {
   const [indices, setIndices] = useState<IndexData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,67 +36,49 @@ export const MarketIndices = () => {
           throw new Error('FMP API key not found. Please set up your API key in the API Keys page');
         }
 
-        // Try premium quotes/index endpoint first
-        try {
-          const premiumResponse = await fetch(
-            `https://financialmodelingprep.com/api/v3/quotes/index?apikey=${apiKeyData.api_key}`
-          );
-
-          if (premiumResponse.ok) {
-            const data = await premiumResponse.json();
-            const majorIndices = data.filter((index: any) => 
-              ['S&P 500', 'Dow Jones', 'NASDAQ Composite', 'Russell 2000'].includes(index.name)
-            );
-            
-            setIndices(majorIndices.map((index: any) => ({
-              symbol: index.symbol,
-              name: index.name,
-              price: Number(index.price) || 0,
-              change: Number(index.change) || 0,
-              changePercent: Number(index.changesPercentage) || 0
-            })));
-            return;
-          }
-        } catch (error) {
-          console.log('Premium endpoint not available, falling back to basic endpoint');
+        // Validate API key format
+        if (apiKeyData.api_key.startsWith('hf_')) {
+          throw new Error('Invalid API key format. Please provide a valid Financial Modeling Prep (FMP) API key, not a Hugging Face key.');
         }
-
-        // Fallback to basic quote endpoint
-        const promises = defaultIndices.map(index =>
-          fetch(`https://financialmodelingprep.com/api/v3/quote/${index.symbol}?apikey=${apiKeyData.api_key}`)
-            .then(res => res.json())
-            .then(data => ({
-              ...data[0],
-              name: index.name
-            }))
+        
+        const response = await fetch(
+          `https://financialmodelingprep.com/api/v3/quotes/index?apikey=${apiKeyData.api_key}`
         );
 
-        const results = await Promise.all(promises);
-        const validIndices = results.map(data => ({
-          symbol: data.symbol,
-          name: data.name,
-          price: Number(data.price) || 0,
-          change: Number(data.change) || 0,
-          changePercent: Number(data.changesPercentage) || 0
+        if (!response.ok) {
+          const data = await response.json();
+          if (response.status === 403 && data?.["Error Message"]?.includes("Exclusive Endpoint")) {
+            throw new Error('This feature requires a premium FMP subscription. Please upgrade your plan at financialmodelingprep.com');
+          }
+          throw new Error('Failed to fetch indices. Please check your API key status.');
+        }
+        
+        const data = await response.json();
+        
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid data format received from API');
+        }
+
+        // Filter for specific major indices
+        const importantSymbols = ['^GSPC', '^DJI', '^IXIC', '^RUT', '^VIX'];
+        const filteredData = data.filter((index: any) => importantSymbols.includes(index?.symbol));
+
+        const validIndices = filteredData.map((index: any) => ({
+          symbol: index.symbol,
+          name: index.name || 'Unknown',
+          price: Number(index.price) || 0,
+          change: Number(index.change) || 0,
+          changePercent: Number(index.changesPercentage) || 0
         }));
 
         setIndices(validIndices);
-
       } catch (error) {
         console.error('Error fetching indices:', error);
         toast({
-          title: "Market Data Limited",
-          description: "Using basic market data.",
-          variant: "default",
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to fetch market indices",
+          variant: "destructive",
         });
-        
-        setIndices(defaultIndices.map(index => ({
-          symbol: index.symbol,
-          name: index.name,
-          price: 0,
-          change: 0,
-          changePercent: 0
-        })));
       } finally {
         setIsLoading(false);
       }
@@ -114,24 +89,33 @@ export const MarketIndices = () => {
 
   if (isLoading) {
     return (
+      <Card className="animate-pulse">
+        <CardHeader>
+          <CardTitle>Market Indices</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {Array(5).fill(0).map((_, i) => (
+              <div key={i} className="flex justify-between">
+                <div className="h-4 bg-muted rounded w-1/4" />
+                <div className="h-4 bg-muted rounded w-1/4" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (indices.length === 0) {
+    return (
       <Card>
         <CardHeader>
           <CardTitle>Market Indices</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="animate-pulse space-y-4">
-            {Array(4).fill(0).map((_, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <div className="h-4 bg-muted rounded w-20"></div>
-                  <div className="h-3 bg-muted rounded w-32"></div>
-                </div>
-                <div className="space-y-2">
-                  <div className="h-4 bg-muted rounded w-16"></div>
-                  <div className="h-3 bg-muted rounded w-12"></div>
-                </div>
-              </div>
-            ))}
+          <div className="text-center text-muted-foreground">
+            No market data available. Please check your API key configuration.
           </div>
         </CardContent>
       </Card>

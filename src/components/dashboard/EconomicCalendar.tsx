@@ -40,26 +40,44 @@ export const EconomicCalendar = () => {
         }
 
         try {
-          // Use basic economic indicators endpoint instead
           const response = await fetch(
-            `https://financialmodelingprep.com/api/v3/economic/gdp/US?apikey=${apiKeyData.api_key}`
+            `https://financialmodelingprep.com/api/v3/economic_calendar?apikey=${apiKeyData.api_key}`
           );
-
-          if (!response.ok) {
-            throw new Error('Failed to fetch economic data');
-          }
 
           const data = await response.json();
 
-          // Transform the data into our format
-          const formattedEvents = [{
-            event: "GDP Release",
-            date: data[0]?.date || new Date().toISOString(),
-            country: "US",
-            actual: `${data[0]?.value}%`,
-            previous: `${data[1]?.value}%`,
-            impact: "High"
-          }];
+          if (!response.ok) {
+            // Handle premium endpoint restriction
+            if (data?.["Error Message"]?.includes("Exclusive Endpoint")) {
+              if (apiKeyData.use_yahoo_backup) {
+                // Use basic placeholder data when premium endpoint is not available
+                const placeholderData = [
+                  {
+                    event: "Economic data temporarily unavailable",
+                    date: new Date().toISOString(),
+                    country: "US",
+                    impact: "Medium"
+                  }
+                ];
+                setEvents(placeholderData);
+                setError("Premium economic data not available. Please upgrade your FMP subscription for full access.");
+                return;
+              }
+              throw new Error('This feature requires a premium FMP subscription');
+            }
+            throw new Error('Failed to fetch economic data');
+          }
+
+          const formattedEvents = data
+            .slice(0, 5)
+            .map((event: any) => ({
+              event: event.event,
+              date: event.date,
+              country: event.country,
+              actual: event.actual,
+              previous: event.previous,
+              impact: event.impact
+            }));
 
           setEvents(formattedEvents);
           setError(null);
@@ -67,17 +85,17 @@ export const EconomicCalendar = () => {
         } catch (error) {
           console.error('Error fetching economic data:', error);
           if (apiKeyData.use_yahoo_backup) {
-            // Use placeholder data
+            // Fallback to basic data
             const basicData = [
               {
-                event: "Economic data temporarily limited",
+                event: "Economic data temporarily unavailable",
                 date: new Date().toISOString(),
                 country: "US",
                 impact: "Medium"
               }
             ];
             setEvents(basicData);
-            setError("Economic data access limited. Some features require a premium subscription.");
+            setError("Economic data temporarily unavailable. Using backup data source.");
           } else {
             throw error;
           }
@@ -86,9 +104,9 @@ export const EconomicCalendar = () => {
         console.error('Error in economic data fetch:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch economic data');
         toast({
-          title: "Limited Access",
-          description: "Some economic features require a premium FMP subscription.",
-          variant: "default",
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to fetch economic data",
+          variant: "destructive",
         });
       } finally {
         setIsLoading(false);
@@ -111,18 +129,28 @@ export const EconomicCalendar = () => {
     );
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Economic Calendar</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Economic Data</CardTitle>
+        <CardTitle>Economic Calendar</CardTitle>
       </CardHeader>
       <CardContent>
-        {error && (
-          <Alert className="mb-4" variant="default">
-            <AlertTitle>Limited Access</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
         <div className="space-y-4">
           {events.map((event, index) => (
             <div
@@ -139,7 +167,7 @@ export const EconomicCalendar = () => {
                 </div>
                 {event.actual && (
                   <div className="text-sm text-muted-foreground">
-                    Current: {event.actual}
+                    Actual: {event.actual}
                   </div>
                 )}
                 {event.previous && (

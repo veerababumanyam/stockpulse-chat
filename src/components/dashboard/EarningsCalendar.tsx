@@ -38,41 +38,42 @@ export const EarningsCalendar = () => {
         }
 
         try {
-          // Try premium earnings calendar endpoint first
           const response = await fetch(
             `https://financialmodelingprep.com/api/v3/earning_calendar?apikey=${apiKeyData.api_key}`
           );
 
+          const data = await response.json();
+
           if (!response.ok) {
-            // Fallback to basic income statement endpoint
-            const basicResponse = await fetch(
-              `https://financialmodelingprep.com/api/v3/income-statement/AAPL?limit=1&apikey=${apiKeyData.api_key}`
-            );
-
-            if (!basicResponse.ok) {
-              throw new Error('Failed to fetch earnings data');
+            // Handle premium endpoint restriction
+            if (data?.["Error Message"]?.includes("Exclusive Endpoint")) {
+              if (apiKeyData.use_yahoo_backup) {
+                // Use basic placeholder data when premium endpoint is not available
+                const placeholderData = [
+                  {
+                    symbol: "INFO",
+                    date: new Date().toISOString().split('T')[0],
+                    eps: null,
+                    revenue: null
+                  }
+                ];
+                setEvents(placeholderData);
+                setError("Premium earnings data not available. Please upgrade your FMP subscription for full access.");
+                return;
+              }
+              throw new Error('This feature requires a premium FMP subscription');
             }
+            throw new Error('Failed to fetch earnings data');
+          }
 
-            const data = await basicResponse.json();
-            const formattedEvents = data.map((event: any) => ({
-              symbol: 'AAPL',
+          const formattedEvents = data
+            .slice(0, 5)
+            .map((event: any) => ({
+              symbol: event.symbol,
               date: event.date,
               eps: event.eps,
               revenue: event.revenue
             }));
-
-            setEvents(formattedEvents);
-            setError("Using basic earnings data. Some features require a premium subscription.");
-            return;
-          }
-
-          const data = await response.json();
-          const formattedEvents = data.slice(0, 10).map((event: any) => ({
-            symbol: event.symbol,
-            date: event.date,
-            eps: event.eps,
-            revenue: event.revenue
-          }));
 
           setEvents(formattedEvents);
           setError(null);
@@ -80,6 +81,7 @@ export const EarningsCalendar = () => {
         } catch (error) {
           console.error('Error fetching earnings:', error);
           if (apiKeyData.use_yahoo_backup) {
+            // Fallback to basic data
             const basicData = [
               {
                 symbol: "INFO",
@@ -89,7 +91,7 @@ export const EarningsCalendar = () => {
               }
             ];
             setEvents(basicData);
-            setError("Basic earnings data available.");
+            setError("Earnings data temporarily unavailable. Using backup data source.");
           } else {
             throw error;
           }
@@ -98,9 +100,9 @@ export const EarningsCalendar = () => {
         console.error('Error in earnings fetch:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch earnings data');
         toast({
-          title: "Earnings Data",
-          description: "Using basic earnings information.",
-          variant: "default",
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to fetch earnings data",
+          variant: "destructive",
         });
       } finally {
         setIsLoading(false);
@@ -123,18 +125,28 @@ export const EarningsCalendar = () => {
     );
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Earnings Calendar</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Earnings Information</CardTitle>
+        <CardTitle>Earnings Calendar</CardTitle>
       </CardHeader>
       <CardContent>
-        {error && (
-          <Alert className="mb-4" variant="default">
-            <AlertTitle>Limited Access</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
         <div className="space-y-4">
           {events.map((event, index) => (
             <div
@@ -143,9 +155,7 @@ export const EarningsCalendar = () => {
             >
               <div>
                 <div className="font-medium">{event.symbol}</div>
-                <div className="text-sm text-muted-foreground">
-                  {new Date(event.date).toLocaleDateString()}
-                </div>
+                <div className="text-sm text-muted-foreground">{new Date(event.date).toLocaleDateString()}</div>
               </div>
               {(event.eps !== null || event.revenue !== null) && (
                 <div className="text-right">
