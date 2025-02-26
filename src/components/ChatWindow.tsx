@@ -1,9 +1,9 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from '@/lib/utils';
 import { Bot, User } from 'lucide-react';
 import { useChat } from 'ai/react';
@@ -26,7 +26,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ role, content }) => (
       "rounded-md px-3 py-2 shadow-sm",
       role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
     )}>
-      <p className="text-sm whitespace-pre-wrap">{content}</p>
+      <p className="text-sm">{content}</p>
     </div>
   </div>
 );
@@ -66,10 +66,10 @@ const ChatWindow: React.FC = () => {
   }, [navigate, toast]);
 
   const { messages, input, handleInputChange, handleSubmit, setMessages } = useChat({
-    api: `${window.location.origin}/functions/v1/stock-chat`,
+    api: `https://llswqgpmjvxjdpmdnypq.supabase.co/functions/v1/stock-chat`,
     headers: {
-      'Authorization': `Bearer ${session?.access_token || ''}`,
-      'Content-Type': 'application/json'
+      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxsc3dxZ3BtanZ4amRwbWRueXBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk3MTk2MjksImV4cCI6MjA1NTI5NTYyOX0.cvX-MJEwdK9HV1rBaA61RgTBu-O7PIxEgNQWDRNBcIw',
+      'Authorization': `Bearer ${session?.access_token || ''}`
     },
     body: {
       session: session
@@ -78,19 +78,19 @@ const ChatWindow: React.FC = () => {
       console.error('Chat error:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to send message. Please try again.",
+        description: "Failed to send message. Please try again.",
         variant: "destructive"
       });
     }
   });
 
   const clearChat = useCallback(() => {
-    setMessages([]);
-  }, [setMessages]);
+    setMessages([])
+  }, [setMessages])
 
   if (isLoading) {
     return (
-      <Card className="flex flex-col h-[calc(100vh-100px)]">
+      <Card className="flex flex-col h-full">
         <CardContent className="flex items-center justify-center h-full">
           <p>Loading...</p>
         </CardContent>
@@ -103,15 +103,15 @@ const ChatWindow: React.FC = () => {
   }
 
   return (
-    <Card className="flex flex-col h-[calc(100vh-100px)]">
+    <Card className="flex flex-col h-full">
       <CardHeader>
         <h3 className="text-lg font-semibold">AI Chat</h3>
         <p className="text-sm text-muted-foreground">
-          Ask questions about stocks, get investment ideas, and more.
+          Ask questions, get investment ideas, and more.
         </p>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full pr-4">
+        <ScrollArea className="h-full">
           <div className="flex flex-col gap-2">
             {messages.map(message => (
               <ChatMessage 
@@ -127,19 +127,18 @@ const ChatWindow: React.FC = () => {
         <form 
           onSubmit={(e) => {
             e.preventDefault();
-            if (!input.trim()) return;
             handleSubmit(e);
           }} 
           className="w-full flex items-center space-x-2"
         >
           <Input
             type="text"
-            placeholder="Ask me anything about stocks..."
+            placeholder="Ask me anything..."
             value={input}
             onChange={handleInputChange}
             className="flex-1"
           />
-          <Button type="submit" disabled={!input.trim()}>Send</Button>
+          <Button type="submit">Send</Button>
           <Button type="button" variant="outline" onClick={clearChat}>Clear</Button>
         </form>
       </CardFooter>
