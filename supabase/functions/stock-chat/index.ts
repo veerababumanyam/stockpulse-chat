@@ -15,9 +15,8 @@ serve(async (req) => {
 
   try {
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    
     if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured in Edge Function secrets');
+      throw new Error('OpenAI API key not configured');
     }
 
     // Get messages from request
@@ -31,6 +30,8 @@ serve(async (req) => {
       throw new Error('Invalid message content');
     }
 
+    console.log('Sending request to OpenAI with API key:', openAIApiKey.substring(0, 3) + '...');
+
     // Set up OpenAI request
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -39,7 +40,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo', // Fixed model name
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -75,25 +76,21 @@ serve(async (req) => {
           }
 
           const chunk = decoder.decode(value);
-          const lines = chunk.split('\n').filter(line => line.trim());
+          const lines = chunk.split('\n').filter(line => line.trim() !== '');
 
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const data = line.slice(6);
-              
-              if (data === '[DONE]') {
-                continue;
-              }
+              if (data === '[DONE]') continue;
 
               try {
                 const parsed = JSON.parse(data);
-                const content = parsed.choices[0]?.delta?.content;
+                const content = parsed.choices[0]?.delta?.content || '';
                 if (content) {
-                  // Format the message correctly for streaming
-                  await writer.write(encoder.encode(`data: ${JSON.stringify({ text: content })}\n\n`));
+                  await writer.write(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
                 }
               } catch (e) {
-                console.error('Error parsing chunk:', e, 'Line:', line);
+                console.error('Error parsing JSON:', e);
               }
             }
           }
