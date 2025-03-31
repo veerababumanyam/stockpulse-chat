@@ -18,6 +18,7 @@ import Agents from "./pages/Agents";
 import SearchResults from "./pages/SearchResults";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
+import PaperTrading from "./pages/PaperTrading";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,9 @@ const App = () => (
           } />
           <Route path="/chat" element={
             <ProtectedRoute><Chat /></ProtectedRoute>
+          } />
+          <Route path="/paper-trading" element={
+            <ProtectedRoute><PaperTrading /></ProtectedRoute>
           } />
           <Route path="*" element={<NotFound />} />
         </Routes>
